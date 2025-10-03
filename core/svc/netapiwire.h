@@ -34,32 +34,32 @@
 
 struct tagNETAPI_USE_ADD_REQ
 {
-    MSG_HEADER h;
-    UCHAR   level;
-    ULONG   ui0_local_len;
-    ULONG   ui0_remote_len;
-    ULONG   ui1_password_len;
-    ULONG   ui2_username_len;
-    ULONG   ui2_domainname_len;
-    ULONG   ui1_status;
-    ULONG   ui1_asg_type;
-    ULONG   ui1_refcount;
-    ULONG   ui1_usecount;
-    ULONG   ui3_flags;
-    ULONG   ui4_auth_identity_length;
-    UCHAR   ui4_auth_identity[2048+2];
-    WCHAR   ui0_local[256+1];
-    WCHAR   ui0_remote[256+1];
-    WCHAR   ui1_password[256+1];
-    WCHAR   ui2_username[256+1];
-    WCHAR   ui2_domainname[256+1];
+	MSG_HEADER h;
+	UCHAR level;
+	ULONG ui0_local_len;
+	ULONG ui0_remote_len;
+	ULONG ui1_password_len;
+	ULONG ui2_username_len;
+	ULONG ui2_domainname_len;
+	ULONG ui1_status;
+	ULONG ui1_asg_type;
+	ULONG ui1_refcount;
+	ULONG ui1_usecount;
+	ULONG ui3_flags;
+	ULONG ui4_auth_identity_length;
+	UCHAR ui4_auth_identity[2048 + 2];
+	WCHAR ui0_local[256 + 1];
+	WCHAR ui0_remote[256 + 1];
+	WCHAR ui1_password[256 + 1];
+	WCHAR ui2_username[256 + 1];
+	WCHAR ui2_domainname[256 + 1];
 };
 
 
 struct tagNETAPI_USE_ADD_RPL
 {
-    MSG_HEADER h;                       // status is NET_API_STATUS
-    ULONG parm_index;
+	MSG_HEADER h; // status is NET_API_STATUS
+	ULONG parm_index;
 };
 
 typedef struct tagNETAPI_USE_ADD_REQ NETAPI_USE_ADD_REQ;

@@ -26,29 +26,28 @@
 
 class CFinderDialog : public CBaseDialog
 {
-    static CFinderDialog *m_instance;
+	static CFinderDialog* m_instance;
 
-    CSize m_InitialSize;
+	CSize m_InitialSize;
 
-    CWnd *m_wndClose;
-    int m_idClose;
+	CWnd* m_wndClose;
+	int m_idClose;
 
-    ULONG m_pid;
+	ULONG m_pid;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    static UINT CALLBACK FindProc(HWND hwndTool, UINT uCode, HWND hwnd);
-    void ShowInfo(ULONG pid);
-    void HideInfo();
+	static UINT CALLBACK FindProc(HWND hwndTool, UINT uCode, HWND hwnd);
+	void ShowInfo(ULONG pid);
+	void HideInfo();
 
-    virtual void OnCancel();
+	virtual void OnCancel();
 
 public:
+	CFinderDialog(CWnd* pParentWnd, int id);
+	~CFinderDialog();
 
-    CFinderDialog(CWnd *pParentWnd, int id);
-    ~CFinderDialog();
-
-    ULONG GetProcessId();
+	ULONG GetProcessId();
 };
 
 

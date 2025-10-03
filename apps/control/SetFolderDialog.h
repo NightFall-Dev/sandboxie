@@ -26,21 +26,20 @@
 
 class CSetFolderDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnSelectDrive();
+	afx_msg void OnSelectDrive();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    CString GetFolder();
-    BOOL SetFolder(const CString &folder);
+	CString GetFolder();
+	BOOL SetFolder(const CString& folder);
 
 public:
-
-    CSetFolderDialog(CWnd *pParentWnd);
-    ~CSetFolderDialog();
+	CSetFolderDialog(CWnd* pParentWnd);
+	~CSetFolderDialog();
 };
 
 

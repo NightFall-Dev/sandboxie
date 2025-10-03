@@ -20,8 +20,8 @@
 //---------------------------------------------------------------------------
 
 
-#include "global.h"
 #include "core/dll/sbiedll.h"
+#include "global.h"
 
 
 //---------------------------------------------------------------------------
@@ -31,49 +31,63 @@
 
 int DoUpdate(void)
 {
-    ULONG status;
-    WCHAR op;
+	ULONG status;
+	WCHAR op;
 
-    BOOL usage_error = FALSE;
-    if ((! CmdVerb(1)) || (! CmdVerb(2)))
-        usage_error = TRUE;
-    else if ((! CmdVerb(3)) && (! CmdIs(L"set")))
-        usage_error = TRUE;
-    else if (CmdVerb(3) && CmdVerb(4))
-        usage_error = TRUE;
+	BOOL usage_error = FALSE;
+	if ((!CmdVerb(1)) || (!CmdVerb(2)))
+	{
+		usage_error = TRUE;
+	}
+	else if ((!CmdVerb(3)) && (!CmdIs(L"set")))
+	{
+		usage_error = TRUE;
+	}
+	else if (CmdVerb(3) && CmdVerb(4))
+	{
+		usage_error = TRUE;
+	}
 
-    if (usage_error) {
+	if (usage_error)
+	{
+		const WCHAR* _usage = L"set|append|insert|delete <section> <setting> <value>\n"
+		                      L"- set:     replaces a setting with a new value"
+		                      L"  if value is omitted,\n"
+		                      L"           the setting will be removed entirely\n"
+		                      L"- append:  adds a new value line for the setting"
+		                      L" at the end of the\n"
+		                      L"           existing list of lines\n"
+		                      L"- insert:  adds a new value line for the setting"
+		                      L" at the top of the\n"
+		                      L"           existing list of lines\n"
+		                      L"- delete:  removes a value line which matches"
+		                      L" the specified value\n";
 
-        const WCHAR *_usage =
-            L"set|append|insert|delete <section> <setting> <value>\n"
-            L"- set:     replaces a setting with a new value"
-                L"  if value is omitted,\n"
-            L"           the setting will be removed entirely\n"
-            L"- append:  adds a new value line for the setting"
-                L" at the end of the\n"
-            L"           existing list of lines\n"
-            L"- insert:  adds a new value line for the setting"
-                L" at the top of the\n"
-            L"           existing list of lines\n"
-            L"- delete:  removes a value line which matches"
-                L" the specified value\n";
+		UsageError(_usage);
+	}
 
-        UsageError(_usage);
-    }
+	if (CmdIs(L"set"))
+	{
+		op = L's';
+	}
+	else if (CmdIs(L"append"))
+	{
+		op = L'a';
+	}
+	else if (CmdIs(L"insert"))
+	{
+		op = L'i';
+	}
+	else if (CmdIs(L"delete"))
+	{
+		op = L'd';
+	}
+	else
+	{
+		return ERRLVL_CMDLINE;
+	}
 
-    if (CmdIs(L"set"))
-        op = L's';
-    else if (CmdIs(L"append"))
-        op = L'a';
-    else if (CmdIs(L"insert"))
-        op = L'i';
-    else if (CmdIs(L"delete"))
-        op = L'd';
-    else
-        return ERRLVL_CMDLINE;
+	status = SbieDll_UpdateConf(op, NULL, CmdVerb(1), CmdVerb(2), CmdVerb(3));
 
-    status = SbieDll_UpdateConf(
-                    op, NULL, CmdVerb(1), CmdVerb(2), CmdVerb(3));
-
-    return 0;
+	return 0;
 }

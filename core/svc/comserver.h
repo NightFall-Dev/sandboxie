@@ -29,147 +29,114 @@
 
 class ComServer
 {
+public:
+	ComServer(PipeServer* pipeServer);
+
+	void DeleteAllSlaves();
+
+protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
+
+	MSG_HEADER* GetClassObjectHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* CreateInstanceHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* QueryInterfaceHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* AddRefReleaseHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* InvokeMethodHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* UnmarshalInterfaceHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* MarshalInterfaceHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* QueryBlanketHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* SetBlanketHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* CopyProxyHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	MSG_HEADER* NonComHandler(MSG_HEADER* msg, void* _slave, BOOLEAN* deleted);
+
+	void* LockSlave(HANDLE idProcess, ULONG msgid);
+
+	ULONG CallSlave(void* _slave, ULONG callid, BOOLEAN* deleted);
+
+	void DeleteSlave(void* _slave);
+
+	void NotifyAllSlaves(HANDLE idProcess);
+
+	static void NotifyAllSlaves2(ULONG64* ThreadData);
+
+	void NotifyAllSlaves3(HANDLE idProcess);
+
+	void LogErr(ULONG session, ULONG n1, ULONG n2);
+
+	void LogErr(void* _slave, ULONG n1, ULONG n2);
+
+	//
+	// Slave Process
+	//
 
 public:
-
-    ComServer(PipeServer *pipeServer);
-
-    void DeleteAllSlaves();
+	static void RunSlave(const WCHAR* cmdline);
 
 protected:
+	static void* FindSlaveObject(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
+	static void* RefOrAllocSlaveObject(ULONG idProcess, void* pUnknown, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *GetClassObjectHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void DeleteSlaveObject(void* _obj, LIST* ObjectsList);
 
-    MSG_HEADER *CreateInstanceHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void GetClassObjectSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *QueryInterfaceHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void CreateInstanceSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *AddRefReleaseHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void AddRefReleaseSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *InvokeMethodHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void QueryInterfaceSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *UnmarshalInterfaceHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void InvokeMethodSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *MarshalInterfaceHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void UnmarshalInterfaceSlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *QueryBlanketHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void MarshalInterfaceSlave(void* _map, LIST* ProxiesList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *SetBlanketHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void QueryBlanketSlave(void* _map, LIST* ProxiesList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *CopyProxyHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void SetBlanketSlave(void* _map, LIST* ProxiesList, ULONG* exc, HRESULT* hr);
 
-    MSG_HEADER *NonComHandler(
-        MSG_HEADER *msg, void *_slave, BOOLEAN *deleted);
+	static void CopyProxySlave(void* _map, LIST* ProxiesList, ULONG* exc, HRESULT* hr);
 
-    void *LockSlave(HANDLE idProcess, ULONG msgid);
+	static void ProcessNotifySlave(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    ULONG CallSlave(void *_slave, ULONG callid, BOOLEAN *deleted);
+	static BOOLEAN CheckWmiExecMethod(UCHAR* BufPtr, ULONG BufLen);
 
-    void DeleteSlave(void *_slave);
+	//
+	// ComServer2
+	//
 
-    void NotifyAllSlaves(HANDLE idProcess);
+	static void* FindOrCreateDummySlaveObject(void* _map, LIST* ObjectsList, ULONG* exc, HRESULT* hr);
 
-    static void NotifyAllSlaves2(ULONG64 *ThreadData);
+	static void* CreateDummySlaveObject(GUID* riid);
 
-    void NotifyAllSlaves3(HANDLE idProcess);
+	static ULONG CryptProtectDataSlave(void* Buffer);
 
-    void LogErr(ULONG session, ULONG n1, ULONG n2);
-
-    void LogErr(void *_slave, ULONG n1, ULONG n2);
-
-    //
-    // Slave Process
-    //
-
-public:
-
-    static void RunSlave(const WCHAR *cmdline);
+	//
+	// variables
+	//
 
 protected:
+	CRITICAL_SECTION m_SlavesLock;
+	LIST m_SlavesList;
+	HANDLE m_SlaveReleasedEvent;
 
-    static void *FindSlaveObject(void *_map, LIST *ObjectsList,
-                                    ULONG *exc, HRESULT *hr);
+	static volatile LONG m_ObjIdx;
 
-    static void *RefOrAllocSlaveObject(ULONG idProcess, void *pUnknown,
-                                       LIST *ObjectsList,
-                                       ULONG *exc, HRESULT *hr);
+	static HANDLE m_heap;
 
-    static void DeleteSlaveObject(void *_obj, LIST *ObjectsList);
-
-    static void GetClassObjectSlave(void *_map, LIST *ObjectsList,
-                                    ULONG *exc, HRESULT *hr);
-
-    static void CreateInstanceSlave(void *_map, LIST *ObjectsList,
-                                    ULONG *exc, HRESULT *hr);
-
-    static void AddRefReleaseSlave(void *_map, LIST *ObjectsList,
-                                   ULONG *exc, HRESULT *hr);
-
-    static void QueryInterfaceSlave(void *_map, LIST *ObjectsList,
-                                    ULONG *exc, HRESULT *hr);
-
-    static void InvokeMethodSlave(void *_map, LIST *ObjectsList,
-                                  ULONG *exc, HRESULT *hr);
-
-    static void UnmarshalInterfaceSlave(void *_map, LIST *ObjectsList,
-                                        ULONG *exc, HRESULT *hr);
-
-    static void MarshalInterfaceSlave(void *_map, LIST *ProxiesList,
-                                      ULONG *exc, HRESULT *hr);
-
-    static void QueryBlanketSlave(void *_map, LIST *ProxiesList,
-                                  ULONG *exc, HRESULT *hr);
-
-    static void SetBlanketSlave(void *_map, LIST *ProxiesList,
-                                ULONG *exc, HRESULT *hr);
-
-    static void CopyProxySlave(void *_map, LIST *ProxiesList,
-                               ULONG *exc, HRESULT *hr);
-
-    static void ProcessNotifySlave(void *_map, LIST *ObjectsList,
-                                   ULONG *exc, HRESULT *hr);
-
-    static BOOLEAN CheckWmiExecMethod(UCHAR *BufPtr, ULONG BufLen);
-
-    //
-    // ComServer2
-    //
-
-    static void *FindOrCreateDummySlaveObject(void *_map, LIST *ObjectsList,
-                                              ULONG *exc, HRESULT *hr);
-
-    static void *CreateDummySlaveObject(GUID *riid);
-
-    static ULONG CryptProtectDataSlave(void *Buffer);
-
-    //
-    // variables
-    //
-
-protected:
-
-    CRITICAL_SECTION m_SlavesLock;
-    LIST m_SlavesList;
-    HANDLE m_SlaveReleasedEvent;
-
-    static volatile LONG m_ObjIdx;
-
-    static HANDLE m_heap;
-
-    static bool m_AnySlaveObjectCreated;
-
+	static bool m_AnySlaveObjectCreated;
 };
 
 

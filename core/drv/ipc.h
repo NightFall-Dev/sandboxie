@@ -28,10 +28,10 @@
 #include "syscall.h"
 
 
-
-typedef struct _IPC_DYNAMIC_PORTS {
-    PERESOURCE  pPortLock;
-    WCHAR       wstrPortName[DYNAMIC_PORT_NAME_CHARS];
+typedef struct _IPC_DYNAMIC_PORTS
+{
+	PERESOURCE pPortLock;
+	WCHAR wstrPortName[DYNAMIC_PORT_NAME_CHARS];
 } IPC_DYNAMIC_PORTS;
 
 extern IPC_DYNAMIC_PORTS Ipc_Dynamic_Ports[];
@@ -42,11 +42,9 @@ extern IPC_DYNAMIC_PORTS Ipc_Dynamic_Ports[];
 //---------------------------------------------------------------------------
 
 
-typedef NTSTATUS (*P_NtRequestPort)(
-    HANDLE PortHandle, void *RequestMessage);
+typedef NTSTATUS (*P_NtRequestPort)(HANDLE PortHandle, void* RequestMessage);
 
-typedef NTSTATUS (*P_NtRequestWaitReplyPort)(
-    HANDLE PortHandle, void *RequestMessage, void *ReplyMessage);
+typedef NTSTATUS (*P_NtRequestWaitReplyPort)(HANDLE PortHandle, void* RequestMessage, void* ReplyMessage);
 
 
 //---------------------------------------------------------------------------
@@ -58,54 +56,49 @@ BOOLEAN Ipc_Init(void);
 
 void Ipc_Unload(void);
 
-BOOLEAN Ipc_CreateBoxPath(PROCESS *proc);
+BOOLEAN Ipc_CreateBoxPath(PROCESS* proc);
 
-void *Ipc_GetServerPort(void *Object);
+void* Ipc_GetServerPort(void* Object);
 
-BOOLEAN Ipc_InitProcess(PROCESS *proc);
+BOOLEAN Ipc_InitProcess(PROCESS* proc);
 
 
 //---------------------------------------------------------------------------
 
 
-NTSTATUS Ipc_ImpersonatePort(
-    PROCESS *proc, SYSCALL_ENTRY *syscall_entry, ULONG_PTR *user_args);
+NTSTATUS Ipc_ImpersonatePort(PROCESS* proc, SYSCALL_ENTRY* syscall_entry, ULONG_PTR* user_args);
 
-NTSTATUS Ipc_RequestPort(
-    PROCESS *proc, SYSCALL_ENTRY *syscall_entry, ULONG_PTR *user_args);
+NTSTATUS Ipc_RequestPort(PROCESS* proc, SYSCALL_ENTRY* syscall_entry, ULONG_PTR* user_args);
 
-NTSTATUS Ipc_AlpcSendWaitReceivePort(
-    PROCESS *proc, SYSCALL_ENTRY *syscall_entry, ULONG_PTR *user_args);
+NTSTATUS Ipc_AlpcSendWaitReceivePort(PROCESS* proc, SYSCALL_ENTRY* syscall_entry, ULONG_PTR* user_args);
 
-NTSTATUS Ipc_NtRequestPort(
-    HANDLE PortHandle, void *RequestMessage);
+NTSTATUS Ipc_NtRequestPort(HANDLE PortHandle, void* RequestMessage);
 
-NTSTATUS Ipc_NtRequestWaitReplyPort(
-    HANDLE PortHandle, void *RequestMessage, void *ReplyMessage);
+NTSTATUS Ipc_NtRequestWaitReplyPort(HANDLE PortHandle, void* RequestMessage, void* ReplyMessage);
 
-NTSTATUS Ipc_Api_SetLsaAuthPkg(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_SetLsaAuthPkg(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Ipc_Api_GetSpoolerPort(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_GetSpoolerPort(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Ipc_Api_GetSpoolerPortFromPid(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_GetSpoolerPortFromPid(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Ipc_Api_AllowSpoolerPrintToFile(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_AllowSpoolerPrintToFile(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Ipc_Api_GetSpoolerPortFromPid(PROCESS *proc, ULONG64 *parms);
-NTSTATUS Ipc_Api_GetWpadPortFromPid(PROCESS *proc, ULONG64 *parms);
-NTSTATUS Ipc_Api_SetGameConfigStorePort(PROCESS *proc, ULONG64 *parms);
-NTSTATUS Ipc_Api_GetSmartCardPortFromPid(PROCESS *proc, ULONG64 *parms);
-NTSTATUS Ipc_Api_SetSmartCardPort(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_GetSpoolerPortFromPid(PROCESS* proc, ULONG64* parms);
+NTSTATUS Ipc_Api_GetWpadPortFromPid(PROCESS* proc, ULONG64* parms);
+NTSTATUS Ipc_Api_SetGameConfigStorePort(PROCESS* proc, ULONG64* parms);
+NTSTATUS Ipc_Api_GetSmartCardPortFromPid(PROCESS* proc, ULONG64* parms);
+NTSTATUS Ipc_Api_SetSmartCardPort(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Ipc_Api_GetRpcPortFromPid(enum ENUM_DYNAMIC_PORT_TYPE ePortType, PROCESS *proc, ULONG64 *parms);
+NTSTATUS Ipc_Api_GetRpcPortFromPid(enum ENUM_DYNAMIC_PORT_TYPE ePortType, PROCESS* proc, ULONG64* parms);
 
 //---------------------------------------------------------------------------
 // Variables
 //---------------------------------------------------------------------------
 
 
-extern P_NtRequestPort              __sys_NtRequestPort;
-extern P_NtRequestWaitReplyPort     __sys_NtRequestWaitReplyPort;
+extern P_NtRequestPort __sys_NtRequestPort;
+extern P_NtRequestWaitReplyPort __sys_NtRequestWaitReplyPort;
 
 
 //---------------------------------------------------------------------------

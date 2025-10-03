@@ -29,171 +29,158 @@
 
 class GuiServer
 {
-
 public:
+	static GuiServer* GetInstance();
 
-    static GuiServer *GetInstance();
+	bool InitProcess(HANDLE hProcess, ULONG process_id, ULONG session_id, BOOLEAN add_to_job);
 
-    bool InitProcess(HANDLE hProcess, ULONG process_id, ULONG session_id,
-                     BOOLEAN add_to_job);
+	bool InitConsole(HANDLE hProcess, ULONG process_id, ULONG session_id);
 
-    bool InitConsole(HANDLE hProcess, ULONG process_id, ULONG session_id);
-
-    static void RunSlave(const WCHAR *cmdline);
+	static void RunSlave(const WCHAR* cmdline);
 
 protected:
+	GuiServer();
 
-    GuiServer();
+	ULONG StartSlave(ULONG session_id);
 
-    ULONG StartSlave(ULONG session_id);
+	ULONG SendMessageToSlave(ULONG session_id, ULONG process_id, BOOLEAN add_to_job);
 
-    ULONG SendMessageToSlave(ULONG session_id, ULONG process_id,
-                             BOOLEAN add_to_job);
+	static void ReportError2336(ULONG session_id, ULONG errlvl, ULONG status);
 
-    static void ReportError2336(
-                        ULONG session_id, ULONG errlvl, ULONG status);
+	static void RunConsoleSlave(const WCHAR* evtname);
 
-    static void RunConsoleSlave(const WCHAR *evtname);
+	static void ConsoleCallbackSlave(void* arg, BOOLEAN timeout);
 
-    static void ConsoleCallbackSlave(void *arg, BOOLEAN timeout);
+	static void AdjustConsoleTaskbarButton();
 
-    static void AdjustConsoleTaskbarButton();
-
-    static ULONG DdeProxyThreadSlave(void *xDdeArgs);
+	static ULONG DdeProxyThreadSlave(void* xDdeArgs);
 
 protected:
+	static void* GetNtUserQueryWindow(void);
 
-    static void *GetNtUserQueryWindow(void);
+	bool CreateQueueSlave(const WCHAR* cmdline);
 
-    bool CreateQueueSlave(const WCHAR *cmdline);
+	static void QueueCallbackSlave(void* arg, BOOLEAN timeout);
 
-    static void QueueCallbackSlave(void *arg, BOOLEAN timeout);
+	bool QueueCallbackSlave2(void);
 
-    bool QueueCallbackSlave2(void);
+	HANDLE GetJobObjectForAssign(const WCHAR* boxname);
 
-    HANDLE GetJobObjectForAssign(const WCHAR *boxname);
+	HANDLE GetJobObjectForGrant(ULONG pid);
 
-    HANDLE GetJobObjectForGrant(ULONG pid);
-
-    bool GetWindowStationAndDesktopName(WCHAR *out_name);
-
-protected:
-
-    struct SlaveArgs {
-        ULONG pid;
-        ULONG req_len;
-        ULONG rpl_len;
-        void *req_buf;
-        void *rpl_buf;
-    };
-    typedef ULONG (GuiServer::*SlaveFunc)(SlaveArgs *args);
-    SlaveFunc *m_SlaveFuncs;
-
-    ULONG InitProcessSlave(SlaveArgs *args);
-
-    ULONG GetWindowStationSlave(SlaveArgs *args);
-
-    ULONG CreateConsoleSlave(SlaveArgs *args);
-
-    ULONG QueryWindowSlave(SlaveArgs *args);
-
-    ULONG IsWindowSlave(SlaveArgs *args);
-
-    ULONG GetWindowLongSlave(SlaveArgs *args);
-
-    ULONG GetWindowPropSlave(SlaveArgs *args);
-
-    ULONG GetWindowHandleSlave(SlaveArgs *args);
-
-    ULONG GetClassNameSlave(SlaveArgs *args);
-
-    ULONG GetWindowRectSlave(SlaveArgs *args);
-
-    ULONG GetWindowInfoSlave(SlaveArgs *args);
-
-    ULONG GrantHandleSlave(SlaveArgs *args);
-
-    ULONG EnumWindowsSlave(SlaveArgs *args);
-
-    ULONG EnumWindowsFilterSlave(ULONG pid, void *rpl_buf);
-
-    static BOOL EnumWindowsSlaveEnumProc(HWND hwnd, LPARAM lParam);
-
-    ULONG FindWindowSlave(SlaveArgs *args);
-
-    ULONG MapWindowPointsSlave(SlaveArgs *args);
-
-    ULONG SetWindowPosSlave(SlaveArgs *args);
-
-    ULONG CloseClipboardSlave(SlaveArgs *args);
-
-    ULONG GetClipboardDataSlave(SlaveArgs *args);
-
-    HANDLE GetClipboardDataSlave2(ULONG pid, void *mem_ptr, SIZE_T mem_len);
-
-    void *GetClipboardBitmapSlave(void *hBitmap);
-
-    void *GetClipboardEnhMetaFileSlave(void *hEnhMetaFile);
-
-    ULONG GetClipboardMetaFileSlave(SlaveArgs *args);
-
-    ULONG SendPostMessageSlave(SlaveArgs *args);
-
-    ULONG SendCopyDataSlave(SlaveArgs *args);
-
-    ULONG ClipCursorSlave(SlaveArgs *args);
-
-    ULONG SetForegroundWindowSlave(SlaveArgs *args);
-
-    ULONG MonitorFromWindowSlave(SlaveArgs *args);
-
-    ULONG SplWow64Slave(SlaveArgs *args);
-
-    void  SplWow64SlaveWin8();
-
-    ULONG ChangeDisplaySettingsSlave(SlaveArgs *args);
-
-    ULONG SetCursorPosSlave(SlaveArgs *args);
-
-    ULONG RemoveHostWindow(SlaveArgs *args);
-
-    //
-    // window access check utilities
-    //
-
-    ULONG GetProcessPathList(
-        ULONG pid, void **out_pool, LIST **out_list);
-
-    bool CheckProcessPathList(LIST *list, const WCHAR *str);
-
-    bool CheckSameProcessBoxes(
-        ULONG in_pid, WCHAR *boxname, HWND hwnd, ULONG *out_pid);
-
-    bool CheckWindowAccessible(
-        ULONG pid, WCHAR *boxname, LIST *list, HWND hwnd);
-
-    bool CompareIntegrityLevels(ULONG src_pid, HWND dst_hwnd);
-
-    bool ShouldIgnoreIntegrityLevels(ULONG pid, HWND hwnd);
-
-    bool AllowSendPostMessage(
-        ULONG pid, ULONG msg, bool IsSendMsg, HWND hwnd);
-
-    //
-    // data
-    //
+	bool GetWindowStationAndDesktopName(WCHAR* out_name);
 
 protected:
+	struct SlaveArgs
+	{
+		ULONG pid;
+		ULONG req_len;
+		ULONG rpl_len;
+		void* req_buf;
+		void* rpl_buf;
+	};
+	typedef ULONG (GuiServer::*SlaveFunc)(SlaveArgs* args);
+	SlaveFunc* m_SlaveFuncs;
 
-    CRITICAL_SECTION m_SlavesLock;
-    LIST m_SlavesList;
-    HANDLE m_QueueEvent;
+	ULONG InitProcessSlave(SlaveArgs* args);
 
-    WCHAR *m_QueueName;
-    ULONG m_ParentPid;
-    ULONG m_SessionId;
-    ULONG m_nOSVersion;
+	ULONG GetWindowStationSlave(SlaveArgs* args);
 
+	ULONG CreateConsoleSlave(SlaveArgs* args);
+
+	ULONG QueryWindowSlave(SlaveArgs* args);
+
+	ULONG IsWindowSlave(SlaveArgs* args);
+
+	ULONG GetWindowLongSlave(SlaveArgs* args);
+
+	ULONG GetWindowPropSlave(SlaveArgs* args);
+
+	ULONG GetWindowHandleSlave(SlaveArgs* args);
+
+	ULONG GetClassNameSlave(SlaveArgs* args);
+
+	ULONG GetWindowRectSlave(SlaveArgs* args);
+
+	ULONG GetWindowInfoSlave(SlaveArgs* args);
+
+	ULONG GrantHandleSlave(SlaveArgs* args);
+
+	ULONG EnumWindowsSlave(SlaveArgs* args);
+
+	ULONG EnumWindowsFilterSlave(ULONG pid, void* rpl_buf);
+
+	static BOOL EnumWindowsSlaveEnumProc(HWND hwnd, LPARAM lParam);
+
+	ULONG FindWindowSlave(SlaveArgs* args);
+
+	ULONG MapWindowPointsSlave(SlaveArgs* args);
+
+	ULONG SetWindowPosSlave(SlaveArgs* args);
+
+	ULONG CloseClipboardSlave(SlaveArgs* args);
+
+	ULONG GetClipboardDataSlave(SlaveArgs* args);
+
+	HANDLE GetClipboardDataSlave2(ULONG pid, void* mem_ptr, SIZE_T mem_len);
+
+	void* GetClipboardBitmapSlave(void* hBitmap);
+
+	void* GetClipboardEnhMetaFileSlave(void* hEnhMetaFile);
+
+	ULONG GetClipboardMetaFileSlave(SlaveArgs* args);
+
+	ULONG SendPostMessageSlave(SlaveArgs* args);
+
+	ULONG SendCopyDataSlave(SlaveArgs* args);
+
+	ULONG ClipCursorSlave(SlaveArgs* args);
+
+	ULONG SetForegroundWindowSlave(SlaveArgs* args);
+
+	ULONG MonitorFromWindowSlave(SlaveArgs* args);
+
+	ULONG SplWow64Slave(SlaveArgs* args);
+
+	void SplWow64SlaveWin8();
+
+	ULONG ChangeDisplaySettingsSlave(SlaveArgs* args);
+
+	ULONG SetCursorPosSlave(SlaveArgs* args);
+
+	ULONG RemoveHostWindow(SlaveArgs* args);
+
+	//
+	// window access check utilities
+	//
+
+	ULONG GetProcessPathList(ULONG pid, void** out_pool, LIST** out_list);
+
+	bool CheckProcessPathList(LIST* list, const WCHAR* str);
+
+	bool CheckSameProcessBoxes(ULONG in_pid, WCHAR* boxname, HWND hwnd, ULONG* out_pid);
+
+	bool CheckWindowAccessible(ULONG pid, WCHAR* boxname, LIST* list, HWND hwnd);
+
+	bool CompareIntegrityLevels(ULONG src_pid, HWND dst_hwnd);
+
+	bool ShouldIgnoreIntegrityLevels(ULONG pid, HWND hwnd);
+
+	bool AllowSendPostMessage(ULONG pid, ULONG msg, bool IsSendMsg, HWND hwnd);
+
+	//
+	// data
+	//
+
+protected:
+	CRITICAL_SECTION m_SlavesLock;
+	LIST m_SlavesList;
+	HANDLE m_QueueEvent;
+
+	WCHAR* m_QueueName;
+	ULONG m_ParentPid;
+	ULONG m_SessionId;
+	ULONG m_nOSVersion;
 };
 
 

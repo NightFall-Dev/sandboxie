@@ -27,19 +27,19 @@
 
 //---------------------------------------------------------------------------
 
-#define CDS_UNKNOWNFLAG     0x00000040      // unknown ChangeDisplaySetting flag used by some apps.
+#define CDS_UNKNOWNFLAG 0x00000040 // unknown ChangeDisplaySetting flag used by some apps.
 
 
 #ifndef ALIGNED
-#define ALIGNED   // __declspec(align(16))
+	#define ALIGNED // __declspec(align(16))
 #endif
 
 #ifndef NOINLINE
-#define NOINLINE  __declspec(noinline)
+	#define NOINLINE __declspec(noinline)
 #endif
 
 #ifndef _FX
-#define _FX       // ALIGNED NOINLINE
+	#define _FX // ALIGNED NOINLINE
 #endif
 
 
@@ -47,28 +47,28 @@
 
 
 #ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
+	#define PAGE_SIZE 4096
 #endif
 
-#define DYNAMIC_PORT_NAME_CHARS     96  // number of wchars in an Epmapper dynamic endpoint port name
+#define DYNAMIC_PORT_NAME_CHARS 96 // number of wchars in an Epmapper dynamic endpoint port name
 
 //---------------------------------------------------------------------------
 
 
 #ifndef SECONDS
-#define SECONDS(n64)            (((LONGLONG)n64) * 10000000L)
+	#define SECONDS(n64) (((LONGLONG)n64) * 10000000L)
 #endif
 
 #ifndef MINUTES
-#define MINUTES(n64)            (SECONDS(n64) * 60)
+	#define MINUTES(n64) (SECONDS(n64) * 60)
 #endif
 
 #ifndef HOURS
-#define HOURS(n64)              (MINUTES(n64) * 60)
+	#define HOURS(n64) (MINUTES(n64) * 60)
 #endif
 
 #ifndef DAYS
-#define DAYS(n64)               (HOURS(n64) * 24)
+	#define DAYS(n64) (HOURS(n64) * 24)
 #endif
 
 
@@ -80,17 +80,18 @@
 //#define wmemcmp(dst,src,len)    memcmp((dst),(src),(len)*sizeof(WCHAR))
 //#define wmemcpy(dst,src,len)    memcpy((dst),(src),(len)*sizeof(WCHAR))
 //#define wmemmove(dst,src,len)   memmove((dst),(src),(len)*sizeof(WCHAR))
-#define memzero(mem,len)        memset((mem),0,(len))
-#define wmemzero(mem,len)       memzero((mem),(len)*sizeof(WCHAR))
+#define memzero(mem, len) memset((mem), 0, (len))
+#define wmemzero(mem, len) memzero((mem), (len) * sizeof(WCHAR))
 //#define wmemchr(mem,c, len)   memchr((mem), (c), (len)*sizeof(WCHAR))
 
 
-typedef enum {
-    SPOOLER_PORT,
-    WPAD_PORT,
-    GAME_CONFIG_STORE_PORT,
-    SMART_CARD_PORT,
-    NUM_DYNAMIC_PORTS
+typedef enum
+{
+	SPOOLER_PORT,
+	WPAD_PORT,
+	GAME_CONFIG_STORE_PORT,
+	SMART_CARD_PORT,
+	NUM_DYNAMIC_PORTS
 } ENUM_DYNAMIC_PORT_TYPE;
 
 //---------------------------------------------------------------------------

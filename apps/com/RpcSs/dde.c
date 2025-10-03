@@ -20,11 +20,12 @@
 //---------------------------------------------------------------------------
 
 
-#include <windows.h>
-#include <dde.h>
-#include "core/dll/sbiedll.h"
 #include "common/defines.h"
 #include "common/my_version.h"
+#include "core/dll/sbiedll.h"
+
+#include <dde.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -57,35 +58,39 @@
 //---------------------------------------------------------------------------
 
 
-_FX ULONG Dde_Thread(void *arg)
+_FX ULONG Dde_Thread(void* arg)
 {
-    ATOM atom;
-    HWND hwnd;
-    WNDCLASS wc;
-    MSG msg;
+	ATOM atom;
+	HWND hwnd;
+	WNDCLASS wc;
+	MSG msg;
 
-    if (SbieApi_QueryProcessInfo(0, 0) & SBIE_FLAG_OPEN_ALL_WIN_CLASS)
-        return 0;
+	if (SbieApi_QueryProcessInfo(0, 0) & SBIE_FLAG_OPEN_ALL_WIN_CLASS)
+	{
+		return 0;
+	}
 
-    memzero(&wc, sizeof(wc));
-    wc.lpfnWndProc = DefWindowProc;
-    wc.hInstance = GetModuleHandle(NULL);
-    wc.lpszClassName = SANDBOXIE L"_DDE_ProxyClass1";
-    atom = RegisterClass(&wc);
-    if (! atom)
-        return 0;
+	memzero(&wc, sizeof(wc));
+	wc.lpfnWndProc   = DefWindowProc;
+	wc.hInstance     = GetModuleHandle(NULL);
+	wc.lpszClassName = SANDBOXIE L"_DDE_ProxyClass1";
+	atom             = RegisterClass(&wc);
+	if (!atom)
+	{
+		return 0;
+	}
 
-    hwnd = CreateWindowEx(0, (LPCWSTR)atom, L"", 0,
-                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-                NULL, NULL, GetModuleHandle(NULL), NULL);
-    if (! hwnd)
-        return 0;
+	hwnd = CreateWindowEx(0, (LPCWSTR)atom, L"", 0, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, GetModuleHandle(NULL), NULL);
+	if (!hwnd)
+	{
+		return 0;
+	}
 
-    while (1) {
+	while (1)
+	{
+		GetMessage(&msg, NULL, 0, 0);
+		DispatchMessage(&msg);
+	}
 
-        GetMessage(&msg, NULL, 0, 0);
-        DispatchMessage(&msg);
-    }
-
-    return 0;
+	return 0;
 }

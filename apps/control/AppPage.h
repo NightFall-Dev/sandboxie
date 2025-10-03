@@ -29,103 +29,95 @@
 
 class CAppPage : public CBoxPage
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    ULONG m_app;
-    static CObList m_app_pages;
+	ULONG m_app;
+	static CObList m_app_pages;
 
-    virtual void Plugin_OnInitDialog(CBox &box);
+	virtual void Plugin_OnInitDialog(CBox& box);
 
-    virtual void Plugin_OnOK(CBox &box);
+	virtual void Plugin_OnOK(CBox& box);
 
-    //
-    // Access
-    //
+	//
+	// Access
+	//
 
-    void Access_OnInitDialog(CBox &box);
-    void Access_OnOK(CBox &box);
+	void Access_OnInitDialog(CBox& box);
+	void Access_OnOK(CBox& box);
 
-    //
-    // Template
-    //
+	//
+	// Template
+	//
 
-    typedef struct _TMPL_INFO {
-        CString ClassName;
-        int ClassModifier;
-        ULONG TitleId;
-        ULONG LabelId;
-        BOOL WithLink;
-        BOOL WithCreate;
-    } TMPL_INFO;
+	typedef struct _TMPL_INFO
+	{
+		CString ClassName;
+		int ClassModifier;
+		ULONG TitleId;
+		ULONG LabelId;
+		BOOL WithLink;
+		BOOL WithCreate;
+	} TMPL_INFO;
 
-    TMPL_INFO m_tmpl_info;
+	TMPL_INFO m_tmpl_info;
 
-    CStringList m_tmpl_sections;
+	CStringList m_tmpl_sections;
 
-    BOOL m_tmpl_init_list_box;
+	BOOL m_tmpl_init_list_box;
 
-    void Template_OnInitDialog(CBox &box);
-    void Template_OnOK(CBox &box);
+	void Template_OnInitDialog(CBox& box);
+	void Template_OnOK(CBox& box);
 
-    afx_msg void Template_OnAdd();
-    afx_msg void Template_OnRemove();
-    afx_msg void Template_OnToggle();
+	afx_msg void Template_OnAdd();
+	afx_msg void Template_OnRemove();
+	afx_msg void Template_OnToggle();
 
-    void Template_OnView();
-    void Template_OnLink();
-    void Template_OnCreate();
+	void Template_OnView();
+	void Template_OnLink();
+	void Template_OnCreate();
 
-    void Template_Filter();
-    void Template_Sort();
+	void Template_Filter();
+	void Template_Sort();
 
-    afx_msg void OnMeasureItem(int idCtrl, LPMEASUREITEMSTRUCT lpmis);
-    afx_msg void OnDrawItem(int idCtrl, LPDRAWITEMSTRUCT lpdis);
+	afx_msg void OnMeasureItem(int idCtrl, LPMEASUREITEMSTRUCT lpmis);
+	afx_msg void OnDrawItem(int idCtrl, LPDRAWITEMSTRUCT lpdis);
 
-    //
-    // Folders
-    //
+	//
+	// Folders
+	//
 
-    CStringList m_folders_vars;
+	CStringList m_folders_vars;
 
-    void Folders_OnInitDialog(CBox &box);
-    void Folders_OnOK(CBox &box);
+	void Folders_OnInitDialog(CBox& box);
+	void Folders_OnOK(CBox& box);
 
-    afx_msg void Folders_OnSelect();
-    afx_msg void Folders_OnAdd();
-    afx_msg void Folders_OnRemove();
+	afx_msg void Folders_OnSelect();
+	afx_msg void Folders_OnAdd();
+	afx_msg void Folders_OnRemove();
 
-    BOOL Folders_CheckExpectFile(const WCHAR *var, const WCHAR *path);
+	BOOL Folders_CheckExpectFile(const WCHAR* var, const WCHAR* path);
 
-    //
-    // More templates
-    //
+	//
+	// More templates
+	//
 
-    static void UpdateWebTemplates(CBox &box);
-    static void UpdateEmailTemplates(CBox &box);
-    static void UpdateTemplates2(CBox &box,
-                                const CString &image_name,
-                                const CString &tmpl_name,
-                                const CString &path1,
-                                const CString &path2);
-    static void UpdateTemplates3(CBox &box,
-                                const CString &image_name,
-                                const CString &tmpl_name,
-                                CStringList &files,
-                                CStringList &keys);
+	static void UpdateWebTemplates(CBox& box);
+	static void UpdateEmailTemplates(CBox& box);
+	static void UpdateTemplates2(CBox& box, const CString& image_name, const CString& tmpl_name, const CString& path1, const CString& path2);
+	static void UpdateTemplates3(CBox& box, const CString& image_name, const CString& tmpl_name, CStringList& files, CStringList& keys);
 
 public:
+	CAppPage(ULONG type, const CString& BoxName, ULONG TitleMsgId);
+	CAppPage(TMPL_INFO* info, const CString& BoxName);
+	~CAppPage();
 
-    CAppPage(ULONG type, const CString &BoxName, ULONG TitleMsgId);
-    CAppPage(TMPL_INFO *info, const CString &BoxName);
-    ~CAppPage();
+	static void AddPages(CPropertySheet& sheet, const CString& BoxName);
+	static void DeletePages();
 
-    static void AddPages(CPropertySheet &sheet, const CString &BoxName);
-    static void DeletePages();
+	static void UpdateTemplates(CBox& box);
 
-    static void UpdateTemplates(CBox &box);
-
-    static void SetDefaultTemplates6(CBox &box);
-    static void SetDefaultTemplates7(CBox &box);
+	static void SetDefaultTemplates6(CBox& box);
+	static void SetDefaultTemplates7(CBox& box);
 };
 
 

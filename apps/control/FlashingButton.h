@@ -29,33 +29,31 @@
 
 class CFlashingButton : public CButton
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    ULONG m_width;
-    ULONG m_height;
-    ULONG_PTR m_timer;
-    int m_invert;
-    bool m_enable;
+	ULONG m_width;
+	ULONG m_height;
+	ULONG_PTR m_timer;
+	int m_invert;
+	bool m_enable;
 
 protected:
+	afx_msg void OnPaint();
 
-    afx_msg void OnPaint();
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 
-    afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg LRESULT OnMouseLeave(WPARAM wParam, LPARAM lParam);
 
-    afx_msg LRESULT OnMouseLeave(WPARAM wParam, LPARAM lParam);
-
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
 public:
+	bool Init(HWND hwndButton);
+	bool Init(CWnd* dlg, UINT id);
 
-    bool Init(HWND hwndButton);
-    bool Init(CWnd *dlg, UINT id);
+	void EnableFlashing(bool enable);
 
-    void EnableFlashing(bool enable);
-
-    CFlashingButton();
-    ~CFlashingButton();
+	CFlashingButton();
+	~CFlashingButton();
 };
 
 

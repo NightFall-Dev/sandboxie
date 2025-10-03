@@ -26,27 +26,26 @@
 
 class CCreateDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    BOOL m_hide;
-    ULONG m_title_id;
-    ULONG m_explain_id;
-    CString m_name;
-    CString m_oldname;
+	BOOL m_hide;
+	ULONG m_title_id;
+	ULONG m_explain_id;
+	CString m_name;
+	CString m_oldname;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnNameChange();
+	afx_msg void OnNameChange();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
+	CString GetName() const;
+	CString GetOldName() const;
 
-    CString GetName() const;
-    CString GetOldName() const;
-
-    CCreateDialog(CWnd *pParentWnd, const CString origName = CString());
-    ~CCreateDialog();
+	CCreateDialog(CWnd* pParentWnd, const CString origName = CString());
+	~CCreateDialog();
 };
 
 

@@ -28,171 +28,149 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
 #ifndef SBIEDLL_EXPORT
-#define SBIEDLL_EXPORT  __declspec(dllexport)
+	#define SBIEDLL_EXPORT __declspec(dllexport)
 #endif
 
 
-//---------------------------------------------------------------------------
-// Defines
-//---------------------------------------------------------------------------
+	//---------------------------------------------------------------------------
+	// Defines
+	//---------------------------------------------------------------------------
 
 
 #define TokenElevationTypeNone 99
 
-#define ENV_VAR_PFX            L"00000000_" SBIE L"_"
+#define ENV_VAR_PFX L"00000000_" SBIE L"_"
 #define DATA_SLOTS 5
 #define SESSION_PROCESS L"SboxSession"
 
-typedef struct _PROCESS_DATA {
-    ULONG tid;
-    ULONG initFlag;
-    HANDLE hStartLingerEvent;
-    DWORD state;
-    DWORD errorCode;
-    DWORD checkpoint;
-    WCHAR * name;
-    WCHAR * EventName;
-} PROCESS_DATA;
+	typedef struct _PROCESS_DATA
+	{
+		ULONG tid;
+		ULONG initFlag;
+		HANDLE hStartLingerEvent;
+		DWORD state;
+		DWORD errorCode;
+		DWORD checkpoint;
+		WCHAR* name;
+		WCHAR* EventName;
+	} PROCESS_DATA;
 
-PROCESS_DATA *my_findProcessData(WCHAR *name,int createNew);
+	PROCESS_DATA* my_findProcessData(WCHAR* name, int createNew);
 
-//---------------------------------------------------------------------------
-// Functions (DllMain)
-//---------------------------------------------------------------------------
-
-
-SBIEDLL_EXPORT  void *SbieDll_Hook(
-    const char *SourceFuncName, void *SourceFunc, void *DetourFunc);
-
-#define SBIEDLL_HOOK(pfx,proc)                  \
-    *(ULONG_PTR *)&__sys_##proc = (ULONG_PTR)   \
-        SbieDll_Hook(#proc, proc, pfx##proc);   \
-    if (! __sys_##proc) return FALSE;
-
-SBIEDLL_EXPORT  void SbieDll_DeviceChange(WPARAM wParam, LPARAM lParam);
-
-SBIEDLL_EXPORT  const WCHAR *SbieDll_GetDrivePath(ULONG DriveIndex);
-
-SBIEDLL_EXPORT  const WCHAR *SbieDll_GetUserPathEx(WCHAR which);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_TranslateNtToDosPath(WCHAR *path);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_StartSbieSvc(BOOLEAN retry);
-
-SBIEDLL_EXPORT  const WCHAR *SbieDll_GetStartError(void);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_GetServiceRegistryValue(
-    const WCHAR *name, void *kvpi, ULONG sizeof_kvpi);
-
-SBIEDLL_EXPORT  ULONG SbieDll_GetLanguage(BOOLEAN *rtl);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_KillOne(ULONG ProcessId);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_KillAll(
-    ULONG SessionId, const WCHAR *BoxName);
-
-SBIEDLL_EXPORT  ULONG SbieDll_GetTokenElevationType(void);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_FormatMessage(ULONG code, const WCHAR **ins);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_FormatMessage0(ULONG code);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_FormatMessage1(ULONG code, const WCHAR *ins1);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_FormatMessage2(
-    ULONG code, const WCHAR *ins1, const WCHAR *ins2);
-
-SBIEDLL_EXPORT  BOOL SbieDll_RunSandboxed(
-    const WCHAR *box_name, const WCHAR *cmd, const WCHAR *dir,
-    ULONG creation_flags, STARTUPINFO *si, PROCESS_INFORMATION *pi);
+	//---------------------------------------------------------------------------
+	// Functions (DllMain)
+	//---------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------
-// Functions (CallSvc)
-//---------------------------------------------------------------------------
+	SBIEDLL_EXPORT void* SbieDll_Hook(const char* SourceFuncName, void* SourceFunc, void* DetourFunc);
+
+#define SBIEDLL_HOOK(pfx, proc)                                                   \
+	*(ULONG_PTR*)&__sys_##proc = (ULONG_PTR)SbieDll_Hook(#proc, proc, pfx##proc); \
+	if (!__sys_##proc)                                                            \
+		return FALSE;
+
+	SBIEDLL_EXPORT void SbieDll_DeviceChange(WPARAM wParam, LPARAM lParam);
+
+	SBIEDLL_EXPORT const WCHAR* SbieDll_GetDrivePath(ULONG DriveIndex);
+
+	SBIEDLL_EXPORT const WCHAR* SbieDll_GetUserPathEx(WCHAR which);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_TranslateNtToDosPath(WCHAR* path);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_StartSbieSvc(BOOLEAN retry);
+
+	SBIEDLL_EXPORT const WCHAR* SbieDll_GetStartError(void);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_GetServiceRegistryValue(const WCHAR* name, void* kvpi, ULONG sizeof_kvpi);
+
+	SBIEDLL_EXPORT ULONG SbieDll_GetLanguage(BOOLEAN* rtl);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_KillOne(ULONG ProcessId);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_KillAll(ULONG SessionId, const WCHAR* BoxName);
+
+	SBIEDLL_EXPORT ULONG SbieDll_GetTokenElevationType(void);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_FormatMessage(ULONG code, const WCHAR** ins);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_FormatMessage0(ULONG code);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_FormatMessage1(ULONG code, const WCHAR* ins1);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_FormatMessage2(ULONG code, const WCHAR* ins1, const WCHAR* ins2);
+
+	SBIEDLL_EXPORT BOOL SbieDll_RunSandboxed(const WCHAR* box_name, const WCHAR* cmd, const WCHAR* dir, ULONG creation_flags, STARTUPINFO* si, PROCESS_INFORMATION* pi);
 
 
-SBIEDLL_EXPORT  const WCHAR *SbieDll_PortName(void);
-
-SBIEDLL_EXPORT  struct _MSG_HEADER *SbieDll_CallServer(
-    struct _MSG_HEADER *req);
-
-SBIEDLL_EXPORT  void SbieDll_FreeMem(void *data);
-
-SBIEDLL_EXPORT  ULONG SbieDll_QueueCreate(
-    const WCHAR *QueueName, HANDLE *out_EventHandle);
-
-SBIEDLL_EXPORT  ULONG SbieDll_QueueGetReq(
-    const WCHAR *QueueName, ULONG *out_ClientPid, ULONG *out_ClientTid,
-    ULONG *out_RequestId, void **out_DataPtr, ULONG *out_DataLen);
-
-SBIEDLL_EXPORT  ULONG SbieDll_QueuePutRpl(
-    const WCHAR *QueueName, ULONG RequestId, void *DataPtr, ULONG DataLen);
-
-SBIEDLL_EXPORT  ULONG SbieDll_QueuePutReq(
-    const WCHAR *QueueName, void *DataPtr, ULONG DataLen,
-    ULONG *out_RequestId, HANDLE *out_EventHandle);
-
-SBIEDLL_EXPORT  ULONG SbieDll_QueueGetRpl(
-    const WCHAR *QueueName, ULONG RequestId,
-    void **out_DataPtr, ULONG *out_DataLen);
-
-SBIEDLL_EXPORT  ULONG SbieDll_UpdateConf(
-    WCHAR OpCode, const WCHAR *Password, const WCHAR *Section,
-    const WCHAR *Setting, const WCHAR *Value);
+	//---------------------------------------------------------------------------
+	// Functions (CallSvc)
+	//---------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------
-// Functions (Other)
-//---------------------------------------------------------------------------
+	SBIEDLL_EXPORT const WCHAR* SbieDll_PortName(void);
+
+	SBIEDLL_EXPORT struct _MSG_HEADER* SbieDll_CallServer(struct _MSG_HEADER* req);
+
+	SBIEDLL_EXPORT void SbieDll_FreeMem(void* data);
+
+	SBIEDLL_EXPORT ULONG SbieDll_QueueCreate(const WCHAR* QueueName, HANDLE* out_EventHandle);
+
+	SBIEDLL_EXPORT ULONG SbieDll_QueueGetReq(const WCHAR* QueueName, ULONG* out_ClientPid, ULONG* out_ClientTid, ULONG* out_RequestId, void** out_DataPtr, ULONG* out_DataLen);
+
+	SBIEDLL_EXPORT ULONG SbieDll_QueuePutRpl(const WCHAR* QueueName, ULONG RequestId, void* DataPtr, ULONG DataLen);
+
+	SBIEDLL_EXPORT ULONG SbieDll_QueuePutReq(const WCHAR* QueueName, void* DataPtr, ULONG DataLen, ULONG* out_RequestId, HANDLE* out_EventHandle);
+
+	SBIEDLL_EXPORT ULONG SbieDll_QueueGetRpl(const WCHAR* QueueName, ULONG RequestId, void** out_DataPtr, ULONG* out_DataLen);
+
+	SBIEDLL_EXPORT ULONG SbieDll_UpdateConf(WCHAR OpCode, const WCHAR* Password, const WCHAR* Section, const WCHAR* Setting, const WCHAR* Value);
 
 
-SBIEDLL_EXPORT  BOOLEAN SbieDll_StartCOM(BOOLEAN Async);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_IsOpenCOM(void);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_IsDirectory(const WCHAR *PathW);
-
-SBIEDLL_EXPORT  void *SbieDll_InitPStore(void);
-
-SBIEDLL_EXPORT  ULONG SbieDll_GetHandlePath(
-    HANDLE FileHandle, WCHAR *OutWchar8192, BOOLEAN *IsBoxedPath);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_RunFromHome(
-    const WCHAR *pgmName, const WCHAR *pgmArgs,
-    STARTUPINFOW *si, PROCESS_INFORMATION *pi);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_AssocQueryCommand(const WCHAR *subj);
-
-SBIEDLL_EXPORT  WCHAR *SbieDll_AssocQueryProgram(const WCHAR *subj);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_IsBoxedService(HANDLE hService);
-
-SBIEDLL_EXPORT  BOOL SbieDll_StartBoxedService(
-    const WCHAR *ServiceName, BOOLEAN WithAdd);
-
-SBIEDLL_EXPORT  HRESULT SbieDll_ComCreateProxy(
-    REFIID riid, void *pUnkOuter, void *pChannel, void **ppUnknown);
-
-SBIEDLL_EXPORT  HRESULT SbieDll_ComCreateStub(
-    REFIID riid, void *pUnknown, void **ppStub, void **ppChannel);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_IsOpenClsid(
-    REFCLSID rclsid, ULONG clsctx, const WCHAR *BoxName);
-
-SBIEDLL_EXPORT  void SbieDll_DisableElevationHook(void);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_RegisterDllCallback(void *Callback);
-
-SBIEDLL_EXPORT  BOOLEAN SbieDll_ExpandAndRunProgram(const WCHAR *Command);
+	//---------------------------------------------------------------------------
+	// Functions (Other)
+	//---------------------------------------------------------------------------
 
 
-//---------------------------------------------------------------------------
+	SBIEDLL_EXPORT BOOLEAN SbieDll_StartCOM(BOOLEAN Async);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_IsOpenCOM(void);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_IsDirectory(const WCHAR* PathW);
+
+	SBIEDLL_EXPORT void* SbieDll_InitPStore(void);
+
+	SBIEDLL_EXPORT ULONG SbieDll_GetHandlePath(HANDLE FileHandle, WCHAR* OutWchar8192, BOOLEAN* IsBoxedPath);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_RunFromHome(const WCHAR* pgmName, const WCHAR* pgmArgs, STARTUPINFOW* si, PROCESS_INFORMATION* pi);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_AssocQueryCommand(const WCHAR* subj);
+
+	SBIEDLL_EXPORT WCHAR* SbieDll_AssocQueryProgram(const WCHAR* subj);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_IsBoxedService(HANDLE hService);
+
+	SBIEDLL_EXPORT BOOL SbieDll_StartBoxedService(const WCHAR* ServiceName, BOOLEAN WithAdd);
+
+	SBIEDLL_EXPORT HRESULT SbieDll_ComCreateProxy(REFIID riid, void* pUnkOuter, void* pChannel, void** ppUnknown);
+
+	SBIEDLL_EXPORT HRESULT SbieDll_ComCreateStub(REFIID riid, void* pUnknown, void** ppStub, void** ppChannel);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_IsOpenClsid(REFCLSID rclsid, ULONG clsctx, const WCHAR* BoxName);
+
+	SBIEDLL_EXPORT void SbieDll_DisableElevationHook(void);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_RegisterDllCallback(void* Callback);
+
+	SBIEDLL_EXPORT BOOLEAN SbieDll_ExpandAndRunProgram(const WCHAR* Command);
+
+
+	//---------------------------------------------------------------------------
 
 
 #ifdef __cplusplus

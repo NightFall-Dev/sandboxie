@@ -20,13 +20,13 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "AutoPlay.h"
 
-#include "SbieIni.h"
 #include "Boxes.h"
+#include "MyApp.h"
+#include "SbieIni.h"
 #include "common/my_version.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -34,10 +34,10 @@
 //---------------------------------------------------------------------------
 
 
-CAutoPlay *CAutoPlay::m_instance = NULL;
+CAutoPlay* CAutoPlay::m_instance = NULL;
 
 
-static GUID CLSID_MyAutoPlay = { MY_AUTOPLAY_CLSID };
+static GUID CLSID_MyAutoPlay = {MY_AUTOPLAY_CLSID};
 
 
 //---------------------------------------------------------------------------
@@ -45,17 +45,16 @@ static GUID CLSID_MyAutoPlay = { MY_AUTOPLAY_CLSID };
 //---------------------------------------------------------------------------
 
 
-HRESULT CAutoPlay::QueryInterface(REFIID riid, void **ppv)
+HRESULT CAutoPlay::QueryInterface(REFIID riid, void** ppv)
 {
-    if (IsEqualIID(riid, IID_IUnknown) ||
-        IsEqualIID(riid, IID_IQueryCancelAutoPlay)) {
+	if (IsEqualIID(riid, IID_IUnknown) || IsEqualIID(riid, IID_IQueryCancelAutoPlay))
+	{
+		++m_refcount;
+		*ppv = this;
+		return S_OK;
+	}
 
-        ++m_refcount;
-        *ppv = this;
-        return S_OK;
-    }
-
-    return E_NOINTERFACE;
+	return E_NOINTERFACE;
 }
 
 
@@ -66,7 +65,7 @@ HRESULT CAutoPlay::QueryInterface(REFIID riid, void **ppv)
 
 ULONG CAutoPlay::AddRef()
 {
-    return ++m_refcount;
+	return ++m_refcount;
 }
 
 
@@ -77,7 +76,7 @@ ULONG CAutoPlay::AddRef()
 
 ULONG CAutoPlay::Release()
 {
-    return --m_refcount;
+	return --m_refcount;
 }
 
 
@@ -86,38 +85,40 @@ ULONG CAutoPlay::Release()
 //---------------------------------------------------------------------------
 
 
-HRESULT CAutoPlay::AllowAutoPlay(
-    const WCHAR *path, ULONG cttype, const WCHAR *label, ULONG sn)
+HRESULT CAutoPlay::AllowAutoPlay(const WCHAR* path, ULONG cttype, const WCHAR* label, ULONG sn)
 {
+	ULONG state;
+	SbieApi_DisableForceProcess(NULL, &state);
+	if (state != 0)
+	{
+		return S_OK;
+	}
 
-    ULONG state;
-    SbieApi_DisableForceProcess(NULL, &state);
-    if (state != 0)
-        return S_OK;
+	WCHAR drive = towupper(path[0]);
 
-    WCHAR drive = towupper(path[0]);
+	CBoxes& boxes = CBoxes::GetInstance();
+	for (int i = (int)boxes.GetSize() - 1; i >= 1; --i)
+	{
+		CBox& box = boxes.GetBox(i);
+		CStringList folders;
+		box.GetProcessList(L'O', folders);
 
-    CBoxes &boxes = CBoxes::GetInstance();
-    for (int i = (int)boxes.GetSize() - 1; i >= 1; --i) {
+		while (!folders.IsEmpty())
+		{
+			CString fol = folders.RemoveHead();
+			ULONG len   = fol.GetLength();
+			if (len <= 3 && fol.GetAt(1) == L':')
+			{
+				if (towupper(fol.GetAt(0)) == drive)
+				{
+					LogAutoPlay(box.GetName(), drive);
+					return S_FALSE;
+				}
+			}
+		}
+	}
 
-        CBox &box = boxes.GetBox(i);
-        CStringList folders;
-        box.GetProcessList(L'O', folders);
-
-        while (! folders.IsEmpty()) {
-            CString fol = folders.RemoveHead();
-            ULONG len = fol.GetLength();
-            if (len <= 3 && fol.GetAt(1) == L':') {
-                if (towupper(fol.GetAt(0)) == drive) {
-
-                    LogAutoPlay(box.GetName(), drive);
-                    return S_FALSE;
-                }
-            }
-        }
-    }
-
-    return S_OK;
+	return S_OK;
 }
 
 
@@ -126,25 +127,27 @@ HRESULT CAutoPlay::AllowAutoPlay(
 //---------------------------------------------------------------------------
 
 
-void CAutoPlay::LogAutoPlay(const WCHAR *boxname, WCHAR drive)
+void CAutoPlay::LogAutoPlay(const WCHAR* boxname, WCHAR drive)
 {
-    WCHAR *tmp = new WCHAR[(wcslen(boxname) + 16)];
-    if (! tmp)
-        return;
+	WCHAR* tmp = new WCHAR[(wcslen(boxname) + 16)];
+	if (!tmp)
+	{
+		return;
+	}
 
-    wcscpy(tmp, boxname);
-    WCHAR *tmp2 = tmp + wcslen(tmp);
-    *tmp2 = L' ';
-    ++tmp2;
-    wcscpy(tmp2, L"*AUTOPLAY*");
-    tmp2 += 10;
-    *tmp2 = drive;
-    ++tmp2;
-    *tmp2 = L'\0';
+	wcscpy(tmp, boxname);
+	WCHAR* tmp2 = tmp + wcslen(tmp);
+	*tmp2       = L' ';
+	++tmp2;
+	wcscpy(tmp2, L"*AUTOPLAY*");
+	tmp2 += 10;
+	*tmp2 = drive;
+	++tmp2;
+	*tmp2 = L'\0';
 
-    SbieApi_Log(2199, tmp);
+	SbieApi_Log(2199, tmp);
 
-    delete tmp;
+	delete tmp;
 }
 
 
@@ -155,41 +158,48 @@ void CAutoPlay::LogAutoPlay(const WCHAR *boxname, WCHAR drive)
 
 void CAutoPlay::Install()
 {
-    HRESULT hr;
-    IMoniker *pMoniker;
-    IRunningObjectTable *pRunningObjectTable;
-    ULONG cookie;
+	HRESULT hr;
+	IMoniker* pMoniker;
+	IRunningObjectTable* pRunningObjectTable;
+	ULONG cookie;
 
-    if (CMyApp::m_Windows2000)
-        return;
+	if (CMyApp::m_Windows2000)
+	{
+		return;
+	}
 
-    CAutoPlay *pAutoPlay = new CAutoPlay();
-    if (! pAutoPlay)
-        return;
-    CAutoPlay::m_instance = pAutoPlay;
+	CAutoPlay* pAutoPlay = new CAutoPlay();
+	if (!pAutoPlay)
+	{
+		return;
+	}
+	CAutoPlay::m_instance = pAutoPlay;
 
-    pAutoPlay->m_refcount = 1;
-    pAutoPlay->m_pMoniker = NULL;
-    pAutoPlay->m_pRunningObjectTable = NULL;
-    pAutoPlay->m_cookie = 0;
+	pAutoPlay->m_refcount            = 1;
+	pAutoPlay->m_pMoniker            = NULL;
+	pAutoPlay->m_pRunningObjectTable = NULL;
+	pAutoPlay->m_cookie              = 0;
 
-    hr = CreateClassMoniker(CLSID_MyAutoPlay, &pMoniker);
-    if (FAILED(hr))
-        return;
-    pAutoPlay->m_pMoniker = pMoniker;
+	hr = CreateClassMoniker(CLSID_MyAutoPlay, &pMoniker);
+	if (FAILED(hr))
+	{
+		return;
+	}
+	pAutoPlay->m_pMoniker = pMoniker;
 
-    hr = GetRunningObjectTable(0, &pRunningObjectTable);
-    if (FAILED(hr))
-        return;
-    pAutoPlay->m_pRunningObjectTable = pRunningObjectTable;
+	hr = GetRunningObjectTable(0, &pRunningObjectTable);
+	if (FAILED(hr))
+	{
+		return;
+	}
+	pAutoPlay->m_pRunningObjectTable = pRunningObjectTable;
 
-    hr = pRunningObjectTable->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE,
-                                       pAutoPlay,
-                                       pMoniker,
-                                       &cookie);
-    if (FAILED(hr))
-        return;
-    pAutoPlay->m_cookie = cookie;
+	hr = pRunningObjectTable->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE, pAutoPlay, pMoniker, &cookie);
+	if (FAILED(hr))
+	{
+		return;
+	}
+	pAutoPlay->m_cookie = cookie;
 }
 
 
@@ -200,19 +210,25 @@ void CAutoPlay::Install()
 
 void CAutoPlay::Remove()
 {
-    CAutoPlay *pAutoPlay = CAutoPlay::m_instance;
-    if (! pAutoPlay)
-        return;
+	CAutoPlay* pAutoPlay = CAutoPlay::m_instance;
+	if (!pAutoPlay)
+	{
+		return;
+	}
 
-    if (pAutoPlay->m_cookie) {
+	if (pAutoPlay->m_cookie)
+	{
+		pAutoPlay->m_pRunningObjectTable->Revoke(pAutoPlay->m_cookie);
+		pAutoPlay->m_cookie = 0;
+	}
 
-        pAutoPlay->m_pRunningObjectTable->Revoke(pAutoPlay->m_cookie);
-        pAutoPlay->m_cookie = 0;
-    }
+	if (pAutoPlay->m_pRunningObjectTable)
+	{
+		pAutoPlay->m_pRunningObjectTable->Release();
+	}
 
-    if (pAutoPlay->m_pRunningObjectTable)
-        pAutoPlay->m_pRunningObjectTable->Release();
-
-    if (pAutoPlay->m_pMoniker)
-        pAutoPlay->m_pMoniker->Release();
+	if (pAutoPlay->m_pMoniker)
+	{
+		pAutoPlay->m_pMoniker->Release();
+	}
 }

@@ -16,4 +16,3 @@
  */
 
 #include "stdafx.h"
-

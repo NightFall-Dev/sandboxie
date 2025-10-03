@@ -18,125 +18,128 @@
 // SboxHostDll.cpp : Defines the exported functions for the DLL application.
 //
 
-#include "stdafx.h"
-
 #include "core/dll/sbiedll.h"
+#include "stdafx.h"
 
 typedef BOOL (*P_OpenProcessToken)(HANDLE ProcessHandle, DWORD DesiredAccess, PHANDLE phTokenOut);
 
-static P_OpenProcessToken   __sys_OpenProcessToken = NULL;
+static P_OpenProcessToken __sys_OpenProcessToken = NULL;
 
 
 BOOL SboxHostDll_OpenProcessToken(HANDLE ProcessHandle, DWORD DesiredAccess, PHANDLE phTokenOut)
 {
-    BOOL bRet = FALSE;
-    HANDLE hToken = 0;
-    std::wstring wsLogonSid;
+	BOOL bRet     = FALSE;
+	HANDLE hToken = 0;
+	std::wstring wsLogonSid;
 
-    // if caller provide null-phTokenOut, pass it to the original call to have the same last error.
-    if (__sys_OpenProcessToken)
-    {
-        bRet = __sys_OpenProcessToken(ProcessHandle, DesiredAccess, phTokenOut? &hToken:phTokenOut);
-    }
+	// if caller provide null-phTokenOut, pass it to the original call to have the same last error.
+	if (__sys_OpenProcessToken)
+	{
+		bRet = __sys_OpenProcessToken(ProcessHandle, DesiredAccess, phTokenOut ? &hToken : phTokenOut);
+	}
 
-    if (bRet)
-    {
-        if (SbieApi_QueryProcessInfo((HANDLE)GetProcessId(ProcessHandle), 0) & SBIE_FLAG_VALID_PROCESS)
-        {
-            BOOL bNeedAnotherValidToken = FALSE;
-            LUID idLogonSession = {0};
-            ATL::CAccessToken token;
-            ATL::CSid userSid;
-            ATL::CSid logonSid;
-            token.Attach(hToken);
+	if (bRet)
+	{
+		if (SbieApi_QueryProcessInfo((HANDLE)GetProcessId(ProcessHandle), 0) & SBIE_FLAG_VALID_PROCESS)
+		{
+			BOOL bNeedAnotherValidToken = FALSE;
+			LUID idLogonSession         = {0};
+			ATL::CAccessToken token;
+			ATL::CSid userSid;
+			ATL::CSid logonSid;
+			token.Attach(hToken);
 
-            //if(token.IsTokenRestricted())
-            //{
-                if(token.GetUser(&userSid))
-                {
-                    // this token is usable for clicktorun service
-                    if (lstrcmpi(userSid.Sid(), _T("S-1-5-7"))==0)
-                    {
-                        if(token.GetLogonSid(&logonSid))
-                        {
-                            wsLogonSid = logonSid.Sid();
-                            bNeedAnotherValidToken = TRUE;
-                        }
-                    }
-                }
-            //}
+			//if(token.IsTokenRestricted())
+			//{
+			if (token.GetUser(&userSid))
+			{
+				// this token is usable for clicktorun service
+				if (lstrcmpi(userSid.Sid(), _T("S-1-5-7")) == 0)
+				{
+					if (token.GetLogonSid(&logonSid))
+					{
+						wsLogonSid             = logonSid.Sid();
+						bNeedAnotherValidToken = TRUE;
+					}
+				}
+			}
+			//}
 
-            token.Detach();
+			token.Detach();
 
-            if (bNeedAnotherValidToken)
-            {
-                // get a host process token with the same wsLogonSid.
-                HANDLE hAltToken = 0;
-                DWORD aPid[1024], cbReturned, nPidCount;
+			if (bNeedAnotherValidToken)
+			{
+				// get a host process token with the same wsLogonSid.
+				HANDLE hAltToken = 0;
+				DWORD aPid[1024], cbReturned, nPidCount;
 
-                if (EnumProcesses( aPid, sizeof(aPid), &cbReturned ) )
-                {
-                    nPidCount = cbReturned / sizeof(DWORD);
-                    for ( UINT i = 0; i < nPidCount; i++ )
-                    {
-                        if (!SbieApi_QueryProcessInfo((HANDLE)aPid[i], 0) & SBIE_FLAG_VALID_PROCESS)
-                        {
-                            HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, TRUE, aPid[i]);
-                            if (hProc)
-                            {
-                                if (__sys_OpenProcessToken(hProc, DesiredAccess, &hAltToken))
-                                {
-                                    ATL::CAccessToken altToken;
-                                    altToken.Attach(hAltToken);
+				if (EnumProcesses(aPid, sizeof(aPid), &cbReturned))
+				{
+					nPidCount = cbReturned / sizeof(DWORD);
+					for (UINT i = 0; i < nPidCount; i++)
+					{
+						if (!SbieApi_QueryProcessInfo((HANDLE)aPid[i], 0) & SBIE_FLAG_VALID_PROCESS)
+						{
+							HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, TRUE, aPid[i]);
+							if (hProc)
+							{
+								if (__sys_OpenProcessToken(hProc, DesiredAccess, &hAltToken))
+								{
+									ATL::CAccessToken altToken;
+									altToken.Attach(hAltToken);
 
-                                    if(altToken.GetLogonSid(&logonSid))
-                                    {
-                                        std::wstring wsAltLogonSid = logonSid.Sid();
-                                        if (wsAltLogonSid == wsLogonSid)
-                                        {
-                                            altToken.Detach();
-                                            CloseHandle(hProc);
-                                            break;
-                                        }
-                                    }
+									if (altToken.GetLogonSid(&logonSid))
+									{
+										std::wstring wsAltLogonSid = logonSid.Sid();
+										if (wsAltLogonSid == wsLogonSid)
+										{
+											altToken.Detach();
+											CloseHandle(hProc);
+											break;
+										}
+									}
 
-                                    altToken.Detach();
+									altToken.Detach();
 
-                                    CloseHandle(hAltToken);
-                                    hAltToken = 0;
-                                }
-                                CloseHandle(hProc);
-                            }
-                        }
-                    }
-                }
+									CloseHandle(hAltToken);
+									hAltToken = 0;
+								}
+								CloseHandle(hProc);
+							}
+						}
+					}
+				}
 
-                if (hAltToken)
-                {
-                    CloseHandle(hToken);
-                    hToken = hAltToken;
-                    bRet = TRUE;
-                }
-            }
-        }
+				if (hAltToken)
+				{
+					CloseHandle(hToken);
+					hToken = hAltToken;
+					bRet   = TRUE;
+				}
+			}
+		}
 
-        if (phTokenOut)
-            *phTokenOut = hToken;
-    }
+		if (phTokenOut)
+		{
+			*phTokenOut = hToken;
+		}
+	}
 
-    return bRet;
+	return bRet;
 }
 
-BOOLEAN InitHook( HINSTANCE hSbieDll )
+BOOLEAN InitHook(HINSTANCE hSbieDll)
 {
-    if (hSbieDll)
-    {
-        HMODULE hAdvapi32 = GetModuleHandle(L"Advapi32.dll");
+	if (hSbieDll)
+	{
+		HMODULE hAdvapi32 = GetModuleHandle(L"Advapi32.dll");
 
-        void *OpenProcessToken = (P_OpenProcessToken)GetProcAddress(hAdvapi32, "OpenProcessToken");
+		void* OpenProcessToken = (P_OpenProcessToken)GetProcAddress(hAdvapi32, "OpenProcessToken");
 
-        if (OpenProcessToken)
-            SBIEDLL_HOOK(SboxHostDll_, OpenProcessToken);
-    }
-    return TRUE;
+		if (OpenProcessToken)
+		{
+			SBIEDLL_HOOK(SboxHostDll_, OpenProcessToken);
+		}
+	}
+	return TRUE;
 }

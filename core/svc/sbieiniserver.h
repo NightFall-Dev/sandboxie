@@ -29,79 +29,73 @@
 
 class SbieIniServer
 {
-
 public:
+	SbieIniServer(PipeServer* pipeServer);
 
-    SbieIniServer(PipeServer *pipeServer);
-
-    ~SbieIniServer();
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    MSG_HEADER *Handler2(MSG_HEADER *msg);
-
-    MSG_HEADER *GetVersion(MSG_HEADER *msg);
-
-    MSG_HEADER *GetWaitHandle(HANDLE idProcess);
-
-    MSG_HEADER *GetUser(MSG_HEADER *msg);
-
-    MSG_HEADER *GetPath(MSG_HEADER *msg);
-
-    ULONG CheckRequest(MSG_HEADER *msg);
-
-    bool SetUserSettingsSectionName(HANDLE hToken);
-
-    bool UserCanEdit(HANDLE hToken);
-
-    ULONG SetSetting(MSG_HEADER *msg);
-
-    ULONG AddSetting(MSG_HEADER *msg, bool insert);
-
-    ULONG DelSetting(MSG_HEADER *msg);
-
-    ULONG SetTemplate(MSG_HEADER *msg);
-
-    ULONG SetOrTestPassword(MSG_HEADER *msg);
-
-    ULONG CallSetSetting(WCHAR *text, MSG_HEADER *msg);
-
-    bool AddText(const WCHAR *line);
-
-    bool AddCallerText(WCHAR *setting, WCHAR *value);
-
-    ULONG RefreshConf();
-
-    bool GetIniPath(WCHAR **IniPath, WCHAR **TmpPath,
-                    BOOLEAN *IsHomePath = NULL);
-
-    bool TokenIsAdmin(HANDLE hToken);
-
-    ULONG IsCallerAuthorized(HANDLE hToken, const WCHAR *Password);
-
-    void LockConf(WCHAR *IniPath);
-
-    void UnlockConf();
-
-    bool HashPassword(const WCHAR *Password, WCHAR *Hash41);
-
-    MSG_HEADER *RunSbieCtrl(HANDLE idProcess, bool isSandboxed);
+	~SbieIniServer();
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    CRITICAL_SECTION m_critsec;
-    WCHAR m_username[256];
-    WCHAR m_sectionname[128];
-    WCHAR *m_text, *m_text_base;
-    ULONG m_text_max_len;
-    WCHAR m_line[1500];
-    BOOLEAN m_insertbom;
-    BOOLEAN m_admin;
-    HANDLE m_hLockFile;
-    ULONG m_session_id;
+	MSG_HEADER* Handler2(MSG_HEADER* msg);
 
+	MSG_HEADER* GetVersion(MSG_HEADER* msg);
+
+	MSG_HEADER* GetWaitHandle(HANDLE idProcess);
+
+	MSG_HEADER* GetUser(MSG_HEADER* msg);
+
+	MSG_HEADER* GetPath(MSG_HEADER* msg);
+
+	ULONG CheckRequest(MSG_HEADER* msg);
+
+	bool SetUserSettingsSectionName(HANDLE hToken);
+
+	bool UserCanEdit(HANDLE hToken);
+
+	ULONG SetSetting(MSG_HEADER* msg);
+
+	ULONG AddSetting(MSG_HEADER* msg, bool insert);
+
+	ULONG DelSetting(MSG_HEADER* msg);
+
+	ULONG SetTemplate(MSG_HEADER* msg);
+
+	ULONG SetOrTestPassword(MSG_HEADER* msg);
+
+	ULONG CallSetSetting(WCHAR* text, MSG_HEADER* msg);
+
+	bool AddText(const WCHAR* line);
+
+	bool AddCallerText(WCHAR* setting, WCHAR* value);
+
+	ULONG RefreshConf();
+
+	bool GetIniPath(WCHAR** IniPath, WCHAR** TmpPath, BOOLEAN* IsHomePath = NULL);
+
+	bool TokenIsAdmin(HANDLE hToken);
+
+	ULONG IsCallerAuthorized(HANDLE hToken, const WCHAR* Password);
+
+	void LockConf(WCHAR* IniPath);
+
+	void UnlockConf();
+
+	bool HashPassword(const WCHAR* Password, WCHAR* Hash41);
+
+	MSG_HEADER* RunSbieCtrl(HANDLE idProcess, bool isSandboxed);
+
+protected:
+	CRITICAL_SECTION m_critsec;
+	WCHAR m_username[256];
+	WCHAR m_sectionname[128];
+	WCHAR *m_text, *m_text_base;
+	ULONG m_text_max_len;
+	WCHAR m_line[1500];
+	BOOLEAN m_insertbom;
+	BOOLEAN m_admin;
+	HANDLE m_hLockFile;
+	ULONG m_session_id;
 };
 
 

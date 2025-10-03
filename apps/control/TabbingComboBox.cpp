@@ -20,8 +20,9 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "TabbingComboBox.h"
+
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -31,7 +32,7 @@
 
 BEGIN_MESSAGE_MAP(CTabbingComboBox, CComboBox)
 
-    ON_WM_CHAR()
+ON_WM_CHAR()
 
 END_MESSAGE_MAP()
 
@@ -41,11 +42,11 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CTabbingComboBox::CTabbingComboBox()
-    : CComboBox()
+CTabbingComboBox::CTabbingComboBox() :
+    CComboBox()
 {
-    m_pWndNext = NULL;
-    m_pWndPrev = NULL;
+	m_pWndNext = NULL;
+	m_pWndPrev = NULL;
 }
 
 
@@ -54,10 +55,10 @@ CTabbingComboBox::CTabbingComboBox()
 //---------------------------------------------------------------------------
 
 
-void CTabbingComboBox::SetTabbingWindows(CWnd *pWndNext, CWnd *pWndPrev)
+void CTabbingComboBox::SetTabbingWindows(CWnd* pWndNext, CWnd* pWndPrev)
 {
-    m_pWndNext = pWndNext;
-    m_pWndPrev = pWndPrev;
+	m_pWndNext = pWndNext;
+	m_pWndPrev = pWndPrev;
 }
 
 
@@ -68,14 +69,15 @@ void CTabbingComboBox::SetTabbingWindows(CWnd *pWndNext, CWnd *pWndPrev)
 
 void CTabbingComboBox::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-    if (nChar == VK_TAB) {
-        CWnd *pWnd =
-            (GetKeyState(VK_SHIFT) & 0x8000) ? m_pWndPrev : m_pWndNext;
-        if (pWnd) {
-            pWnd->SetFocus();
-            return;
-        }
-    }
-    const MSG *msg = GetCurrentMessage();
-    DefWindowProc(msg->message, msg->wParam, msg->lParam);
+	if (nChar == VK_TAB)
+	{
+		CWnd* pWnd = (GetKeyState(VK_SHIFT) & 0x8000) ? m_pWndPrev : m_pWndNext;
+		if (pWnd)
+		{
+			pWnd->SetFocus();
+			return;
+		}
+	}
+	const MSG* msg = GetCurrentMessage();
+	DefWindowProc(msg->message, msg->wParam, msg->lParam);
 }

@@ -26,23 +26,21 @@
 
 class CTemplateListBox
 {
-
 public:
+	static CString Prefix2;
+	static CString Prefix1;
+	static CString Prefix0;
 
-    static CString Prefix2;
-    static CString Prefix1;
-    static CString Prefix0;
+	static CString GetTemplateTitle(const CString& TemplateName);
+	static CString GetTemplateClass(const CString& TemplateName);
 
-    static CString GetTemplateTitle(const CString &TemplateName);
-    static CString GetTemplateClass(const CString &TemplateName);
+	static void Decorate(CString& text, BOOL enable, BOOL force);
+	static void DecorateAster(CString& text);
+	static BOOL IsAster(const CString& text);
+	static BOOL IsCheck(const CString& text);
+	static BOOL IsClear(const CString& text);
 
-    static void Decorate(CString &text, BOOL enable, BOOL force);
-    static void DecorateAster(CString &text);
-    static BOOL IsAster(const CString &text);
-    static BOOL IsCheck(const CString &text);
-    static BOOL IsClear(const CString &text);
-
-    static BOOL OnAddRemove(CWnd *wnd, BOOL enable, BOOL toggle = FALSE);
+	static BOOL OnAddRemove(CWnd* wnd, BOOL enable, BOOL toggle = FALSE);
 };
 
 

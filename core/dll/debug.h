@@ -27,19 +27,19 @@
 //---------------------------------------------------------------------------
 
 
-#undef  WITH_DEBUG
+#undef WITH_DEBUG
 
 
 //---------------------------------------------------------------------------
 
 
-#ifdef  WITH_DEBUG
+#ifdef WITH_DEBUG
 
-#define  BREAK_IMAGE_1      L"java.exe" // L"jp2launcher.exe"
+	#define BREAK_IMAGE_1 L"java.exe" // L"jp2launcher.exe"
 
 int Debug_Init(void);
 
-#endif  WITH_DEBUG
+#endif WITH_DEBUG
 
 
 //---------------------------------------------------------------------------

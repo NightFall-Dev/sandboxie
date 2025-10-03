@@ -19,18 +19,18 @@
 // Driver Assistant
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-
-#include <sddl.h>
-#include <stdio.h>
-#include <psapi.h>
-
-#include "misc.h"
 #include "DriverAssist.h"
+
 #include "common/defines.h"
 #include "common/my_version.h"
 #include "core/dll/sbiedll.h"
 #include "core/drv/api_defs.h"
+#include "misc.h"
+#include "stdafx.h"
+
+#include <psapi.h>
+#include <sddl.h>
+#include <stdio.h>
 
 
 //---------------------------------------------------------------------------
@@ -39,12 +39,12 @@
 
 typedef struct _MSG_DATA
 {
-    void *ClassContext;
-    UCHAR msg[MAX_PORTMSG_LENGTH];
+	void* ClassContext;
+	UCHAR msg[MAX_PORTMSG_LENGTH];
 } MSG_DATA;
 
 
-DriverAssist *DriverAssist::m_instance = NULL;
+DriverAssist* DriverAssist::m_instance = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -54,12 +54,12 @@ DriverAssist *DriverAssist::m_instance = NULL;
 
 DriverAssist::DriverAssist()
 {
-    m_PortHandle = NULL;
-    m_Threads = NULL;
-    m_DriverReady = false;
+	m_PortHandle  = NULL;
+	m_Threads     = NULL;
+	m_DriverReady = false;
 
-    InitializeCriticalSection(&m_LogMessage_CritSec);
-    InitializeCriticalSection(&m_critSecHostInjectedSvcs);
+	InitializeCriticalSection(&m_LogMessage_CritSec);
+	InitializeCriticalSection(&m_critSecHostInjectedSvcs);
 }
 
 
@@ -70,25 +70,27 @@ DriverAssist::DriverAssist()
 
 bool DriverAssist::Initialize()
 {
-    m_instance = new DriverAssist();
-    ULONG tid;
-    HANDLE hThread;
+	m_instance = new DriverAssist();
+	ULONG tid;
+	HANDLE hThread;
 
-    if (!m_instance) {
-        return false;
-    }
+	if (!m_instance)
+	{
+		return false;
+	}
 
-    if (!m_instance->InjectLow_Init()) {
-        return false;
-    }
-    if (!m_instance->InitializePortAndThreads()) {
-        return false;
-    }
+	if (!m_instance->InjectLow_Init())
+	{
+		return false;
+	}
+	if (!m_instance->InitializePortAndThreads())
+	{
+		return false;
+	}
 
-    hThread = CreateThread(NULL, 0,
-        (LPTHREAD_START_ROUTINE)StartDriverAsync, m_instance, 0, &tid);
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartDriverAsync, m_instance, 0, &tid);
 
-    return true;
+	return true;
 }
 
 
@@ -99,75 +101,74 @@ bool DriverAssist::Initialize()
 
 bool DriverAssist::InitializePortAndThreads()
 {
-    NTSTATUS status;
-    UNICODE_STRING objname;
-    OBJECT_ATTRIBUTES objattrs;
-    WCHAR PortName[64];
-    PSECURITY_DESCRIPTOR sd;
-    ULONG i, n;
+	NTSTATUS status;
+	UNICODE_STRING objname;
+	OBJECT_ATTRIBUTES objattrs;
+	WCHAR PortName[64];
+	PSECURITY_DESCRIPTOR sd;
+	ULONG i, n;
 
-    //
-    // create a security descriptor with a limited dacl
-    // owner:system, group:system, dacl(allow;generic_all;system)
-    //
+	//
+	// create a security descriptor with a limited dacl
+	// owner:system, group:system, dacl(allow;generic_all;system)
+	//
 
-    if (! ConvertStringSecurityDescriptorToSecurityDescriptor(
-            L"O:SYG:SYD:(A;;GA;;;SY)", SDDL_REVISION_1, &sd, NULL)) {
-        LogEvent(MSG_9234, 0x9244, GetLastError());
-        return false;
-    }
+	if (!ConvertStringSecurityDescriptorToSecurityDescriptor(L"O:SYG:SYD:(A;;GA;;;SY)", SDDL_REVISION_1, &sd, NULL))
+	{
+		LogEvent(MSG_9234, 0x9244, GetLastError());
+		return false;
+	}
 
-    //
-    // create LPC port which the driver will use to send us messages
-    // the port must have a name, or LpcRequestPort in SbieDrv will fail
-    //
+	//
+	// create LPC port which the driver will use to send us messages
+	// the port must have a name, or LpcRequestPort in SbieDrv will fail
+	//
 
-    wsprintf(PortName, L"%s-internal-%d",
-             SbieDll_PortName(), GetTickCount());
-    RtlInitUnicodeString(&objname, PortName);
+	wsprintf(PortName, L"%s-internal-%d", SbieDll_PortName(), GetTickCount());
+	RtlInitUnicodeString(&objname, PortName);
 
-    InitializeObjectAttributes(
-        &objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, sd);
+	InitializeObjectAttributes(&objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, sd);
 
-    status = NtCreatePort(
-        (HANDLE *)&m_PortHandle, &objattrs, 0, MAX_PORTMSG_LENGTH, NULL);
+	status = NtCreatePort((HANDLE*)&m_PortHandle, &objattrs, 0, MAX_PORTMSG_LENGTH, NULL);
 
-    if (! NT_SUCCESS(status)) {
-        LogEvent(MSG_9234, 0x9254, status);
-        return false;
-    }
+	if (!NT_SUCCESS(status))
+	{
+		LogEvent(MSG_9234, 0x9254, status);
+		return false;
+	}
 
-    LocalFree(sd);
+	LocalFree(sd);
 
-    //
-    // make sure threads on other CPUs will see the port
-    //
+	//
+	// make sure threads on other CPUs will see the port
+	//
 
-    InterlockedExchangePointer(&m_PortHandle, m_PortHandle);
+	InterlockedExchangePointer(&m_PortHandle, m_PortHandle);
 
-    //
-    // create the worker threads
-    //
+	//
+	// create the worker threads
+	//
 
-    n = (NUMBER_OF_THREADS) * sizeof(HANDLE);
-    m_Threads = (HANDLE *)HeapAlloc(GetProcessHeap(), 0, n);
-    if (! m_Threads) {
-        LogEvent(MSG_9234, 0x9251, GetLastError());
-        return false;
-    }
-    memzero(m_Threads, n);
+	n         = (NUMBER_OF_THREADS) * sizeof(HANDLE);
+	m_Threads = (HANDLE*)HeapAlloc(GetProcessHeap(), 0, n);
+	if (!m_Threads)
+	{
+		LogEvent(MSG_9234, 0x9251, GetLastError());
+		return false;
+	}
+	memzero(m_Threads, n);
 
-    for (i = 0; i < NUMBER_OF_THREADS; ++i) {
+	for (i = 0; i < NUMBER_OF_THREADS; ++i)
+	{
+		m_Threads[i] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadStub, this, 0, &n);
+		if (!m_Threads[i])
+		{
+			LogEvent(MSG_9234, 0x9253, GetLastError());
+			return false;
+		}
+	}
 
-        m_Threads[i] = CreateThread(
-            NULL, 0, (LPTHREAD_START_ROUTINE)ThreadStub, this, 0, &n);
-        if (! m_Threads[i]) {
-            LogEvent(MSG_9234, 0x9253, GetLastError());
-            return false;
-        }
-    }
-
-    return true;
+	return true;
 }
 
 
@@ -178,13 +179,13 @@ bool DriverAssist::InitializePortAndThreads()
 
 void DriverAssist::Shutdown()
 {
-    if (m_instance) {
+	if (m_instance)
+	{
+		m_instance->ShutdownPortAndThreads();
 
-        m_instance->ShutdownPortAndThreads();
-
-        delete m_instance;
-        m_instance = NULL;
-    }
+		delete m_instance;
+		m_instance = NULL;
+	}
 }
 
 
@@ -195,35 +196,39 @@ void DriverAssist::Shutdown()
 
 void DriverAssist::ShutdownPortAndThreads()
 {
-    ULONG i;
+	ULONG i;
 
-    HANDLE PortHandle = InterlockedExchangePointer(&m_PortHandle, NULL);
+	HANDLE PortHandle = InterlockedExchangePointer(&m_PortHandle, NULL);
 
-    if (PortHandle) {
+	if (PortHandle)
+	{
+		UCHAR space[MAX_PORTMSG_LENGTH];
 
-        UCHAR space[MAX_PORTMSG_LENGTH];
+		for (i = 0; i < NUMBER_OF_THREADS; ++i)
+		{
+			PORT_MESSAGE* msg = (PORT_MESSAGE*)space;
+			memzero(msg, MAX_PORTMSG_LENGTH);
+			msg->u1.s1.TotalLength = (USHORT)sizeof(PORT_MESSAGE);
+			NtRequestPort(PortHandle, msg);
+		}
+	}
 
-        for (i = 0; i < NUMBER_OF_THREADS; ++i) {
-            PORT_MESSAGE *msg = (PORT_MESSAGE *)space;
-            memzero(msg, MAX_PORTMSG_LENGTH);
-            msg->u1.s1.TotalLength = (USHORT)sizeof(PORT_MESSAGE);
-            NtRequestPort(PortHandle, msg);
-        }
-    }
+	if (m_Threads)
+	{
+		if (WAIT_TIMEOUT == WaitForMultipleObjects(NUMBER_OF_THREADS, m_Threads, TRUE, 5000))
+		{
+			for (i = 0; i < NUMBER_OF_THREADS; ++i)
+			{
+				TerminateThread(m_Threads[i], 0);
+			}
+			WaitForMultipleObjects(NUMBER_OF_THREADS, m_Threads, TRUE, 5000);
+		}
+	}
 
-    if (m_Threads) {
-
-        if (WAIT_TIMEOUT == WaitForMultipleObjects(
-                                NUMBER_OF_THREADS, m_Threads, TRUE, 5000)) {
-
-            for (i = 0; i < NUMBER_OF_THREADS; ++i)
-                TerminateThread(m_Threads[i], 0);
-            WaitForMultipleObjects(NUMBER_OF_THREADS, m_Threads, TRUE, 5000);
-        }
-    }
-
-    if (PortHandle)
-        NtClose(PortHandle);
+	if (PortHandle)
+	{
+		NtClose(PortHandle);
+	}
 }
 
 
@@ -232,9 +237,9 @@ void DriverAssist::ShutdownPortAndThreads()
 //---------------------------------------------------------------------------
 
 
-void DriverAssist::ThreadStub(void *parm)
+void DriverAssist::ThreadStub(void* parm)
 {
-    ((DriverAssist *)parm)->Thread();
+	((DriverAssist*)parm)->Thread();
 }
 
 
@@ -242,93 +247,93 @@ void DriverAssist::ThreadStub(void *parm)
 // Thread
 //---------------------------------------------------------------------------
 
-void DriverAssist::MsgWorkerThread(void *MyMsg)
+void DriverAssist::MsgWorkerThread(void* MyMsg)
 {
-    PORT_MESSAGE *msg = (PORT_MESSAGE *)MyMsg;
-    //Null pointer checked by caller
-    if (msg->u2.s2.Type != LPC_DATAGRAM) {
-        return;
-    }
-    ULONG data_len = msg->u1.s1.DataLength;
-    if (data_len < sizeof(ULONG)) {
-        return;
-    }
-    data_len -= sizeof(ULONG);
+	PORT_MESSAGE* msg = (PORT_MESSAGE*)MyMsg;
+	//Null pointer checked by caller
+	if (msg->u2.s2.Type != LPC_DATAGRAM)
+	{
+		return;
+	}
+	ULONG data_len = msg->u1.s1.DataLength;
+	if (data_len < sizeof(ULONG))
+	{
+		return;
+	}
+	data_len -= sizeof(ULONG);
 
-    ULONG *data_ptr = (ULONG *)((UCHAR *)msg + sizeof(PORT_MESSAGE));
-    ULONG msgid = *data_ptr;
-    ++data_ptr;
+	ULONG* data_ptr = (ULONG*)((UCHAR*)msg + sizeof(PORT_MESSAGE));
+	ULONG msgid     = *data_ptr;
+	++data_ptr;
 
-    if (msgid == SVC_LOOKUP_SID) {
-
-        LookupSid(data_ptr);
-
-    }
-    else if (msgid == SVC_INJECT_PROCESS) {
-
-        InjectLow(data_ptr);
-
-    }
-    else if (msgid == SVC_CANCEL_PROCESS) {
-
-        CancelProcess(data_ptr);
-
-    }
-    else if (msgid == SVC_UNMOUNT_HIVE) {
-
-        UnmountHive(data_ptr);
-
-    }
-    else if (msgid == SVC_LOG_MESSAGE) {
-
-        LogMessage();
-
-    }
-    else if (msgid == SVC_RESTART_HOST_INJECTED_SVCS) {
-
-        RestartHostInjectedSvcs();
-    }
+	if (msgid == SVC_LOOKUP_SID)
+	{
+		LookupSid(data_ptr);
+	}
+	else if (msgid == SVC_INJECT_PROCESS)
+	{
+		InjectLow(data_ptr);
+	}
+	else if (msgid == SVC_CANCEL_PROCESS)
+	{
+		CancelProcess(data_ptr);
+	}
+	else if (msgid == SVC_UNMOUNT_HIVE)
+	{
+		UnmountHive(data_ptr);
+	}
+	else if (msgid == SVC_LOG_MESSAGE)
+	{
+		LogMessage();
+	}
+	else if (msgid == SVC_RESTART_HOST_INJECTED_SVCS)
+	{
+		RestartHostInjectedSvcs();
+	}
 }
 
-DWORD DriverAssist::MsgWorkerThreadStub(void *MyMsg)
+DWORD DriverAssist::MsgWorkerThreadStub(void* MyMsg)
 {
-    if (!MyMsg) {
-        return -1;
-    }
+	if (!MyMsg)
+	{
+		return -1;
+	}
 
-    MSG_DATA* MsgData = (MSG_DATA*)MyMsg;
-    ((DriverAssist *)(MsgData->ClassContext))->MsgWorkerThread(&MsgData->msg[0]);
-    //Memory allocated in parent thread
-    VirtualFree(MyMsg, 0, MEM_RELEASE);
+	MSG_DATA* MsgData = (MSG_DATA*)MyMsg;
+	((DriverAssist*)(MsgData->ClassContext))->MsgWorkerThread(&MsgData->msg[0]);
+	//Memory allocated in parent thread
+	VirtualFree(MyMsg, 0, MEM_RELEASE);
 
-    return NO_ERROR;
+	return NO_ERROR;
 }
 
 void DriverAssist::Thread()
 {
-    NTSTATUS status;
-    DWORD threadId;
-    MSG_DATA *MsgData;
+	NTSTATUS status;
+	DWORD threadId;
+	MSG_DATA* MsgData;
 
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
 
-    while (1) {
+	while (1)
+	{
+		MsgData = (MSG_DATA*)VirtualAlloc(0, sizeof(MSG_DATA), MEM_COMMIT, PAGE_READWRITE);
+		if (!MsgData)
+		{
+			break; // out of memory
+		}
 
-        MsgData = (MSG_DATA*)VirtualAlloc(0, sizeof(MSG_DATA), MEM_COMMIT, PAGE_READWRITE);
-        if (!MsgData) {
-            break;  // out of memory
-        }
+		status = NtReplyWaitReceivePort(m_PortHandle, NULL, NULL, (PORT_MESSAGE*)MsgData->msg);
 
-        status = NtReplyWaitReceivePort(m_PortHandle, NULL, NULL, (PORT_MESSAGE *)MsgData->msg);
+		if (!m_PortHandle)
+		{ // service is shutting down
+			VirtualFree(MsgData, 0, MEM_RELEASE);
+			break;
+		}
 
-        if (!m_PortHandle) {    // service is shutting down
-            VirtualFree(MsgData, 0, MEM_RELEASE);
-            break;
-        }
-
-        MsgData->ClassContext = this;
-        CreateThread(NULL, 0, MsgWorkerThreadStub, (void *)MsgData, 0, &threadId);
-    }
+		MsgData->ClassContext = this;
+		CreateThread(NULL, 0, MsgWorkerThreadStub, (void*)MsgData, 0, &threadId);
+	}
 }
 
 
@@ -337,51 +342,58 @@ void DriverAssist::Thread()
 //---------------------------------------------------------------------------
 
 
-void DriverAssist::LookupSid(void *_msg)
+void DriverAssist::LookupSid(void* _msg)
 {
-    SVC_LOOKUP_SID_MSG *msg = (SVC_LOOKUP_SID_MSG *)_msg;
+	SVC_LOOKUP_SID_MSG* msg = (SVC_LOOKUP_SID_MSG*)_msg;
 
-    PSID pSid;
-    BOOL b = ConvertStringSidToSid(msg->sid_string, &pSid);
-    if (! b) {
-        SbieApi_LogEx(msg->session_id, 2209, L"[11 / %d]", GetLastError());
-        return;
-    }
+	PSID pSid;
+	BOOL b = ConvertStringSidToSid(msg->sid_string, &pSid);
+	if (!b)
+	{
+		SbieApi_LogEx(msg->session_id, 2209, L"[11 / %d]", GetLastError());
+		return;
+	}
 
-    WCHAR username[256];
-    ULONG username_len = sizeof(username) / sizeof(WCHAR) - 4;
-    WCHAR domain[256];
-    ULONG domain_len = sizeof(domain) / sizeof(WCHAR) - 4;
-    SID_NAME_USE use;
+	WCHAR username[256];
+	ULONG username_len = sizeof(username) / sizeof(WCHAR) - 4;
+	WCHAR domain[256];
+	ULONG domain_len = sizeof(domain) / sizeof(WCHAR) - 4;
+	SID_NAME_USE use;
 
-    username[0] = L'\0';
+	username[0] = L'\0';
 
-    b = LookupAccountSid(
-        NULL, pSid, username, &username_len, domain, &domain_len, &use);
+	b = LookupAccountSid(NULL, pSid, username, &username_len, domain, &domain_len, &use);
 
-    if ((! b) && GetLastError() == ERROR_NONE_MAPPED) {
+	if ((!b) && GetLastError() == ERROR_NONE_MAPPED)
+	{
+		username_len = sizeof(username) / sizeof(WCHAR) - 4;
+		username[0]  = L'\0';
+		LookupSid2(msg->sid_string, username, username_len);
+		if (username[0])
+		{
+			b = TRUE;
+		}
+		else
+		{
+			SetLastError(ERROR_NONE_MAPPED);
+		}
+	}
 
-        username_len = sizeof(username) / sizeof(WCHAR) - 4;
-        username[0] = L'\0';
-        LookupSid2(msg->sid_string, username, username_len);
-        if (username[0])
-            b = TRUE;
-        else
-            SetLastError(ERROR_NONE_MAPPED);
-    }
+	if ((!b) || (!username[0]))
+	{
+		//SbieApi_LogEx(msg->session_id, 2209, L": %S [22 / %d]", msg->sid_string, GetLastError());
+		wcscpy(username, L"*?*?*?*");
+	}
 
-    if ((! b) || (! username[0])) {
-        //SbieApi_LogEx(msg->session_id, 2209, L": %S [22 / %d]", msg->sid_string, GetLastError());
-        wcscpy(username, L"*?*?*?*");
-    }
+	LocalFree(pSid);
 
-    LocalFree(pSid);
+	username[sizeof(username) / sizeof(WCHAR) - 4] = L'\0';
 
-    username[sizeof(username) / sizeof(WCHAR) - 4] = L'\0';
-
-    LONG rc = SbieApi_SetUserName(msg->sid_string, username);
-    if (rc != 0)
-        SbieApi_LogEx(msg->session_id, 2209, L"[33 / %08X]", rc);
+	LONG rc = SbieApi_SetUserName(msg->sid_string, username);
+	if (rc != 0)
+	{
+		SbieApi_LogEx(msg->session_id, 2209, L"[33 / %08X]", rc);
+	}
 }
 
 
@@ -390,30 +402,31 @@ void DriverAssist::LookupSid(void *_msg)
 //---------------------------------------------------------------------------
 
 
-void DriverAssist::LookupSid2(
-    const WCHAR *SidString, WCHAR *UserName, ULONG UserNameLen)
+void DriverAssist::LookupSid2(const WCHAR* SidString, WCHAR* UserName, ULONG UserNameLen)
 {
-    WCHAR *KeyPath = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, 1024);
-    if (! KeyPath)
-        return;
-    wcscpy(KeyPath, SidString);
-    wcscat(KeyPath,
-                L"\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer");
+	WCHAR* KeyPath = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, 1024);
+	if (!KeyPath)
+	{
+		return;
+	}
+	wcscpy(KeyPath, SidString);
+	wcscat(KeyPath, L"\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer");
 
-    HKEY hKey;
-    LONG rc = RegOpenKeyEx(HKEY_USERS, KeyPath, 0, KEY_READ, &hKey);
-    if (rc == 0) {
+	HKEY hKey;
+	LONG rc = RegOpenKeyEx(HKEY_USERS, KeyPath, 0, KEY_READ, &hKey);
+	if (rc == 0)
+	{
+		ULONG type, len = UserNameLen;
+		rc = RegQueryValueEx(hKey, L"Logon User Name", NULL, &type, (LPBYTE)UserName, &len);
+		if (rc != 0 || type != REG_SZ)
+		{
+			UserName[0] = L'\0';
+		}
 
-        ULONG type, len = UserNameLen;
-        rc = RegQueryValueEx(hKey, L"Logon User Name", NULL,
-                             &type, (LPBYTE)UserName, &len);
-        if (rc != 0 || type != REG_SZ)
-            UserName[0] = L'\0';
+		RegCloseKey(hKey);
+	}
 
-        RegCloseKey(hKey);
-    }
-
-    HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, KeyPath);
+	HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, KeyPath);
 }
 
 
@@ -422,35 +435,38 @@ void DriverAssist::LookupSid2(
 //---------------------------------------------------------------------------
 
 
-void DriverAssist::CancelProcess(void *_msg)
+void DriverAssist::CancelProcess(void* _msg)
 {
-    //
-    // cancel process in response to request from driver
-    //
+	//
+	// cancel process in response to request from driver
+	//
 
-    SVC_PROCESS_MSG *msg = (SVC_PROCESS_MSG *)_msg;
+	SVC_PROCESS_MSG* msg = (SVC_PROCESS_MSG*)_msg;
 
-    const ULONG _DesiredAccess = PROCESS_TERMINATE
-                               | PROCESS_QUERY_INFORMATION;
+	const ULONG _DesiredAccess = PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION;
 
-    HANDLE hProcess = OpenProcess(_DesiredAccess, FALSE, msg->process_id);
+	HANDLE hProcess = OpenProcess(_DesiredAccess, FALSE, msg->process_id);
 
-    if (hProcess) {
+	if (hProcess)
+	{
+		FILETIME time, time1, time2, time3;
+		BOOL ok = GetProcessTimes(hProcess, &time, &time1, &time2, &time3);
+		if (ok && *(ULONG64*)&time.dwLowDateTime == msg->create_time)
+		{
+			TerminateProcess(hProcess, 1);
+		}
 
-        FILETIME time, time1, time2, time3;
-        BOOL ok = GetProcessTimes(hProcess, &time, &time1, &time2, &time3);
-        if (ok && *(ULONG64 *)&time.dwLowDateTime == msg->create_time) {
+		CloseHandle(hProcess);
+	}
 
-            TerminateProcess(hProcess, 1);
-        }
-
-        CloseHandle(hProcess);
-    }
-
-    if (msg->reason != 0)
-        SbieApi_LogEx(msg->session_id, 2314, L"%S [%d / %d]", msg->process_name, msg->process_id, msg->reason);
-    else
-        SbieApi_LogEx(msg->session_id, 2314, msg->process_name);
+	if (msg->reason != 0)
+	{
+		SbieApi_LogEx(msg->session_id, 2314, L"%S [%d / %d]", msg->process_name, msg->process_id, msg->reason);
+	}
+	else
+	{
+		SbieApi_LogEx(msg->session_id, 2314, msg->process_name);
+	}
 }
 
 
@@ -458,9 +474,9 @@ extern void RestartHostInjectedSvcs();
 
 void DriverAssist::RestartHostInjectedSvcs()
 {
-    EnterCriticalSection(&m_critSecHostInjectedSvcs);
-    ::RestartHostInjectedSvcs();
-    LeaveCriticalSection(&m_critSecHostInjectedSvcs);
+	EnterCriticalSection(&m_critSecHostInjectedSvcs);
+	::RestartHostInjectedSvcs();
+	LeaveCriticalSection(&m_critSecHostInjectedSvcs);
 }
 
 
@@ -469,117 +485,125 @@ void DriverAssist::RestartHostInjectedSvcs()
 //---------------------------------------------------------------------------
 
 
-void DriverAssist::UnmountHive(void *_msg)
+void DriverAssist::UnmountHive(void* _msg)
 {
-    SVC_UNMOUNT_MSG *msg = (SVC_UNMOUNT_MSG *)_msg;
-    ULONG rc, retries;
+	SVC_UNMOUNT_MSG* msg = (SVC_UNMOUNT_MSG*)_msg;
+	ULONG rc, retries;
 
-    //
-    // we got a message that specifies the pid of the last process in
-    // a box, we're going to wait until that process disappears
-    //
+	//
+	// we got a message that specifies the pid of the last process in
+	// a box, we're going to wait until that process disappears
+	//
 
-    bool ended = false;
+	bool ended = false;
 
-    HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, msg->process_id);
-    if (hProcess) {
+	HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, msg->process_id);
+	if (hProcess)
+	{
+		if (WaitForSingleObject(hProcess, 2 * 1000) == STATUS_SUCCESS)
+		{
+			ended = true;
+		}
 
-        if (WaitForSingleObject(hProcess, 2 * 1000) == STATUS_SUCCESS) {
+		CloseHandle(hProcess);
+	}
 
-            ended = true;
-        }
+	if (!ended)
+	{
+		for (retries = 0; retries < 20; ++retries)
+		{
+			rc = SbieApi_QueryProcess((HANDLE)(ULONG_PTR)msg->process_id, NULL, NULL, NULL, NULL);
+			if (rc != 0)
+			{
+				break;
+			}
 
-        CloseHandle(hProcess);
-    }
+			Sleep(100);
+		}
+	}
 
-    if (! ended) {
+	//
+	// it could be that we are invoked because Start.exe terminated, but
+	// its spawned child process has not yet asked to mount the registry
+	// for it.  I.e.,  the registry use count has dropped to zero, even
+	// though another process is going to ask for that registry very soon.
+	//
+	// to make sure we don't unmount in this case, only to re-mount,
+	// we check that the sandbox is empty, before issuing the unmount
+	//
 
-        for (retries = 0; retries < 20; ++retries) {
+	bool ShouldUnmount = false;
 
-            rc = SbieApi_QueryProcess((HANDLE)(ULONG_PTR)msg->process_id,
-                                      NULL, NULL, NULL, NULL);
-            if (rc != 0)
-                break;
+	ULONG* pids = (ULONG*)HeapAlloc(GetProcessHeap(), 0, PAGE_SIZE);
 
-            Sleep(100);
-        }
-    }
+	if (pids)
+	{
+		for (retries = 0; retries < 20; ++retries)
+		{
+			rc = SbieApi_EnumProcessEx(msg->boxname, FALSE, msg->session_id, pids);
+			if (rc == 0 && *pids == 0)
+			{
+				ShouldUnmount = true;
+				break;
+			}
 
-    //
-    // it could be that we are invoked because Start.exe terminated, but
-    // its spawned child process has not yet asked to mount the registry
-    // for it.  I.e.,  the registry use count has dropped to zero, even
-    // though another process is going to ask for that registry very soon.
-    //
-    // to make sure we don't unmount in this case, only to re-mount,
-    // we check that the sandbox is empty, before issuing the unmount
-    //
+			Sleep(100);
+		}
 
-    bool ShouldUnmount = false;
+		HeapFree(GetProcessHeap(), 0, pids);
+	}
 
-    ULONG *pids = (ULONG *)HeapAlloc(GetProcessHeap(), 0, PAGE_SIZE);
+	//
+	// unmount.  on Windows 2000, the process may appear to disappear
+	// even before its handles were all closed (in particular, registry
+	// handles), which could lead to SBIE2208 being reported.  so we
+	// retry the operation
+	//
 
-    if (pids) {
+	while (ShouldUnmount)
+	{
+		WCHAR root_path[256];
+		UNICODE_STRING root_uni;
+		OBJECT_ATTRIBUTES root_objattrs;
+		HANDLE root_key;
 
-        for (retries = 0; retries < 20; ++retries) {
+		SbieApi_GetUnmountHive(root_path);
+		if (!root_path[0])
+		{
+			break;
+		}
 
-            rc = SbieApi_EnumProcessEx(
-                                msg->boxname, FALSE, msg->session_id, pids);
-            if (rc == 0 && *pids == 0) {
+		RtlInitUnicodeString(&root_uni, root_path);
+		InitializeObjectAttributes(&root_objattrs, &root_uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-                ShouldUnmount = true;
-                break;
-            }
+		for (retries = 0; retries < 25; ++retries)
+		{
+			rc = NtUnloadKey(&root_objattrs);
+			if (rc == 0)
+			{
+				break;
+			}
 
-            Sleep(100);
-        }
+			Sleep(100);
 
-        HeapFree(GetProcessHeap(), 0, pids);
-    }
+			rc = NtOpenKey(&root_key, KEY_READ, &root_objattrs);
+			if (rc == STATUS_OBJECT_NAME_NOT_FOUND || rc == STATUS_OBJECT_PATH_NOT_FOUND)
+			{
+				break;
+			}
+			if (rc == 0)
+			{
+				NtClose(root_key);
+			}
+		}
 
-    //
-    // unmount.  on Windows 2000, the process may appear to disappear
-    // even before its handles were all closed (in particular, registry
-    // handles), which could lead to SBIE2208 being reported.  so we
-    // retry the operation
-    //
+		if (rc != 0)
+		{
+			SbieApi_LogEx(msg->session_id, 2208, L"[%08X]", rc);
+		}
 
-    while (ShouldUnmount) {
-
-        WCHAR root_path[256];
-        UNICODE_STRING root_uni;
-        OBJECT_ATTRIBUTES root_objattrs;
-        HANDLE root_key;
-
-        SbieApi_GetUnmountHive(root_path);
-        if (! root_path[0])
-            break;
-
-        RtlInitUnicodeString(&root_uni, root_path);
-        InitializeObjectAttributes(&root_objattrs,
-            &root_uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
-
-        for (retries = 0; retries < 25; ++retries) {
-
-            rc = NtUnloadKey(&root_objattrs);
-            if (rc == 0)
-                break;
-
-            Sleep(100);
-
-            rc = NtOpenKey(&root_key, KEY_READ, &root_objattrs);
-            if (rc == STATUS_OBJECT_NAME_NOT_FOUND ||
-                rc == STATUS_OBJECT_PATH_NOT_FOUND)
-                break;
-            if (rc == 0)
-                NtClose(root_key);
-        }
-
-        if (rc != 0)
-            SbieApi_LogEx(msg->session_id, 2208, L"[%08X]", rc);
-
-        break;
-    }
+		break;
+	}
 }
 
 
@@ -588,6 +612,6 @@ void DriverAssist::UnmountHive(void *_msg)
 //---------------------------------------------------------------------------
 
 
-#include "DriverAssistStart.cpp"
 #include "DriverAssistInject.cpp"
 #include "DriverAssistLog.cpp"
+#include "DriverAssistStart.cpp"

@@ -22,7 +22,7 @@
 #include "my_winnt.h"
 
 #define KERNEL_MODE
-#undef  DEBUG_MEMORY
+#undef DEBUG_MEMORY
 
 /* List */
 
@@ -33,14 +33,14 @@
 extern const ULONG tzuk;
 #define POOL_TAG tzuk
 #ifdef DEBUG_MEMORY
-#define Pool_Alloc Original_Pool_Alloc
-#define Pool_Free  Original_Pool_Free
+	#define Pool_Alloc Original_Pool_Alloc
+	#define Pool_Free Original_Pool_Free
 #endif
 #include "common/pool.c"
 #ifdef DEBUG_MEMORY
-#undef  Pool_Alloc
-#undef  Pool_Free
-#include "dbgmem.c"
+	#undef Pool_Alloc
+	#undef Pool_Free
+	#include "dbgmem.c"
 #endif
 
 /* Stream */
@@ -50,9 +50,9 @@ extern const ULONG tzuk;
 /* Pattern */
 
 #include "mem.h"
-#define Pool_Alloc(pool,size) Mem_Alloc((pool),(size))
+#define Pool_Alloc(pool, size) Mem_Alloc((pool), (size))
 #include "common/pattern.c"
-#undef  Pool_Alloc
+#undef Pool_Alloc
 
 /* CRC */
 

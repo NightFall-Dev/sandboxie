@@ -19,10 +19,9 @@
 // GUI Services
 //---------------------------------------------------------------------------
 
-#include "dll.h"
-
-#include "gui_p.h"
 #include "core/svc/GuiWire.h"
+#include "dll.h"
+#include "gui_p.h"
 
 
 //---------------------------------------------------------------------------
@@ -40,7 +39,7 @@ static BOOL Gui_SwapMouseButton(BOOL fSwap);
 
 static BOOL Gui_SetDoubleClickTime(UINT uInterval);
 
-static BOOL Gui_ClipCursor(const RECT *lpRect);
+static BOOL Gui_ClipCursor(const RECT* lpRect);
 
 static BOOLEAN Gui_GrantHandle(ULONG_PTR handle);
 
@@ -58,12 +57,9 @@ static BOOL Gui_BlockInput(BOOL fBlockIt);
 
 static UINT Gui_SendInput(ULONG nInputs, LPINPUT pInputs, ULONG cbInput);
 
-static HDESK Gui_OpenInputDesktop(
-    DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
+static HDESK Gui_OpenInputDesktop(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
 
-static BOOL Gui_GetUserObjectInformationW(
-    HANDLE hObj, int nIndex,
-    void *pvInfo, DWORD nLength, DWORD *lpnLengthNeeded);
+static BOOL Gui_GetUserObjectInformationW(HANDLE hObj, int nIndex, void* pvInfo, DWORD nLength, DWORD* lpnLengthNeeded);
 
 static BOOL Gui_OpenClipboard(HWND hwnd);
 
@@ -71,46 +67,33 @@ static BOOL Gui_CloseClipboard(void);
 
 static HANDLE Gui_GetClipboardData(UINT uFormat);
 
-static void Gui_GetClipboardData_BMP(void *buf, ULONG fmt);
+static void Gui_GetClipboardData_BMP(void* buf, ULONG fmt);
 
-static void Gui_GetClipboardData_MF(void *buf, ULONG sz, ULONG fmt);
+static void Gui_GetClipboardData_MF(void* buf, ULONG sz, ULONG fmt);
 
-static void Gui_GetClipboardData_EnhMF(void *buf, ULONG sz, ULONG fmt);
+static void Gui_GetClipboardData_EnhMF(void* buf, ULONG sz, ULONG fmt);
 
-static LONG Gui_ChangeDisplaySettingsExA(
-    void *lpszDeviceName, void *lpDevMode, HWND hwnd,
-    DWORD dwflags, void *lParam);
+static LONG Gui_ChangeDisplaySettingsExA(void* lpszDeviceName, void* lpDevMode, HWND hwnd, DWORD dwflags, void* lParam);
 
-static LONG Gui_ChangeDisplaySettingsExW(
-    void *lpszDeviceName, void *lpDevMode, HWND hwnd,
-    DWORD dwflags, void *lParam);
+static LONG Gui_ChangeDisplaySettingsExW(void* lpszDeviceName, void* lpDevMode, HWND hwnd, DWORD dwflags, void* lParam);
 
 
 //---------------------------------------------------------------------------
 
 
-typedef BOOL (*P_GetUserObjectInformationW)(
-    HANDLE hObj, int nIndex,
-    void *pvInfo, DWORD nLength, DWORD *lpnLengthNeeded);
+typedef BOOL (*P_GetUserObjectInformationW)(HANDLE hObj, int nIndex, void* pvInfo, DWORD nLength, DWORD* lpnLengthNeeded);
 
-typedef HMETAFILE (*P_SetMetaFileBitsEx)(
-    UINT nSize, const BYTE *lpData);
+typedef HMETAFILE (*P_SetMetaFileBitsEx)(UINT nSize, const BYTE* lpData);
 
-typedef HENHMETAFILE (*P_SetEnhMetaFileBits)(
-    UINT nSize, const BYTE *lpData);
+typedef HENHMETAFILE (*P_SetEnhMetaFileBits)(UINT nSize, const BYTE* lpData);
 
-typedef HBITMAP (*P_CreateCompatibleBitmap)( 
-    HDC hdc, int cx, int cy);
+typedef HBITMAP (*P_CreateCompatibleBitmap)(HDC hdc, int cx, int cy);
 
-typedef int (*P_SetDIBits)
-    (HDC hdc, HBITMAP hbm, UINT start, UINT cLines, CONST VOID *lpBits, CONST BITMAPINFO * lpbmi, UINT ColorUse);
+typedef int (*P_SetDIBits)(HDC hdc, HBITMAP hbm, UINT start, UINT cLines, CONST VOID* lpBits, CONST BITMAPINFO* lpbmi, UINT ColorUse);
 
-typedef HDC (*P_GetDC)(
-    HWND hWnd);
+typedef HDC (*P_GetDC)(HWND hWnd);
 
-typedef int (*P_ReleaseDC)(
-    HWND hWnd,
-    HDC hDC);
+typedef int (*P_ReleaseDC)(HWND hWnd, HDC hDC);
 
 static P_GetUserObjectInformationW __sys_GetUserObjectInformationW = NULL;
 
@@ -122,9 +105,9 @@ static P_GetUserObjectInformationW __sys_GetUserObjectInformationW = NULL;
 
 static BOOLEAN Gui_ClipCursorActive = FALSE;
 
-static HWND  Gui_OpenClipboard_hwnd = NULL;
-static ULONG Gui_OpenClipboard_tid  = 0;
-static ULONG Gui_OpenClipboard_seq  = -1;
+static HWND Gui_OpenClipboard_hwnd = NULL;
+static ULONG Gui_OpenClipboard_tid = 0;
+static ULONG Gui_OpenClipboard_seq = -1;
 
 static HANDLE Gui_DummyInputDesktopHandle = NULL;
 
@@ -136,83 +119,81 @@ static HANDLE Gui_DummyInputDesktopHandle = NULL;
 
 _FX BOOLEAN Gui_InitMisc(void)
 {
-    if (! Gui_OpenAllWinClasses) {
+	if (!Gui_OpenAllWinClasses)
+	{
+		SBIEDLL_HOOK_GUI(GetWindow);
+		SBIEDLL_HOOK_GUI(GetParent);
+		SBIEDLL_HOOK_GUI(SetParent);
+		SBIEDLL_HOOK_GUI(SetForegroundWindow);
+		SBIEDLL_HOOK_GUI(MonitorFromWindow);
 
-        SBIEDLL_HOOK_GUI(GetWindow);
-        SBIEDLL_HOOK_GUI(GetParent);
-        SBIEDLL_HOOK_GUI(SetParent);
-        SBIEDLL_HOOK_GUI(SetForegroundWindow);
-        SBIEDLL_HOOK_GUI(MonitorFromWindow);
+		SBIEDLL_HOOK_GUI(SetCursor);
+		SBIEDLL_HOOK_GUI(GetIconInfo);
+		SBIEDLL_HOOK_GUI(SetCursorPos);
+		SBIEDLL_HOOK_GUI(ClipCursor);
+		SBIEDLL_HOOK_GUI(SwapMouseButton);
+		SBIEDLL_HOOK_GUI(SetDoubleClickTime);
 
-        SBIEDLL_HOOK_GUI(SetCursor);
-        SBIEDLL_HOOK_GUI(GetIconInfo);
-        SBIEDLL_HOOK_GUI(SetCursorPos);
-        SBIEDLL_HOOK_GUI(ClipCursor);
-        SBIEDLL_HOOK_GUI(SwapMouseButton);
-        SBIEDLL_HOOK_GUI(SetDoubleClickTime);
+		if (Dll_OsBuild >= 6000)
+		{
+			//
+			// hook BlockInput and SendInput on Windows Vista because UIPI
+			// is disabled if UAC is disabled.  if UAC is enabled, kernel
+			// side UIPI will also protect these two APIs.  see also Gui_Init
+			// in core/drv/gui.c and PostThreadMessage in core/dll/guimsg.c
+			//
 
-        if (Dll_OsBuild >= 6000) {
+			SBIEDLL_HOOK_GUI(BlockInput);
+			SBIEDLL_HOOK_GUI(SendInput);
+		}
+	}
 
-            //
-            // hook BlockInput and SendInput on Windows Vista because UIPI
-            // is disabled if UAC is disabled.  if UAC is enabled, kernel
-            // side UIPI will also protect these two APIs.  see also Gui_Init
-            // in core/drv/gui.c and PostThreadMessage in core/dll/guimsg.c
-            //
+	SBIEDLL_HOOK_GUI(OpenClipboard);
+	SBIEDLL_HOOK_GUI(CloseClipboard);
+	SBIEDLL_HOOK_GUI(GetClipboardData);
 
-            SBIEDLL_HOOK_GUI(BlockInput);
-            SBIEDLL_HOOK_GUI(SendInput);
-        }
-    }
+	//
+	// Chinese instant messenger QQ.exe (aka TM.exe) uses OpenInputDesktop,
+	// GetThreadDesktop and GetUserObjectInformation to determine if the
+	// desktop is locked, and if OpenInputDesktop fails, it assumes lock.
+	// fortunately it is enough to hook just OpenInputDesktop to fix this
+	//
+	// Google Chrome also uses OpenInputDesktop and GetUserObjectInformation
+	// to check if the desktop is locked, and other programs might as well
+	//
 
-    SBIEDLL_HOOK_GUI(OpenClipboard);
-    SBIEDLL_HOOK_GUI(CloseClipboard);
-    SBIEDLL_HOOK_GUI(GetClipboardData);
+	if (1)
+	{
+		typedef HDESK (*P_OpenInputDesktop)(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
 
-    //
-    // Chinese instant messenger QQ.exe (aka TM.exe) uses OpenInputDesktop,
-    // GetThreadDesktop and GetUserObjectInformation to determine if the
-    // desktop is locked, and if OpenInputDesktop fails, it assumes lock.
-    // fortunately it is enough to hook just OpenInputDesktop to fix this
-    //
-    // Google Chrome also uses OpenInputDesktop and GetUserObjectInformation
-    // to check if the desktop is locked, and other programs might as well
-    //
+		P_OpenInputDesktop __sys_OpenInputDesktop = (P_OpenInputDesktop)Ldr_GetProcAddrNew(DllName_user32, L"OpenInputDesktop", "OpenInputDesktop");
 
-    if (1) {
+		__sys_GetUserObjectInformationW = (P_GetUserObjectInformationW)Ldr_GetProcAddrNew(DllName_user32, L"GetUserObjectInformationW", "GetUserObjectInformationW");
 
-        typedef HDESK (*P_OpenInputDesktop)(
-            DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess);
+		if (__sys_OpenInputDesktop)
+		{
+			SBIEDLL_HOOK_GUI(OpenInputDesktop);
+		}
 
-        P_OpenInputDesktop __sys_OpenInputDesktop = (P_OpenInputDesktop)
-            Ldr_GetProcAddrNew(DllName_user32, L"OpenInputDesktop","OpenInputDesktop");
+		if (__sys_GetUserObjectInformationW)
+		{
+			SBIEDLL_HOOK_GUI(GetUserObjectInformationW);
+		}
+	}
 
-        __sys_GetUserObjectInformationW = (P_GetUserObjectInformationW)
-            Ldr_GetProcAddrNew(DllName_user32, L"GetUserObjectInformationW","GetUserObjectInformationW");
+	//
+	// ChangeDisplaySettingsEx on Windows 8
+	//
 
-        if (__sys_OpenInputDesktop) {
-            SBIEDLL_HOOK_GUI(OpenInputDesktop);
-        }
+	if (Dll_OsBuild >= 8400)
+	{
+		P_ChangeDisplaySettingsEx __sys_ChangeDisplaySettingsExA = Ldr_GetProcAddrNew(DllName_user32, L"ChangeDisplaySettingsExA", "ChangeDisplaySettingsExA");
+		P_ChangeDisplaySettingsEx __sys_ChangeDisplaySettingsExW = Ldr_GetProcAddrNew(DllName_user32, L"ChangeDisplaySettingsExW", "ChangeDisplaySettingsExW");
+		SBIEDLL_HOOK_GUI(ChangeDisplaySettingsExA);
+		SBIEDLL_HOOK_GUI(ChangeDisplaySettingsExW);
+	}
 
-        if (__sys_GetUserObjectInformationW) {
-            SBIEDLL_HOOK_GUI(GetUserObjectInformationW);
-        }
-    }
-
-    //
-    // ChangeDisplaySettingsEx on Windows 8
-    //
-
-    if (Dll_OsBuild >= 8400) {
-        P_ChangeDisplaySettingsEx __sys_ChangeDisplaySettingsExA =
-            Ldr_GetProcAddrNew(DllName_user32, L"ChangeDisplaySettingsExA","ChangeDisplaySettingsExA");
-        P_ChangeDisplaySettingsEx __sys_ChangeDisplaySettingsExW =
-            Ldr_GetProcAddrNew(DllName_user32, L"ChangeDisplaySettingsExW","ChangeDisplaySettingsExW");
-        SBIEDLL_HOOK_GUI(ChangeDisplaySettingsExA);
-        SBIEDLL_HOOK_GUI(ChangeDisplaySettingsExW);
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -223,10 +204,14 @@ _FX BOOLEAN Gui_InitMisc(void)
 
 _FX HWND Gui_GetWindow(HWND hWnd, UINT uCmd)
 {
-    if (uCmd < 0x10)
-        return Gui_GetWindowFromProxy(uCmd, hWnd);
-    else
-        return NULL;
+	if (uCmd < 0x10)
+	{
+		return Gui_GetWindowFromProxy(uCmd, hWnd);
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 
@@ -237,10 +222,14 @@ _FX HWND Gui_GetWindow(HWND hWnd, UINT uCmd)
 
 _FX HWND Gui_GetParent(HWND hWnd)
 {
-    if (__sys_IsWindow(hWnd) || (! hWnd))
-        return __sys_GetParent(hWnd);
-    else
-        return Gui_GetWindowFromProxy('prnt', hWnd);
+	if (__sys_IsWindow(hWnd) || (!hWnd))
+	{
+		return __sys_GetParent(hWnd);
+	}
+	else
+	{
+		return Gui_GetWindowFromProxy('prnt', hWnd);
+	}
 }
 
 
@@ -251,28 +240,33 @@ _FX HWND Gui_GetParent(HWND hWnd)
 
 _FX HWND Gui_SetParent(HWND hWndChild, HWND hWndNewParent)
 {
-    //
-    // fail the request (with a warning) if either the child or the
-    // parent windows are not accessible to this process.  but note that
-    // we make a special exception of converting the desktop hwnd to NULL
-    //
+	//
+	// fail the request (with a warning) if either the child or the
+	// parent windows are not accessible to this process.  but note that
+	// we make a special exception of converting the desktop hwnd to NULL
+	//
 
-    if (! Gui_IsWindowAccessible(hWndChild)) {
-        SetLastError(ERROR_INVALID_WINDOW_HANDLE);
-        return NULL;
-    }
+	if (!Gui_IsWindowAccessible(hWndChild))
+	{
+		SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+		return NULL;
+	}
 
-    if (hWndNewParent && (! Gui_IsWindowAccessible(hWndNewParent))) {
-        if (hWndNewParent == __sys_GetDesktopWindow())
-            hWndNewParent = NULL;
-        else {
-            //SbieApi_Log(2205, L"SetParent");
-            SetLastError(ERROR_INVALID_WINDOW_HANDLE);
-            return NULL;
-        }
-    }
+	if (hWndNewParent && (!Gui_IsWindowAccessible(hWndNewParent)))
+	{
+		if (hWndNewParent == __sys_GetDesktopWindow())
+		{
+			hWndNewParent = NULL;
+		}
+		else
+		{
+			//SbieApi_Log(2205, L"SetParent");
+			SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+			return NULL;
+		}
+	}
 
-    return __sys_SetParent(hWndChild, hWndNewParent);
+	return __sys_SetParent(hWndChild, hWndNewParent);
 }
 
 
@@ -281,30 +275,36 @@ _FX HWND Gui_SetParent(HWND hWndChild, HWND hWndNewParent)
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Gui_ClipCursor(const RECT *lpRect)
+_FX BOOL Gui_ClipCursor(const RECT* lpRect)
 {
-    GUI_CLIP_CURSOR_REQ req;
-    void *rpl;
+	GUI_CLIP_CURSOR_REQ req;
+	void* rpl;
 
-    req.msgid = GUI_CLIP_CURSOR;
-    if (lpRect) {
-        req.have_rect = TRUE;
-        memcpy(&req.rect, lpRect, sizeof(req.rect));
-        Gui_ClipCursorActive = TRUE;
-    } else {
-        req.have_rect = FALSE;
-        memzero(&req.rect, sizeof(req.rect));
-        Gui_ClipCursorActive = FALSE;
-    }
+	req.msgid = GUI_CLIP_CURSOR;
+	if (lpRect)
+	{
+		req.have_rect = TRUE;
+		memcpy(&req.rect, lpRect, sizeof(req.rect));
+		Gui_ClipCursorActive = TRUE;
+	}
+	else
+	{
+		req.have_rect = FALSE;
+		memzero(&req.rect, sizeof(req.rect));
+		Gui_ClipCursorActive = FALSE;
+	}
 
-    rpl = Gui_CallProxy(&req, sizeof(req), sizeof(ULONG));
-    if (rpl) {
-        Dll_Free(rpl);
-        return TRUE;
-    } else {
-        SetLastError(ERROR_ACCESS_DENIED);
-        return FALSE;
-    }
+	rpl = Gui_CallProxy(&req, sizeof(req), sizeof(ULONG));
+	if (rpl)
+	{
+		Dll_Free(rpl);
+		return TRUE;
+	}
+	else
+	{
+		SetLastError(ERROR_ACCESS_DENIED);
+		return FALSE;
+	}
 }
 
 
@@ -315,16 +315,18 @@ _FX BOOL Gui_ClipCursor(const RECT *lpRect)
 
 _FX void Gui_ResetClipCursor(void)
 {
-    //
-    // progams that set a clip cursor (e.g. full screen games) tend to
-    // remove the clip on alt-tab switch, but do not remove the clip when
-    // terminating.  and the clip remains in effect probably because the
-    // sandboxed process does not have WINSTA_WRITEATTRIBUTES access.
-    // to work around this, we have DllMain call this function on exit.
-    //
+	//
+	// progams that set a clip cursor (e.g. full screen games) tend to
+	// remove the clip on alt-tab switch, but do not remove the clip when
+	// terminating.  and the clip remains in effect probably because the
+	// sandboxed process does not have WINSTA_WRITEATTRIBUTES access.
+	// to work around this, we have DllMain call this function on exit.
+	//
 
-    if (Gui_ClipCursorActive)
-        Gui_ClipCursor(NULL);
+	if (Gui_ClipCursorActive)
+	{
+		Gui_ClipCursor(NULL);
+	}
 }
 
 
@@ -335,8 +337,8 @@ _FX void Gui_ResetClipCursor(void)
 
 _FX BOOL Gui_SwapMouseButton(BOOL fSwap)
 {
-    SetLastError(ERROR_ACCESS_DENIED);
-    return FALSE;
+	SetLastError(ERROR_ACCESS_DENIED);
+	return FALSE;
 }
 
 
@@ -347,8 +349,8 @@ _FX BOOL Gui_SwapMouseButton(BOOL fSwap)
 
 _FX BOOL Gui_SetDoubleClickTime(UINT uInterval)
 {
-    SetLastError(ERROR_ACCESS_DENIED);
-    return FALSE;
+	SetLastError(ERROR_ACCESS_DENIED);
+	return FALSE;
 }
 
 
@@ -359,25 +361,29 @@ _FX BOOL Gui_SetDoubleClickTime(UINT uInterval)
 
 _FX BOOLEAN Gui_GrantHandle(ULONG_PTR handle)
 {
-    GUI_GRANT_HANDLE_REQ req;
-    void *rpl;
+	GUI_GRANT_HANDLE_REQ req;
+	void* rpl;
 
-    if (! handle)
-        return FALSE;
+	if (!handle)
+	{
+		return FALSE;
+	}
 
-    req.msgid = GUI_GRANT_HANDLE;
-    req.handle_type = 1;        // bitmap/cursor/icon
-    req.handle_value = (ULONG)handle;
+	req.msgid        = GUI_GRANT_HANDLE;
+	req.handle_type  = 1; // bitmap/cursor/icon
+	req.handle_value = (ULONG)handle;
 
-    rpl = Gui_CallProxy(&req, sizeof(req), sizeof(ULONG));
-    if (rpl) {
-        Dll_Free(rpl);
-        return TRUE;
-
-    } else {
-        SetLastError(ERROR_INVALID_CURSOR_HANDLE);
-        return FALSE;
-    }
+	rpl = Gui_CallProxy(&req, sizeof(req), sizeof(ULONG));
+	if (rpl)
+	{
+		Dll_Free(rpl);
+		return TRUE;
+	}
+	else
+	{
+		SetLastError(ERROR_INVALID_CURSOR_HANDLE);
+		return FALSE;
+	}
 }
 
 
@@ -388,21 +394,21 @@ _FX BOOLEAN Gui_GrantHandle(ULONG_PTR handle)
 
 _FX HCURSOR Gui_SetCursor(HCURSOR hCursor)
 {
-    HCURSOR hCursorRet = __sys_SetCursor(hCursor);
-    if ((! hCursorRet) && (GetLastError() == ERROR_INVALID_CURSOR_HANDLE)) {
+	HCURSOR hCursorRet = __sys_SetCursor(hCursor);
+	if ((!hCursorRet) && (GetLastError() == ERROR_INVALID_CURSOR_HANDLE))
+	{
+		//
+		// the cursor handle is probably not yet accessible to our
+		// job object so ask SbieSvc GUI Proxy server to grant us access
+		//
 
-        //
-        // the cursor handle is probably not yet accessible to our
-        // job object so ask SbieSvc GUI Proxy server to grant us access
-        //
+		if (Gui_GrantHandle((ULONG_PTR)hCursor))
+		{
+			hCursorRet = __sys_SetCursor(hCursor);
+		}
+	}
 
-        if (Gui_GrantHandle((ULONG_PTR)hCursor)) {
-
-            hCursorRet = __sys_SetCursor(hCursor);
-        }
-    }
-
-    return hCursorRet;
+	return hCursorRet;
 }
 
 
@@ -413,21 +419,21 @@ _FX HCURSOR Gui_SetCursor(HCURSOR hCursor)
 
 _FX BOOL Gui_GetIconInfo(HICON hIcon, PICONINFO piconinfo)
 {
-    BOOL ok = __sys_GetIconInfo(hIcon, piconinfo);
-    if ((! ok) && (GetLastError() == ERROR_INVALID_CURSOR_HANDLE)) {
+	BOOL ok = __sys_GetIconInfo(hIcon, piconinfo);
+	if ((!ok) && (GetLastError() == ERROR_INVALID_CURSOR_HANDLE))
+	{
+		//
+		// the icon handle is probably not yet accessible to our
+		// job object so ask SbieSvc GUI Proxy server to grant us access
+		//
 
-        //
-        // the icon handle is probably not yet accessible to our
-        // job object so ask SbieSvc GUI Proxy server to grant us access
-        //
+		if (Gui_GrantHandle((ULONG_PTR)hIcon))
+		{
+			ok = __sys_GetIconInfo(hIcon, piconinfo);
+		}
+	}
 
-        if (Gui_GrantHandle((ULONG_PTR)hIcon)) {
-
-            ok = __sys_GetIconInfo(hIcon, piconinfo);
-        }
-    }
-
-    return ok;
+	return ok;
 }
 
 
@@ -438,26 +444,29 @@ _FX BOOL Gui_GetIconInfo(HICON hIcon, PICONINFO piconinfo)
 
 _FX BOOL Gui_SetCursorPos(int x, int y)
 {
-    GUI_SET_CURSOR_POS_REQ req;
-    GUI_SET_CURSOR_POS_RPL *rpl;
-    ULONG error;
-    BOOL retval;
+	GUI_SET_CURSOR_POS_REQ req;
+	GUI_SET_CURSOR_POS_RPL* rpl;
+	ULONG error;
+	BOOL retval;
 
-    req.msgid = GUI_SET_CURSOR_POS;
-    req.error = GetLastError();
-    req.x = x;
-    req.y = y;
-    rpl = Gui_CallProxyEx(&req, sizeof(req), sizeof(ULONG), TRUE);
-    if (rpl) {
-        retval = rpl->retval;
-        error = rpl->error;
-        Dll_Free(rpl);
-    } else {
-        error = ERROR_ACCESS_DENIED;
-        retval = FALSE;
-    }
-    SetLastError(error);
-    return retval;
+	req.msgid = GUI_SET_CURSOR_POS;
+	req.error = GetLastError();
+	req.x     = x;
+	req.y     = y;
+	rpl       = Gui_CallProxyEx(&req, sizeof(req), sizeof(ULONG), TRUE);
+	if (rpl)
+	{
+		retval = rpl->retval;
+		error  = rpl->error;
+		Dll_Free(rpl);
+	}
+	else
+	{
+		error  = ERROR_ACCESS_DENIED;
+		retval = FALSE;
+	}
+	SetLastError(error);
+	return retval;
 }
 
 
@@ -468,29 +477,35 @@ _FX BOOL Gui_SetCursorPos(int x, int y)
 
 _FX BOOL Gui_SetForegroundWindow(HWND hWnd)
 {
-    GUI_SET_FOREGROUND_WINDOW_REQ req;
-    void *rpl;
+	GUI_SET_FOREGROUND_WINDOW_REQ req;
+	void* rpl;
 
-    if (__sys_IsWindow(hWnd) || (! hWnd)) {
-        // window is in the same sandbox (or is NULL), no need for GUI Proxy
-        return __sys_SetForegroundWindow(hWnd);
-    }
+	if (__sys_IsWindow(hWnd) || (!hWnd))
+	{
+		// window is in the same sandbox (or is NULL), no need for GUI Proxy
+		return __sys_SetForegroundWindow(hWnd);
+	}
 
-    if (__sys_SetForegroundWindow(hWnd))
-        return TRUE;
+	if (__sys_SetForegroundWindow(hWnd))
+	{
+		return TRUE;
+	}
 
-    Gui_AllowSetForegroundWindow();
+	Gui_AllowSetForegroundWindow();
 
-    req.msgid = GUI_SET_FOREGROUND_WINDOW;
-    req.hwnd = (ULONG)(ULONG_PTR)hWnd;
-    rpl = Gui_CallProxyEx(&req, sizeof(req), sizeof(ULONG), TRUE);
-    if (rpl) {
-        Dll_Free(rpl);
-        return TRUE;
-    } else {
-        SetLastError(ERROR_INVALID_WINDOW_HANDLE);
-        return FALSE;
-    }
+	req.msgid = GUI_SET_FOREGROUND_WINDOW;
+	req.hwnd  = (ULONG)(ULONG_PTR)hWnd;
+	rpl       = Gui_CallProxyEx(&req, sizeof(req), sizeof(ULONG), TRUE);
+	if (rpl)
+	{
+		Dll_Free(rpl);
+		return TRUE;
+	}
+	else
+	{
+		SetLastError(ERROR_INVALID_WINDOW_HANDLE);
+		return FALSE;
+	}
 }
 
 
@@ -501,30 +516,32 @@ _FX BOOL Gui_SetForegroundWindow(HWND hWnd)
 
 _FX HMONITOR Gui_MonitorFromWindow(HWND hWnd, DWORD dwFlags)
 {
-    ULONG err = GetLastError();
-    HMONITOR result = __sys_MonitorFromWindow(hWnd, dwFlags);
-    if (! result) {
+	ULONG err       = GetLastError();
+	HMONITOR result = __sys_MonitorFromWindow(hWnd, dwFlags);
+	if (!result)
+	{
+		GUI_MONITOR_FROM_WINDOW_REQ req;
+		GUI_MONITOR_FROM_WINDOW_RPL* rpl;
 
-        GUI_MONITOR_FROM_WINDOW_REQ req;
-        GUI_MONITOR_FROM_WINDOW_RPL *rpl;
+		req.msgid = GUI_MONITOR_FROM_WINDOW;
+		req.error = err;
+		req.hwnd  = (ULONG)(ULONG_PTR)hWnd;
+		req.flags = dwFlags;
 
-        req.msgid = GUI_MONITOR_FROM_WINDOW;
-        req.error = err;
-        req.hwnd = (ULONG)(ULONG_PTR)hWnd;
-        req.flags = dwFlags;
+		rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
+		if (!rpl)
+		{
+			return FALSE;
+		}
 
-        rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
-        if (! rpl)
-            return FALSE;
+		err    = rpl->error;
+		result = (HMONITOR)(LONG_PTR)(LONG)rpl->retval;
+		Dll_Free(rpl);
 
-        err = rpl->error;
-        result = (HMONITOR)(LONG_PTR)(LONG)rpl->retval;
-        Dll_Free(rpl);
+		SetLastError(err);
+	}
 
-        SetLastError(err);
-    }
-
-    return result;
+	return result;
 }
 
 
@@ -535,10 +552,14 @@ _FX HMONITOR Gui_MonitorFromWindow(HWND hWnd, DWORD dwFlags)
 
 _FX BOOL Gui_BlockInput(BOOL fBlockIt)
 {
-    if (fBlockIt)
-        return 0;
-    else
-        return __sys_BlockInput(fBlockIt);
+	if (fBlockIt)
+	{
+		return 0;
+	}
+	else
+	{
+		return __sys_BlockInput(fBlockIt);
+	}
 }
 
 
@@ -549,39 +570,45 @@ _FX BOOL Gui_BlockInput(BOOL fBlockIt)
 
 _FX UINT Gui_SendInput(ULONG nInputs, LPINPUT pInputs, ULONG cbInput)
 {
-    //
-    // we are going to pass the input to the system one INPUT structure
-    // at a time, so we can check for change in the foreground window
-    //
+	//
+	// we are going to pass the input to the system one INPUT structure
+	// at a time, so we can check for change in the foreground window
+	//
 
-    ULONG retval = 0;
-    while (nInputs && nInputs < 16) {
+	ULONG retval = 0;
+	while (nInputs && nInputs < 16)
+	{
+		//
+		// if the foreground window is not sandboxed, stop
+		//
 
-        //
-        // if the foreground window is not sandboxed, stop
-        //
+		HWND hwnd = __sys_GetForegroundWindow();
+		if (!hwnd)
+		{
+			break;
+		}
+		if (!Gui_IsSameBox(hwnd, NULL, NULL))
+		{
+			break;
+		}
 
-        HWND hwnd = __sys_GetForegroundWindow();
-        if (! hwnd)
-            break;
-        if (! Gui_IsSameBox(hwnd, NULL, NULL))
-            break;
+		//
+		// otherwise pass one INPUT structure to the system, then advance
+		// to the next INPUT structure.  note that we must get a return
+		// of exactly 1
+		//
 
-        //
-        // otherwise pass one INPUT structure to the system, then advance
-        // to the next INPUT structure.  note that we must get a return
-        // of exactly 1
-        //
+		if (__sys_SendInput(1, pInputs, cbInput) != 1)
+		{
+			break;
+		}
 
-        if (__sys_SendInput(1, pInputs, cbInput) != 1)
-            break;
+		++retval;
+		--nInputs;
+		pInputs = (LPINPUT)((UCHAR*)pInputs + cbInput);
+	}
 
-        ++retval;
-        --nInputs;
-        pInputs = (LPINPUT)((UCHAR *)pInputs + cbInput);
-    }
-
-    return retval;
+	return retval;
 }
 
 
@@ -590,12 +617,13 @@ _FX UINT Gui_SendInput(ULONG nInputs, LPINPUT pInputs, ULONG cbInput)
 //---------------------------------------------------------------------------
 
 
-_FX HDESK Gui_OpenInputDesktop(
-    DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess)
+_FX HDESK Gui_OpenInputDesktop(DWORD dwFlags, BOOL fInherit, ACCESS_MASK dwDesiredAccess)
 {
-    if (! Gui_DummyInputDesktopHandle)
-        Gui_DummyInputDesktopHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
-    return Gui_DummyInputDesktopHandle;
+	if (!Gui_DummyInputDesktopHandle)
+	{
+		Gui_DummyInputDesktopHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
+	}
+	return Gui_DummyInputDesktopHandle;
 }
 
 
@@ -604,25 +632,25 @@ _FX HDESK Gui_OpenInputDesktop(
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Gui_GetUserObjectInformationW(
-    HANDLE hObj, int nIndex,
-    void *pvInfo, DWORD nLength, DWORD *lpnLengthNeeded)
+_FX BOOL Gui_GetUserObjectInformationW(HANDLE hObj, int nIndex, void* pvInfo, DWORD nLength, DWORD* lpnLengthNeeded)
 {
-    if (Gui_DummyInputDesktopHandle && hObj == Gui_DummyInputDesktopHandle && nIndex == UOI_NAME) {
+	if (Gui_DummyInputDesktopHandle && hObj == Gui_DummyInputDesktopHandle && nIndex == UOI_NAME)
+	{
+		ULONG Default_len = (7 + 1) * sizeof(WCHAR);
+		if (lpnLengthNeeded)
+		{
+			*lpnLengthNeeded = Default_len;
+		}
+		if (pvInfo && nLength >= Default_len)
+		{
+			memcpy(pvInfo, L"Default", Default_len);
+			return TRUE;
+		}
+		SetLastError(ERROR_INSUFFICIENT_BUFFER);
+		return FALSE;
+	}
 
-        ULONG Default_len = (7 + 1) * sizeof(WCHAR);
-        if (lpnLengthNeeded)
-            *lpnLengthNeeded = Default_len;
-        if (pvInfo && nLength >= Default_len) {
-            memcpy(pvInfo, L"Default", Default_len);
-            return TRUE;
-        }
-        SetLastError(ERROR_INSUFFICIENT_BUFFER);
-        return FALSE;
-    }
-
-    return __sys_GetUserObjectInformationW(
-                        hObj, nIndex, pvInfo, nLength, lpnLengthNeeded);
+	return __sys_GetUserObjectInformationW(hObj, nIndex, pvInfo, nLength, lpnLengthNeeded);
 }
 
 
@@ -650,13 +678,14 @@ _FX BOOL Gui_GetUserObjectInformationW(
 
 _FX BOOL Gui_OpenClipboard(HWND hwnd)
 {
-    BOOL ok = __sys_OpenClipboard(hwnd);
-    if (ok) {
-        Gui_OpenClipboard_hwnd = hwnd;
-        Gui_OpenClipboard_tid = GetCurrentThreadId();
-        Gui_OpenClipboard_seq = __sys_GetClipboardSequenceNumber();
-    }
-    return ok;
+	BOOL ok = __sys_OpenClipboard(hwnd);
+	if (ok)
+	{
+		Gui_OpenClipboard_hwnd = hwnd;
+		Gui_OpenClipboard_tid  = GetCurrentThreadId();
+		Gui_OpenClipboard_seq  = __sys_GetClipboardSequenceNumber();
+	}
+	return ok;
 }
 
 
@@ -667,65 +696,71 @@ _FX BOOL Gui_OpenClipboard(HWND hwnd)
 
 _FX BOOL Gui_CloseClipboard(void)
 {
-    //
-    // this request is used on Windows Vista and later where we need to
-    // adjust the internal integrity level numbers stored in the clipboard.
-    // see CloseClipboardSlave in core/svc/GuiServer.cpp,
-    // and also see core/drv/gui.c
-    //
-    // there is a potential problem if there is a clipboard viewer program
-    // (registered via SetClipboardViewer or AddClipboardFormatListener),
-    // in which case we have a race condition:  do we get to fix the
-    // clipboard before the viewer gets the clipboard notification?
-    // SbieSvc is an "above normal" priority process, so we rely on that.
-    //
+	//
+	// this request is used on Windows Vista and later where we need to
+	// adjust the internal integrity level numbers stored in the clipboard.
+	// see CloseClipboardSlave in core/svc/GuiServer.cpp,
+	// and also see core/drv/gui.c
+	//
+	// there is a potential problem if there is a clipboard viewer program
+	// (registered via SetClipboardViewer or AddClipboardFormatListener),
+	// in which case we have a race condition:  do we get to fix the
+	// clipboard before the viewer gets the clipboard notification?
+	// SbieSvc is an "above normal" priority process, so we rely on that.
+	//
 
-    BOOL ok = __sys_CloseClipboard();
-    ULONG err = GetLastError();
+	BOOL ok   = __sys_CloseClipboard();
+	ULONG err = GetLastError();
 
-    if (ok && Dll_OsBuild >= 6000) {
+	if (ok && Dll_OsBuild >= 6000)
+	{
+		ULONG new_seq = __sys_GetClipboardSequenceNumber();
+		if (new_seq != Gui_OpenClipboard_seq)
+		{
+			ULONG req = GUI_CLOSE_CLIPBOARD;
 
-        ULONG new_seq = __sys_GetClipboardSequenceNumber();
-        if (new_seq != Gui_OpenClipboard_seq) {
+			// While calling the Service we want to suppress
+			// any informational msg boxes that the application
+			// my through up. This is because we're bringing
+			// forward the rendering of "Delay rendered"
+			// clipboard types (e.g. the Enhanced Metafile type
+			// from Office applications).
+			// This causes some issues because sometimes
+			// the application (e.g. Excel) will pop up message
+			// box where it normally wouldn't do so. There
+			// is also no option to turn off that informational
+			// message.
+			THREAD_DATA* TlsData = Dll_GetTlsData(NULL);
+			ULONG* rpl           = NULL;
 
-            ULONG req = GUI_CLOSE_CLIPBOARD;
+			if (TlsData)
+			{
+				TlsData->gui_should_suppress_msgbox = TRUE;
+			}
 
-            // While calling the Service we want to suppress
-            // any informational msg boxes that the application
-            // my through up. This is because we're bringing
-            // forward the rendering of "Delay rendered"
-            // clipboard types (e.g. the Enhanced Metafile type
-            // from Office applications).
-            // This causes some issues because sometimes
-            // the application (e.g. Excel) will pop up message
-            // box where it normally wouldn't do so. There
-            // is also no option to turn off that informational
-            // message. 
-            THREAD_DATA *TlsData = Dll_GetTlsData(NULL);
-            ULONG * rpl = NULL;
+			rpl = Gui_CallProxyEx(&req, sizeof(ULONG), sizeof(ULONG), TRUE);
+			if (TlsData)
+			{
+				TlsData->gui_should_suppress_msgbox = FALSE;
+			}
 
-            if (TlsData)
-                TlsData->gui_should_suppress_msgbox = TRUE;
+			if (rpl)
+			{
+				Dll_Free(rpl);
+			}
 
-            rpl = Gui_CallProxyEx(
-                &req, sizeof(ULONG), sizeof(ULONG), TRUE);
-            if (TlsData)
-                TlsData->gui_should_suppress_msgbox = FALSE;
+			Gui_OpenClipboard_seq = new_seq;
+		}
+	}
 
-            if (rpl)
-                Dll_Free(rpl);
+	if (ok)
+	{
+		Gui_OpenClipboard_hwnd = NULL;
+		Gui_OpenClipboard_tid  = 0;
+	}
 
-            Gui_OpenClipboard_seq = new_seq;
-        }
-    }
-
-    if (ok) {
-        Gui_OpenClipboard_hwnd = NULL;
-        Gui_OpenClipboard_tid  = 0;
-    }
-
-    SetLastError(err);
-    return ok;
+	SetLastError(err);
+	return ok;
 }
 
 
@@ -736,192 +771,206 @@ _FX BOOL Gui_CloseClipboard(void)
 
 _FX HANDLE Gui_GetClipboardData(UINT uFormat)
 {
-    static HANDLE *_hGlobalClipData = NULL;
-    HANDLE hGlobalRet;
-    HWND OpenClipboardHwnd;
-    GUI_GET_CLIPBOARD_DATA_REQ req;
-    GUI_GET_CLIPBOARD_DATA_RPL *rpl;
-    ULONG error;
-    ULONG retry;
+	static HANDLE* _hGlobalClipData = NULL;
+	HANDLE hGlobalRet;
+	HWND OpenClipboardHwnd;
+	GUI_GET_CLIPBOARD_DATA_REQ req;
+	GUI_GET_CLIPBOARD_DATA_RPL* rpl;
+	ULONG error;
+	ULONG retry;
 
-    //
-    // first we try the system GetClipboardData.  this always fails with
-    // ERROR_ACCESS_DENIED if the process is running in a job that has a
-    // UIRestriction which prevents clipboard access.  it fails with
-    // ERROR_INVALID_HANDLE if the job has UIRestriction which prevents
-    // access to handles outside the job, and the clipboard data belongs
-    // to a process outside the job
-    //
-    // in either case, we go to SbieSvc GUI Proxy Server to ask for the
-    // clipboard data
-    //
+	//
+	// first we try the system GetClipboardData.  this always fails with
+	// ERROR_ACCESS_DENIED if the process is running in a job that has a
+	// UIRestriction which prevents clipboard access.  it fails with
+	// ERROR_INVALID_HANDLE if the job has UIRestriction which prevents
+	// access to handles outside the job, and the clipboard data belongs
+	// to a process outside the job
+	//
+	// in either case, we go to SbieSvc GUI Proxy Server to ask for the
+	// clipboard data
+	//
 
-    hGlobalRet = __sys_GetClipboardData(uFormat);
-    if (hGlobalRet)
-        return hGlobalRet;
-    error = GetLastError();
-    if (error != ERROR_ACCESS_DENIED && error != ERROR_INVALID_HANDLE)
-        return hGlobalRet;
+	hGlobalRet = __sys_GetClipboardData(uFormat);
+	if (hGlobalRet)
+	{
+		return hGlobalRet;
+	}
+	error = GetLastError();
+	if (error != ERROR_ACCESS_DENIED && error != ERROR_INVALID_HANDLE)
+	{
+		return hGlobalRet;
+	}
 
-    //
-    // we have to close the clipboard before another process can access it
-    // (the other process being the SbieSvc GuiProxy process)
-    //
-    // if we can't close the clipboard (which means the thread has not
-    // actually opened the clipboard), then abort
-    //
+	//
+	// we have to close the clipboard before another process can access it
+	// (the other process being the SbieSvc GuiProxy process)
+	//
+	// if we can't close the clipboard (which means the thread has not
+	// actually opened the clipboard), then abort
+	//
 
-    OpenClipboardHwnd = __sys_GetOpenClipboardWindow();
+	OpenClipboardHwnd = __sys_GetOpenClipboardWindow();
 
-    if (OpenClipboardHwnd != Gui_OpenClipboard_hwnd ||
-                    GetCurrentThreadId() != Gui_OpenClipboard_tid) {
-        SetLastError(ERROR_ACCESS_DENIED);
-        return NULL;
-    }
+	if (OpenClipboardHwnd != Gui_OpenClipboard_hwnd || GetCurrentThreadId() != Gui_OpenClipboard_tid)
+	{
+		SetLastError(ERROR_ACCESS_DENIED);
+		return NULL;
+	}
 
-    if (! __sys_CloseClipboard()) {
-        SetLastError(ERROR_ACCESS_DENIED);
-        return NULL;
-    }
+	if (!__sys_CloseClipboard())
+	{
+		SetLastError(ERROR_ACCESS_DENIED);
+		return NULL;
+	}
 
-    //
-    // ask SbieSvc to call GetClipboardData for us
-    //
+	//
+	// ask SbieSvc to call GetClipboardData for us
+	//
 
-    req.msgid = GUI_GET_CLIPBOARD_DATA;
-    req.format = uFormat;
-    rpl = Gui_CallProxyEx(&req, sizeof(req), sizeof(*rpl), TRUE);
-    if (! rpl)
-        error = GetLastError();
-    else {
+	req.msgid  = GUI_GET_CLIPBOARD_DATA;
+	req.format = uFormat;
+	rpl        = Gui_CallProxyEx(&req, sizeof(req), sizeof(*rpl), TRUE);
+	if (!rpl)
+	{
+		error = GetLastError();
+	}
+	else
+	{
+		if (!rpl->result)
+		{
+			error = rpl->error;
+		}
+		else
+		{
+			//
+			// if the request was successful, we were given a handle to a
+			// section which contains the data from the clipboard, but we
+			// have to convert this into an HGLOBAL
+			//
 
-        if (! rpl->result)
-            error = rpl->error;
-        else {
+			void* src = MapViewOfFileEx((HANDLE)(ULONG_PTR)rpl->section_handle, FILE_MAP_READ, 0, 0, 0, NULL);
+			if (!src)
+			{
+				error = GetLastError();
+			}
+			else
+			{
+				HGLOBAL hGlobal = GlobalAlloc(GMEM_FIXED, (ULONG_PTR)rpl->section_length);
+				if (hGlobal)
+				{
+					void* dst = GlobalLock(hGlobal);
+					if (!dst)
+					{
+						error = GetLastError();
+					}
+					else
+					{
+						memcpy(dst, src, (ULONG_PTR)rpl->section_length);
 
-            //
-            // if the request was successful, we were given a handle to a
-            // section which contains the data from the clipboard, but we
-            // have to convert this into an HGLOBAL
-            //
+						if (uFormat == CF_BITMAP) // || uFormat == CF_DIB)
+						{
+							Gui_GetClipboardData_BMP(dst, uFormat);
+						}
 
-            void *src = MapViewOfFileEx(
-                                (HANDLE)(ULONG_PTR)rpl->section_handle,
-                                FILE_MAP_READ, 0, 0, 0, NULL);
-            if (! src)
-                error = GetLastError();
-            else {
+						if (uFormat == CF_ENHMETAFILE)
+						{
+							Gui_GetClipboardData_EnhMF(dst, (ULONG)(ULONG_PTR)rpl->section_length, uFormat);
+						}
 
-                HGLOBAL hGlobal =
-                    GlobalAlloc(GMEM_FIXED, (ULONG_PTR)rpl->section_length);
-                if (hGlobal) {
+						if (uFormat == CF_METAFILEPICT)
+						{
+							Gui_GetClipboardData_MF(dst, (ULONG)(ULONG_PTR)rpl->section_length, uFormat);
+						}
 
-                    void *dst = GlobalLock(hGlobal);
-                    if (! dst)
-                        error = GetLastError();
-                    else {
+						GlobalUnlock(hGlobal);
 
-                        memcpy(dst, src, (ULONG_PTR)rpl->section_length);
+						hGlobalRet = hGlobal;
+						error      = ERROR_SUCCESS;
+					}
+				}
 
-                        if (uFormat == CF_BITMAP)// || uFormat == CF_DIB)
-                            Gui_GetClipboardData_BMP(dst, uFormat);
+				UnmapViewOfFile(src);
+			}
 
-                        if (uFormat == CF_ENHMETAFILE) {
-                            Gui_GetClipboardData_EnhMF(
-                                dst, (ULONG)(ULONG_PTR)rpl->section_length,
-                                uFormat);
-                        }
+			CloseHandle((HANDLE)(ULONG_PTR)rpl->section_handle);
+		}
 
-                        if (uFormat == CF_METAFILEPICT) {
-                            Gui_GetClipboardData_MF(
-                              dst, (ULONG)(ULONG_PTR)rpl->section_length,
-                              uFormat);
-                        }
+		Dll_Free(rpl);
+	}
 
-                        GlobalUnlock(hGlobal);
+	//
+	// applications aren't supposed to free clipboard HGLOBALs, so we have
+	// to free the HGLOBAL we returned last time, and keep the HGLOBAL that
+	// we return now, to free it on the next call to this function
+	//
 
-                        hGlobalRet = hGlobal;
-                        error = ERROR_SUCCESS;
-                    }
-                }
+	if (hGlobalRet)
+	{
+		if (_hGlobalClipData)
+		{
+			// reuse the previous returned data if it is the same
+			BOOL bReuse     = FALSE;
+			SIZE_T nSizeOld = GlobalSize(_hGlobalClipData);
+			SIZE_T nSizeNew = GlobalSize(hGlobalRet);
 
-                UnmapViewOfFile(src);
-            }
+			if (nSizeOld && nSizeOld == nSizeNew)
+			{
+				if (memcmp(hGlobalRet, _hGlobalClipData, nSizeOld) == 0)
+				{
+					bReuse = TRUE;
+				}
+			}
 
-            CloseHandle((HANDLE)(ULONG_PTR)rpl->section_handle);
-        }
+			if (bReuse)
+			{
+				GlobalFree(hGlobalRet);
+				hGlobalRet = _hGlobalClipData;
+			}
+			else
+			{
+				GlobalFree(_hGlobalClipData);
+			}
+		}
+		_hGlobalClipData = hGlobalRet;
 
-        Dll_Free(rpl);
-    }
+		//
+		// if this is a bitmap paste, Gui_GetClipboardData_BMP should have
+		// stored the HBITMAP handle at the top of the global data buffer
+		//
 
-    //
-    // applications aren't supposed to free clipboard HGLOBALs, so we have
-    // to free the HGLOBAL we returned last time, and keep the HGLOBAL that
-    // we return now, to free it on the next call to this function
-    //
+		if (uFormat == CF_BITMAP)
+		{ // || uFormat == CF_DIB) {
 
-    if (hGlobalRet) {
+			void* dst  = GlobalLock(_hGlobalClipData);
+			hGlobalRet = *(HANDLE*)dst;
+			GlobalUnlock(_hGlobalClipData);
+		}
+		else if (uFormat == CF_ENHMETAFILE)
+		{
+			void* dst  = GlobalLock(_hGlobalClipData);
+			hGlobalRet = *(HANDLE*)dst;
+			GlobalUnlock(_hGlobalClipData);
+		}
+	}
 
-        if (_hGlobalClipData)
-        {   
-            // reuse the previous returned data if it is the same
-            BOOL    bReuse = FALSE;
-            SIZE_T  nSizeOld = GlobalSize(_hGlobalClipData);
-            SIZE_T  nSizeNew = GlobalSize(hGlobalRet);
-            
-            if (nSizeOld && nSizeOld == nSizeNew)
-            {
-                if (memcmp(hGlobalRet, _hGlobalClipData, nSizeOld) == 0)
-                {
-                    bReuse = TRUE;
-                }
-            }
+	//
+	// grab ownership of the clipboard again before returning
+	//
 
-            if (bReuse)
-            {
-                GlobalFree(hGlobalRet);
-                hGlobalRet = _hGlobalClipData;
-            }
-            else
-            {
-                GlobalFree(_hGlobalClipData);
-            }
-        }
-        _hGlobalClipData = hGlobalRet;
+	for (retry = 0; retry < 5000; ++retry)
+	{
+		BOOL ok = Gui_OpenClipboard(OpenClipboardHwnd);
+		if (ok)
+		{
+			break;
+		}
+		Sleep(1);
+	}
 
-        //
-        // if this is a bitmap paste, Gui_GetClipboardData_BMP should have
-        // stored the HBITMAP handle at the top of the global data buffer
-        //
+	SetLastError(error);
 
-        if (uFormat == CF_BITMAP) { // || uFormat == CF_DIB) {
-
-            void *dst = GlobalLock(_hGlobalClipData);
-            hGlobalRet = *(HANDLE *)dst;
-            GlobalUnlock(_hGlobalClipData);
-        }
-        else if (uFormat == CF_ENHMETAFILE)
-        {
-            void *dst = GlobalLock(_hGlobalClipData);
-            hGlobalRet = *(HANDLE *)dst;
-            GlobalUnlock(_hGlobalClipData);
-        }
-    }
-
-    //
-    // grab ownership of the clipboard again before returning
-    //
-
-    for (retry = 0; retry < 5000; ++retry) {
-        BOOL ok = Gui_OpenClipboard(OpenClipboardHwnd);
-        if (ok)
-            break;
-        Sleep(1);
-    }
-
-    SetLastError(error);
-
-    return hGlobalRet;
+	return hGlobalRet;
 }
 
 
@@ -930,53 +979,56 @@ _FX HANDLE Gui_GetClipboardData(UINT uFormat)
 //---------------------------------------------------------------------------
 
 
-_FX void Gui_GetClipboardData_BMP(void *buf, ULONG fmt)
+_FX void Gui_GetClipboardData_BMP(void* buf, ULONG fmt)
 {
-    //
-    // GetClipboardData(CF_BITMAP) returns an HBITMAP that is valid in the
-    // context of SbieSvc.  GuiServer::GetClipboardBitmapSlave already sent
-    // us the bitmap data in the reply buffer, we just need to turn it into
-    // a local HBITMAP handle
-    //
+	//
+	// GetClipboardData(CF_BITMAP) returns an HBITMAP that is valid in the
+	// context of SbieSvc.  GuiServer::GetClipboardBitmapSlave already sent
+	// us the bitmap data in the reply buffer, we just need to turn it into
+	// a local HBITMAP handle
+	//
 
-    P_CreateCompatibleBitmap    CreateCompatibleBitmap = NULL;
-    P_SetDIBits                 SetDIBits = NULL;
-    P_GetDC                     GetDC = NULL;
-    P_ReleaseDC                 ReleaseDC = NULL;
+	P_CreateCompatibleBitmap CreateCompatibleBitmap = NULL;
+	P_SetDIBits SetDIBits                           = NULL;
+	P_GetDC GetDC                                   = NULL;
+	P_ReleaseDC ReleaseDC                           = NULL;
 
-    HBITMAP hBitmap = NULL;
+	HBITMAP hBitmap = NULL;
 
-    if (fmt != CF_BITMAP)
-        SbieApi_Log(2205, L"Clipboard Bitmap (fmt %04X)", fmt);
+	if (fmt != CF_BITMAP)
+	{
+		SbieApi_Log(2205, L"Clipboard Bitmap (fmt %04X)", fmt);
+	}
 
-    else {
-        BITMAPINFO *pBitmapInfo = (BITMAPINFO *)buf;
+	else
+	{
+		BITMAPINFO* pBitmapInfo = (BITMAPINFO*)buf;
 
-        CreateCompatibleBitmap  = Ldr_GetProcAddrNew(DllName_gdi32, L"CreateCompatibleBitmap", "CreateCompatibleBitmap");
-        SetDIBits               = Ldr_GetProcAddrNew(DllName_gdi32, L"SetDIBits", "SetDIBits");
-        GetDC                   = Ldr_GetProcAddrNew(DllName_user32, L"GetDC", "GetDC");
-        ReleaseDC               = Ldr_GetProcAddrNew(DllName_user32, L"ReleaseDC", "ReleaseDC");
+		CreateCompatibleBitmap = Ldr_GetProcAddrNew(DllName_gdi32, L"CreateCompatibleBitmap", "CreateCompatibleBitmap");
+		SetDIBits              = Ldr_GetProcAddrNew(DllName_gdi32, L"SetDIBits", "SetDIBits");
+		GetDC                  = Ldr_GetProcAddrNew(DllName_user32, L"GetDC", "GetDC");
+		ReleaseDC              = Ldr_GetProcAddrNew(DllName_user32, L"ReleaseDC", "ReleaseDC");
 
-        if (CreateCompatibleBitmap && GetDC && SetDIBits && ReleaseDC)
-        {
-            HDC hdc = GetDC(NULL);
+		if (CreateCompatibleBitmap && GetDC && SetDIBits && ReleaseDC)
+		{
+			HDC hdc = GetDC(NULL);
 
-            if(hdc)
-            {
-                hBitmap = CreateCompatibleBitmap(hdc, pBitmapInfo->bmiHeader.biWidth, pBitmapInfo->bmiHeader.biHeight);
+			if (hdc)
+			{
+				hBitmap = CreateCompatibleBitmap(hdc, pBitmapInfo->bmiHeader.biWidth, pBitmapInfo->bmiHeader.biHeight);
 
-                if (hBitmap)
-                {
-                    SetDIBits(hdc, hBitmap, 0, pBitmapInfo->bmiHeader.biHeight, (UCHAR *)buf + 128, pBitmapInfo, DIB_RGB_COLORS);
-                }
+				if (hBitmap)
+				{
+					SetDIBits(hdc, hBitmap, 0, pBitmapInfo->bmiHeader.biHeight, (UCHAR*)buf + 128, pBitmapInfo, DIB_RGB_COLORS);
+				}
 
-                ReleaseDC(NULL, hdc);
-            }
-        }
-    }
-    
+				ReleaseDC(NULL, hdc);
+			}
+		}
+	}
 
-    *(HANDLE *)buf = hBitmap;
+
+	*(HANDLE*)buf = hBitmap;
 }
 
 
@@ -985,25 +1037,28 @@ _FX void Gui_GetClipboardData_BMP(void *buf, ULONG fmt)
 //---------------------------------------------------------------------------
 
 
-_FX void Gui_GetClipboardData_EnhMF(void *buf, ULONG sz, ULONG fmt)
+_FX void Gui_GetClipboardData_EnhMF(void* buf, ULONG sz, ULONG fmt)
 {
-    //
-    // GetClipboardData(CF_ENHMETAFILE) returns an HENHMETAFILE object.
-    //
-    P_SetEnhMetaFileBits SetEnhMetaFileBits;
-    HENHMETAFILE hEnhMetaFile;
+	//
+	// GetClipboardData(CF_ENHMETAFILE) returns an HENHMETAFILE object.
+	//
+	P_SetEnhMetaFileBits SetEnhMetaFileBits;
+	HENHMETAFILE hEnhMetaFile;
 
-    if (fmt != CF_ENHMETAFILE) {
-        SbieApi_Log(2205, L"Clipboard Enhanced MetaFile (fmt %04X sz %d)", fmt, sz);
-        return;
-    }
+	if (fmt != CF_ENHMETAFILE)
+	{
+		SbieApi_Log(2205, L"Clipboard Enhanced MetaFile (fmt %04X sz %d)", fmt, sz);
+		return;
+	}
 
-    SetEnhMetaFileBits = Ldr_GetProcAddrNew(DllName_gdi32, L"SetEnhMetaFileBits","SetEnhMetaFileBits");
-    if (! SetEnhMetaFileBits)
-        return;
+	SetEnhMetaFileBits = Ldr_GetProcAddrNew(DllName_gdi32, L"SetEnhMetaFileBits", "SetEnhMetaFileBits");
+	if (!SetEnhMetaFileBits)
+	{
+		return;
+	}
 
-    hEnhMetaFile = SetEnhMetaFileBits(sz, buf);
-    *(HANDLE*)buf = hEnhMetaFile;
+	hEnhMetaFile  = SetEnhMetaFileBits(sz, buf);
+	*(HANDLE*)buf = hEnhMetaFile;
 }
 
 
@@ -1012,73 +1067,74 @@ _FX void Gui_GetClipboardData_EnhMF(void *buf, ULONG sz, ULONG fmt)
 //---------------------------------------------------------------------------
 
 
-_FX void Gui_GetClipboardData_MF(void *buf, ULONG sz, ULONG fmt)
+_FX void Gui_GetClipboardData_MF(void* buf, ULONG sz, ULONG fmt)
 {
-    GUI_GET_CLIPBOARD_DATA_REQ req;
-    GUI_GET_CLIPBOARD_DATA_RPL *rpl;
-    P_SetMetaFileBitsEx SetMetaFileBitsEx;
+	GUI_GET_CLIPBOARD_DATA_REQ req;
+	GUI_GET_CLIPBOARD_DATA_RPL* rpl;
+	P_SetMetaFileBitsEx SetMetaFileBitsEx;
 
-    //
-    // GetClipboardData(CF_METAFILEPICT) returns a structure which contains
-    // an HMETAFILE handle that is valid in the context of SbieSvc, so we
-    // make a secondary call to SbieSvc to get the data bytes so that we can
-    // create a local HMETAFILE handle
-    //
+	//
+	// GetClipboardData(CF_METAFILEPICT) returns a structure which contains
+	// an HMETAFILE handle that is valid in the context of SbieSvc, so we
+	// make a secondary call to SbieSvc to get the data bytes so that we can
+	// create a local HMETAFILE handle
+	//
 
-    if ((fmt != CF_METAFILEPICT) || (sz != sizeof(METAFILEPICT))) {
-        SbieApi_Log(2205, L"Clipboard MetaFile (fmt %04X sz %d)", fmt, sz);
-        return;
-    }
+	if ((fmt != CF_METAFILEPICT) || (sz != sizeof(METAFILEPICT)))
+	{
+		SbieApi_Log(2205, L"Clipboard MetaFile (fmt %04X sz %d)", fmt, sz);
+		return;
+	}
 
-    SetMetaFileBitsEx = Ldr_GetProcAddrNew(DllName_gdi32, L"SetMetaFileBitsEx","SetMetaFileBitsEx");
-    if (! SetMetaFileBitsEx)
-        return;
+	SetMetaFileBitsEx = Ldr_GetProcAddrNew(DllName_gdi32, L"SetMetaFileBitsEx", "SetMetaFileBitsEx");
+	if (!SetMetaFileBitsEx)
+	{
+		return;
+	}
 
-    req.msgid = GUI_GET_CLIPBOARD_METAFILE;
-    req.format = fmt;
-    rpl = Gui_CallProxyEx(&req, sizeof(req), sizeof(*rpl), TRUE);
-    if (! rpl)
-        return;
+	req.msgid  = GUI_GET_CLIPBOARD_METAFILE;
+	req.format = fmt;
+	rpl        = Gui_CallProxyEx(&req, sizeof(req), sizeof(*rpl), TRUE);
+	if (!rpl)
+	{
+		return;
+	}
 
-    if (rpl->result) {
+	if (rpl->result)
+	{
+		//
+		// if the request was successful, we were given a handle to a
+		// section which contains the data from the clipboard, but we
+		// have to convert this into an HGLOBAL
+		//
 
-        //
-        // if the request was successful, we were given a handle to a
-        // section which contains the data from the clipboard, but we
-        // have to convert this into an HGLOBAL
-        //
+		void* src = MapViewOfFileEx((HANDLE)(ULONG_PTR)rpl->section_handle, FILE_MAP_READ, 0, 0, 0, NULL);
+		if (src)
+		{
+			HGLOBAL hGlobal = GlobalAlloc(GMEM_FIXED, (ULONG_PTR)rpl->section_length);
+			if (hGlobal)
+			{
+				void* dst = GlobalLock(hGlobal);
+				if (dst)
+				{
+					HMETAFILE hmf = SetMetaFileBitsEx((ULONG)(ULONG_PTR)rpl->section_length, src);
 
-        void *src = MapViewOfFileEx(
-                            (HANDLE)(ULONG_PTR)rpl->section_handle,
-                            FILE_MAP_READ, 0, 0, 0, NULL);
-        if (src) {
+					if (hmf)
+					{
+						((METAFILEPICT*)buf)->hMF = hmf;
+					}
 
-            HGLOBAL hGlobal =
-                GlobalAlloc(GMEM_FIXED, (ULONG_PTR)rpl->section_length);
-            if (hGlobal) {
+					GlobalUnlock(hGlobal);
+				}
+			}
 
-                void *dst = GlobalLock(hGlobal);
-                if (dst) {
+			UnmapViewOfFile(src);
+		}
 
-                    HMETAFILE hmf = SetMetaFileBitsEx(
-                        (ULONG)(ULONG_PTR)rpl->section_length, src);
+		CloseHandle((HANDLE)(ULONG_PTR)rpl->section_handle);
+	}
 
-                    if (hmf) {
-
-                        ((METAFILEPICT *)buf)->hMF = hmf;
-                    }
-
-                    GlobalUnlock(hGlobal);
-                }
-            }
-
-            UnmapViewOfFile(src);
-        }
-
-        CloseHandle((HANDLE)(ULONG_PTR)rpl->section_handle);
-    }
-
-    Dll_Free(rpl);
+	Dll_Free(rpl);
 }
 
 
@@ -1087,52 +1143,63 @@ _FX void Gui_GetClipboardData_MF(void *buf, ULONG sz, ULONG fmt)
 //---------------------------------------------------------------------------
 
 
-_FX LONG Gui_ChangeDisplaySettingsExA(
-    void *lpszDeviceName, void *lpDevMode, HWND hwnd,
-    DWORD dwflags, void *lParam)
+_FX LONG Gui_ChangeDisplaySettingsExA(void* lpszDeviceName, void* lpDevMode, HWND hwnd, DWORD dwflags, void* lParam)
 {
-    GUI_CHANGE_DISPLAY_SETTINGS_REQ req;
-    GUI_CHANGE_DISPLAY_SETTINGS_RPL *rpl;
+	GUI_CHANGE_DISPLAY_SETTINGS_REQ req;
+	GUI_CHANGE_DISPLAY_SETTINGS_RPL* rpl;
 
-    if ((dwflags & ~(CDS_UNKNOWNFLAG | CDS_RESET | CDS_FULLSCREEN | CDS_TEST)) || lParam || hwnd) {
-        SbieApi_Log(2205, L"ChangeDisplaySettingsExA %08X", dwflags);
-        SetLastError(ERROR_ACCESS_DENIED);
-        return DISP_CHANGE_FAILED;
-    }
+	if ((dwflags & ~(CDS_UNKNOWNFLAG | CDS_RESET | CDS_FULLSCREEN | CDS_TEST)) || lParam || hwnd)
+	{
+		SbieApi_Log(2205, L"ChangeDisplaySettingsExA %08X", dwflags);
+		SetLastError(ERROR_ACCESS_DENIED);
+		return DISP_CHANGE_FAILED;
+	}
 
-    req.msgid = GUI_CHANGE_DISPLAY_SETTINGS;
-    req.flags = dwflags;
-    req.unicode = FALSE;
+	req.msgid   = GUI_CHANGE_DISPLAY_SETTINGS;
+	req.flags   = dwflags;
+	req.unicode = FALSE;
 
-    if (lpszDeviceName) {
-        UCHAR *name = (UCHAR *)req.devname;
-        ULONG len = strlen(lpszDeviceName);
-        if (len > 62)
-            len = 62;
-        memcpy(name, lpszDeviceName, len);
-        name[len] = L'\0';
-        req.have_devname = TRUE;
-    } else {
-        memzero(req.devname, sizeof(req.devname));
-        req.have_devname = FALSE;
-    }
+	if (lpszDeviceName)
+	{
+		UCHAR* name = (UCHAR*)req.devname;
+		ULONG len   = strlen(lpszDeviceName);
+		if (len > 62)
+		{
+			len = 62;
+		}
+		memcpy(name, lpszDeviceName, len);
+		name[len]        = L'\0';
+		req.have_devname = TRUE;
+	}
+	else
+	{
+		memzero(req.devname, sizeof(req.devname));
+		req.have_devname = FALSE;
+	}
 
-    if (lpDevMode) {
-        memcpy(&req.devmode, lpDevMode, sizeof(DEVMODEA));
-        req.have_devmode = TRUE;
-    } else
-        req.have_devmode = FALSE;
+	if (lpDevMode)
+	{
+		memcpy(&req.devmode, lpDevMode, sizeof(DEVMODEA));
+		req.have_devmode = TRUE;
+	}
+	else
+	{
+		req.have_devmode = FALSE;
+	}
 
-    rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
-    if (! rpl)
-        return DISP_CHANGE_FAILED;
-    else {
-        ULONG error = rpl->error;
-        ULONG retval = rpl->retval;
-        Dll_Free(rpl);
-        SetLastError(error);
-        return retval;
-    }
+	rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
+	if (!rpl)
+	{
+		return DISP_CHANGE_FAILED;
+	}
+	else
+	{
+		ULONG error  = rpl->error;
+		ULONG retval = rpl->retval;
+		Dll_Free(rpl);
+		SetLastError(error);
+		return retval;
+	}
 }
 
 
@@ -1141,52 +1208,63 @@ _FX LONG Gui_ChangeDisplaySettingsExA(
 //---------------------------------------------------------------------------
 
 
-_FX LONG Gui_ChangeDisplaySettingsExW(
-    void *lpszDeviceName, void *lpDevMode, HWND hwnd,
-    DWORD dwflags, void *lParam)
+_FX LONG Gui_ChangeDisplaySettingsExW(void* lpszDeviceName, void* lpDevMode, HWND hwnd, DWORD dwflags, void* lParam)
 {
-    GUI_CHANGE_DISPLAY_SETTINGS_REQ req;
-    GUI_CHANGE_DISPLAY_SETTINGS_RPL *rpl;
+	GUI_CHANGE_DISPLAY_SETTINGS_REQ req;
+	GUI_CHANGE_DISPLAY_SETTINGS_RPL* rpl;
 
-    if ((dwflags & ~(CDS_UNKNOWNFLAG | CDS_RESET | CDS_FULLSCREEN | CDS_TEST)) || lParam || hwnd) {
-        SbieApi_Log(2205, L"ChangeDisplaySettingsExW %08X", dwflags);
-        SetLastError(ERROR_ACCESS_DENIED);
-        return DISP_CHANGE_FAILED;
-    }
+	if ((dwflags & ~(CDS_UNKNOWNFLAG | CDS_RESET | CDS_FULLSCREEN | CDS_TEST)) || lParam || hwnd)
+	{
+		SbieApi_Log(2205, L"ChangeDisplaySettingsExW %08X", dwflags);
+		SetLastError(ERROR_ACCESS_DENIED);
+		return DISP_CHANGE_FAILED;
+	}
 
-    req.msgid = GUI_CHANGE_DISPLAY_SETTINGS;
-    req.flags = dwflags;
-    req.unicode = TRUE;
+	req.msgid   = GUI_CHANGE_DISPLAY_SETTINGS;
+	req.flags   = dwflags;
+	req.unicode = TRUE;
 
-    if (lpszDeviceName) {
-        WCHAR *name = (WCHAR *)req.devname;
-        ULONG len = wcslen(lpszDeviceName);
-        if (len > 62)
-            len = 62;
-        wmemcpy(name, lpszDeviceName, len);
-        name[len] = L'\0';
-        req.have_devname = TRUE;
-    } else {
-        memzero(req.devname, sizeof(req.devname));
-        req.have_devname = FALSE;
-    }
+	if (lpszDeviceName)
+	{
+		WCHAR* name = (WCHAR*)req.devname;
+		ULONG len   = wcslen(lpszDeviceName);
+		if (len > 62)
+		{
+			len = 62;
+		}
+		wmemcpy(name, lpszDeviceName, len);
+		name[len]        = L'\0';
+		req.have_devname = TRUE;
+	}
+	else
+	{
+		memzero(req.devname, sizeof(req.devname));
+		req.have_devname = FALSE;
+	}
 
-    if (lpDevMode) {
-        memcpy(&req.devmode, lpDevMode, sizeof(DEVMODEW));
-        req.have_devmode = TRUE;
-    } else
-        req.have_devmode = FALSE;
+	if (lpDevMode)
+	{
+		memcpy(&req.devmode, lpDevMode, sizeof(DEVMODEW));
+		req.have_devmode = TRUE;
+	}
+	else
+	{
+		req.have_devmode = FALSE;
+	}
 
-    rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
-    if (! rpl)
-        return DISP_CHANGE_FAILED;
-    else {
-        ULONG error = rpl->error;
-        ULONG retval = rpl->retval;
-        Dll_Free(rpl);
-        SetLastError(error);
-        return retval;
-    }
+	rpl = Gui_CallProxy(&req, sizeof(req), sizeof(*rpl));
+	if (!rpl)
+	{
+		return DISP_CHANGE_FAILED;
+	}
+	else
+	{
+		ULONG error  = rpl->error;
+		ULONG retval = rpl->retval;
+		Dll_Free(rpl);
+		SetLastError(error);
+		return retval;
+	}
 }
 
 
@@ -1209,19 +1287,17 @@ _FX LONG Gui_ChangeDisplaySettingsExW(
 
 static ULONG_PTR Gui_ImmAssociateContext(ULONG_PTR hwnd, ULONG_PTR imc);
 
-static BOOL Gui_ImmAssociateContextEx(
-    ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags);
+static BOOL Gui_ImmAssociateContextEx(ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags);
 
 typedef ULONG_PTR (*P_ImmAssociateContext)(ULONG_PTR hwnd, ULONG_PTR imc);
 
-typedef BOOL (*P_ImmAssociateContextEx)(
-                ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags);
+typedef BOOL (*P_ImmAssociateContextEx)(ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags);
 
 typedef ULONG_PTR (*P_ImmCreateContext)(void);
 
-static P_ImmAssociateContext    __sys_ImmAssociateContext   = NULL;
-static P_ImmAssociateContextEx  __sys_ImmAssociateContextEx = NULL;
-static P_ImmCreateContext       __sys_ImmCreateContext      = NULL;
+static P_ImmAssociateContext __sys_ImmAssociateContext     = NULL;
+static P_ImmAssociateContextEx __sys_ImmAssociateContextEx = NULL;
+static P_ImmCreateContext __sys_ImmCreateContext           = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -1231,27 +1307,26 @@ static P_ImmCreateContext       __sys_ImmCreateContext      = NULL;
 
 _FX BOOLEAN Gui_Init_IMM32(HMODULE module)
 {
-    __sys_ImmAssociateContext = (P_ImmAssociateContext)
-                GetProcAddress(module, "ImmAssociateContext");
+	__sys_ImmAssociateContext = (P_ImmAssociateContext)GetProcAddress(module, "ImmAssociateContext");
 
-    __sys_ImmAssociateContextEx = (P_ImmAssociateContextEx)
-                GetProcAddress(module, "ImmAssociateContextEx");
+	__sys_ImmAssociateContextEx = (P_ImmAssociateContextEx)GetProcAddress(module, "ImmAssociateContextEx");
 
-    __sys_ImmCreateContext = (P_ImmCreateContext)
-                GetProcAddress(module, "ImmCreateContext");
+	__sys_ImmCreateContext = (P_ImmCreateContext)GetProcAddress(module, "ImmCreateContext");
 
-    if (__sys_ImmCreateContext) {
+	if (__sys_ImmCreateContext)
+	{
+		if (__sys_ImmAssociateContext)
+		{
+			SBIEDLL_HOOK_GUI(ImmAssociateContext);
+		}
 
-        if (__sys_ImmAssociateContext) {
-            SBIEDLL_HOOK_GUI(ImmAssociateContext);
-        }
+		if (__sys_ImmAssociateContextEx)
+		{
+			SBIEDLL_HOOK_GUI(ImmAssociateContextEx);
+		}
+	}
 
-        if (__sys_ImmAssociateContextEx) {
-            SBIEDLL_HOOK_GUI(ImmAssociateContextEx);
-        }
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -1262,26 +1337,28 @@ _FX BOOLEAN Gui_Init_IMM32(HMODULE module)
 
 _FX ULONG_PTR Gui_ImmAssociateContext(ULONG_PTR hwnd, ULONG_PTR imc)
 {
-    ULONG LastError;
-    THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+	ULONG LastError;
+	THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-    imc = __sys_ImmAssociateContext(hwnd, imc);
-    if ((! imc) && (GetLastError() == ERROR_ACCESS_DENIED)) {
+	imc = __sys_ImmAssociateContext(hwnd, imc);
+	if ((!imc) && (GetLastError() == ERROR_ACCESS_DENIED))
+	{
+		imc = TlsData->gui_himc;
+		if (!imc)
+		{
+			imc = __sys_ImmCreateContext();
+			if (!imc)
+			{
+				SetLastError(ERROR_ACCESS_DENIED);
+				return FALSE;
+			}
+			TlsData->gui_himc = imc;
+		}
 
-        imc = TlsData->gui_himc;
-        if (! imc) {
-            imc = __sys_ImmCreateContext();
-            if (! imc) {
-                SetLastError(ERROR_ACCESS_DENIED);
-                return FALSE;
-            }
-            TlsData->gui_himc = imc;
-        }
+		imc = __sys_ImmAssociateContext(hwnd, imc);
+	}
 
-        imc = __sys_ImmAssociateContext(hwnd, imc);
-    }
-
-    return imc;
+	return imc;
 }
 
 
@@ -1290,27 +1367,28 @@ _FX ULONG_PTR Gui_ImmAssociateContext(ULONG_PTR hwnd, ULONG_PTR imc)
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Gui_ImmAssociateContextEx(
-    ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags)
+_FX BOOL Gui_ImmAssociateContextEx(ULONG_PTR hwnd, ULONG_PTR imc, ULONG flags)
 {
-    ULONG LastError;
-    THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+	ULONG LastError;
+	THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-    BOOL ok = __sys_ImmAssociateContextEx(hwnd, imc, flags);
-    if ((! ok) && (GetLastError() == ERROR_ACCESS_DENIED)) {
+	BOOL ok = __sys_ImmAssociateContextEx(hwnd, imc, flags);
+	if ((!ok) && (GetLastError() == ERROR_ACCESS_DENIED))
+	{
+		imc = TlsData->gui_himc;
+		if (!imc)
+		{
+			imc = __sys_ImmCreateContext();
+			if (!imc)
+			{
+				SetLastError(ERROR_ACCESS_DENIED);
+				return FALSE;
+			}
+			TlsData->gui_himc = imc;
+		}
 
-        imc = TlsData->gui_himc;
-        if (! imc) {
-            imc = __sys_ImmCreateContext();
-            if (! imc) {
-                SetLastError(ERROR_ACCESS_DENIED);
-                return FALSE;
-            }
-            TlsData->gui_himc = imc;
-        }
+		ok = __sys_ImmAssociateContextEx(hwnd, imc, 0);
+	}
 
-        ok = __sys_ImmAssociateContextEx(hwnd, imc, 0);
-    }
-
-    return ok;
+	return ok;
 }

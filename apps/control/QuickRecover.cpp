@@ -20,15 +20,16 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "QuickRecover.h"
 
-#include <shlobj.h>
-#include "common/win32_ntddk.h"
-#include "UserSettings.h"
 #include "Boxes.h"
-#include "apps/common/MyGdi.h"
+#include "UserSettings.h"
 #include "apps/common/CommonUtils.h"
+#include "apps/common/MyGdi.h"
+#include "common/win32_ntddk.h"
+#include "stdafx.h"
+
+#include <shlobj.h>
 
 
 //---------------------------------------------------------------------------
@@ -45,7 +46,7 @@ ULONG CQuickRecover::m_TempFolderCounter = 0;
 
 CStringList CQuickRecover::m_past_files;
 
-const WCHAR *CQuickRecover::ReplaceButtonText = NULL;
+const WCHAR* CQuickRecover::ReplaceButtonText = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -55,16 +56,16 @@ const WCHAR *CQuickRecover::ReplaceButtonText = NULL;
 
 BEGIN_MESSAGE_MAP(CQuickRecover, CBaseDialog)
 
-    ON_WM_VKEYTOITEM()
-    ON_CONTROL(LBN_SELCHANGE,   ID_RECOVER_FOLDERS, OnListSelect)
-    ON_CONTROL(LBN_DBLCLK,      ID_RECOVER_FOLDERS, OnListSelect)
-    ON_COMMAND(ID_RECOVER_SELECT_ALL,               OnSelectAll)
-    ON_COMMAND(ID_RECOVER_DISABLE,                  OnCheckBoxClick)
-    ON_COMMAND(ID_RECOVER_REMOVE,                   OnRemoveFolders)
-    ON_COMMAND(ID_RECOVER_CYCLE,                    OnCycleRecover)
-    ON_WM_CONTEXTMENU()
-    ON_WM_DESTROY()
-    ON_WM_ACTIVATE()
+ON_WM_VKEYTOITEM()
+ON_CONTROL(LBN_SELCHANGE, ID_RECOVER_FOLDERS, OnListSelect)
+ON_CONTROL(LBN_DBLCLK, ID_RECOVER_FOLDERS, OnListSelect)
+ON_COMMAND(ID_RECOVER_SELECT_ALL, OnSelectAll)
+ON_COMMAND(ID_RECOVER_DISABLE, OnCheckBoxClick)
+ON_COMMAND(ID_RECOVER_REMOVE, OnRemoveFolders)
+ON_COMMAND(ID_RECOVER_CYCLE, OnCycleRecover)
+ON_WM_CONTEXTMENU()
+ON_WM_DESTROY()
+ON_WM_ACTIVATE()
 
 END_MESSAGE_MAP()
 
@@ -74,27 +75,33 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CQuickRecover::CQuickRecover(
-    CWnd *pParentWnd, const CString &BoxName,
-    const CString &SrcPath, int qrMode)
-    : CBaseDialog(pParentWnd)
+CQuickRecover::CQuickRecover(CWnd* pParentWnd, const CString& BoxName, const CString& SrcPath, int qrMode) :
+    CBaseDialog(pParentWnd)
 {
-    m_BoxName = BoxName;
-    m_SrcPath = SrcPath;
+	m_BoxName = BoxName;
+	m_SrcPath = SrcPath;
 
-    m_ready = FALSE;
-    m_log = FALSE;
-    m_replace = FALSE;
-    m_recover_mode = 0;
+	m_ready        = FALSE;
+	m_log          = FALSE;
+	m_replace      = FALSE;
+	m_recover_mode = 0;
 
-    if (qrMode == QR_SAME)
-        RecoverToSameFolder();
-    else if (qrMode == QR_ANY)
-        RecoverToAnyFolder();
-    else if (qrMode == QR_AUTO)
-        AutoRecover();
-    else if (qrMode == QR_LOG)
-        RecoveryLog();
+	if (qrMode == QR_SAME)
+	{
+		RecoverToSameFolder();
+	}
+	else if (qrMode == QR_ANY)
+	{
+		RecoverToAnyFolder();
+	}
+	else if (qrMode == QR_AUTO)
+	{
+		AutoRecover();
+	}
+	else if (qrMode == QR_LOG)
+	{
+		RecoveryLog();
+	}
 }
 
 
@@ -102,44 +109,51 @@ CQuickRecover::CQuickRecover(
 // Constructor
 //---------------------------------------------------------------------------
 
-CQuickRecover::CQuickRecover(
-    CWnd *pParentWnd, const CString &BoxName,
-    CStringList &SrcPaths, int qrMode)
-    : CBaseDialog(pParentWnd)
+CQuickRecover::CQuickRecover(CWnd* pParentWnd, const CString& BoxName, CStringList& SrcPaths, int qrMode) :
+    CBaseDialog(pParentWnd)
 {
-    m_BoxName = BoxName;
+	m_BoxName = BoxName;
 
-    m_ready = FALSE;
-    m_log = FALSE;
-    m_replace = FALSE;
-    m_recover_mode = 0;
+	m_ready        = FALSE;
+	m_log          = FALSE;
+	m_replace      = FALSE;
+	m_recover_mode = 0;
 
-    bool first = true;
-    BOOL ok;
-    CString SaveDstPath;
+	bool first = true;
+	BOOL ok;
+	CString SaveDstPath;
 
-    POSITION pos = SrcPaths.GetHeadPosition();
-    while (pos) {
+	POSITION pos = SrcPaths.GetHeadPosition();
+	while (pos)
+	{
+		CString RelativePath;
+		m_SrcPath = SrcPaths.GetNext(pos);
+		int index = m_SrcPath.ReverseFind(L'|');
+		if (index != -1)
+		{
+			RelativePath = m_SrcPath.Mid(index + 1);
+			m_SrcPath    = m_SrcPath.Left(index);
+		}
 
-        CString RelativePath;
-        m_SrcPath = SrcPaths.GetNext(pos);
-        int index = m_SrcPath.ReverseFind(L'|');
-        if (index != -1) {
-            RelativePath = m_SrcPath.Mid(index + 1);
-            m_SrcPath = m_SrcPath.Left(index);
-        }
-
-        if (qrMode == QR_SAME)
-            ok = RecoverToSameFolder();
-        else if (first) {
-            ok = RecoverToAnyFolder(RelativePath);
-            SaveDstPath = m_DstPath;
-            first = false;
-        } else
-            ok = RecoverFile(GetDestPlusRelative(SaveDstPath, RelativePath));
-        if ((! ok) || m_DstPath.IsEmpty())
-            break;
-    }
+		if (qrMode == QR_SAME)
+		{
+			ok = RecoverToSameFolder();
+		}
+		else if (first)
+		{
+			ok          = RecoverToAnyFolder(RelativePath);
+			SaveDstPath = m_DstPath;
+			first       = false;
+		}
+		else
+		{
+			ok = RecoverFile(GetDestPlusRelative(SaveDstPath, RelativePath));
+		}
+		if ((!ok) || m_DstPath.IsEmpty())
+		{
+			break;
+		}
+	}
 }
 
 
@@ -160,12 +174,18 @@ CQuickRecover::~CQuickRecover()
 
 void CQuickRecover::OnDestroy()
 {
-    if (m_static.m_hWnd)
-        m_static.UnsubclassWindow();
-    if (m_listbox.m_hWnd)
-        m_listbox.UnsubclassWindow();
-    if (m_checkbox.m_hWnd)
-        m_checkbox.UnsubclassWindow();
+	if (m_static.m_hWnd)
+	{
+		m_static.UnsubclassWindow();
+	}
+	if (m_listbox.m_hWnd)
+	{
+		m_listbox.UnsubclassWindow();
+	}
+	if (m_checkbox.m_hWnd)
+	{
+		m_checkbox.UnsubclassWindow();
+	}
 }
 
 
@@ -176,45 +196,54 @@ void CQuickRecover::OnDestroy()
 
 void CQuickRecover::OnListSelect()
 {
-    if (m_ready) {
+	if (m_ready)
+	{
+		POSITION pos = 0;
+		int index    = m_listbox.GetCurSel();
+		if (index != LB_ERR)
+		{
+			pos = m_list.FindIndex(index);
+		}
+		if (pos)
+		{
+			if (m_hwndTree)
+			{
+				//
+				// SHBrowseForFolder dialog
+				//
 
-        POSITION pos = 0;
-        int index = m_listbox.GetCurSel();
-        if (index != LB_ERR)
-            pos = m_list.FindIndex(index);
-        if (pos) {
+				CString& path = m_list.GetAt(pos);
+				SendMessage(BFFM_SETSELECTION, TRUE, (LPARAM)(const WCHAR*)path);
 
-            if (m_hwndTree) {
+				const MSG* msg = GetCurrentMessage();
+				if (HIWORD(msg->wParam) == LBN_DBLCLK)
+				{
+					SendMessage(WM_COMMAND, IDOK, 0);
+				}
+				else
+				{
+					::SetFocus(m_hwndTree);
+				}
+			}
+			else
+			{
+				//
+				// Immediate Recovery dialog
+				//
 
-                //
-                // SHBrowseForFolder dialog
-                //
+				if (m_log)
+				{
+					GetDlgItem(IDOK)->EnableWindow(TRUE);
+				}
 
-                CString &path = m_list.GetAt(pos);
-                SendMessage(
-                    BFFM_SETSELECTION, TRUE, (LPARAM)(const WCHAR *)path);
-
-                const MSG *msg = GetCurrentMessage();
-                if (HIWORD(msg->wParam) == LBN_DBLCLK)
-                    SendMessage(WM_COMMAND, IDOK, 0);
-                else
-                    ::SetFocus(m_hwndTree);
-
-            } else {
-
-                //
-                // Immediate Recovery dialog
-                //
-
-                if (m_log)
-                    GetDlgItem(IDOK)->EnableWindow(TRUE);
-
-                const MSG *msg = GetCurrentMessage();
-                if (HIWORD(msg->wParam) == LBN_DBLCLK && (! m_check))
-                    SendMessage(WM_COMMAND, IDOK, 0);
-            }
-        }
-    }
+				const MSG* msg = GetCurrentMessage();
+				if (HIWORD(msg->wParam) == LBN_DBLCLK && (!m_check))
+				{
+					SendMessage(WM_COMMAND, IDOK, 0);
+				}
+			}
+		}
+	}
 }
 
 
@@ -223,15 +252,19 @@ void CQuickRecover::OnListSelect()
 //---------------------------------------------------------------------------
 
 
-int CQuickRecover::OnVKeyToItem(UINT nKey, CListBox *pListBox, UINT nIndex)
+int CQuickRecover::OnVKeyToItem(UINT nKey, CListBox* pListBox, UINT nIndex)
 {
-    if (m_log || m_hwndTree || pListBox->GetDlgCtrlID() != ID_RECOVER_ITEMS)
-        return -1;
-    if (nKey != L'A' || (GetKeyState(VK_CONTROL) & 0x8000) == 0)
-        return -1;
+	if (m_log || m_hwndTree || pListBox->GetDlgCtrlID() != ID_RECOVER_ITEMS)
+	{
+		return -1;
+	}
+	if (nKey != L'A' || (GetKeyState(VK_CONTROL) & 0x8000) == 0)
+	{
+		return -1;
+	}
 
-    pListBox->SelItemRange(TRUE, 0, pListBox->GetCount());
-    return -2;
+	pListBox->SelItemRange(TRUE, 0, pListBox->GetCount());
+	return -2;
 }
 
 
@@ -242,8 +275,8 @@ int CQuickRecover::OnVKeyToItem(UINT nKey, CListBox *pListBox, UINT nIndex)
 
 void CQuickRecover::OnSelectAll()
 {
-    CListBox *pListBox = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    pListBox->SelItemRange(TRUE, 0, pListBox->GetCount());
+	CListBox* pListBox = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	pListBox->SelItemRange(TRUE, 0, pListBox->GetCount());
 }
 
 
@@ -252,111 +285,126 @@ void CQuickRecover::OnSelectAll()
 //---------------------------------------------------------------------------
 
 
-void CQuickRecover::OnContextMenu(CWnd *pWnd, CPoint pt)
+void CQuickRecover::OnContextMenu(CWnd* pWnd, CPoint pt)
 {
-    //
-    // display a context menu to remove items from the list of folders
-    //
+	//
+	// display a context menu to remove items from the list of folders
+	//
 
-    if (m_hwndTree)
-        return;
-    if (pWnd->GetDlgCtrlID() != ID_RECOVER_FOLDERS)
-        return;
-    CListBox *pListBox = (CListBox *)GetDlgItem(ID_RECOVER_FOLDERS);
+	if (m_hwndTree)
+	{
+		return;
+	}
+	if (pWnd->GetDlgCtrlID() != ID_RECOVER_FOLDERS)
+	{
+		return;
+	}
+	CListBox* pListBox = (CListBox*)GetDlgItem(ID_RECOVER_FOLDERS);
 
-    CPoint ptListBox = pt;
-    pListBox->ScreenToClient(&ptListBox);
+	CPoint ptListBox = pt;
+	pListBox->ScreenToClient(&ptListBox);
 
-    BOOL outside = FALSE;
-    ULONG FolderIndex = pListBox->ItemFromPoint(ptListBox, outside);
-    if (outside)
-        return;
-    pListBox->SetCurSel(FolderIndex);
-    if (m_hwndTree)
-        OnListSelect();
+	BOOL outside      = FALSE;
+	ULONG FolderIndex = pListBox->ItemFromPoint(ptListBox, outside);
+	if (outside)
+	{
+		return;
+	}
+	pListBox->SetCurSel(FolderIndex);
+	if (m_hwndTree)
+	{
+		OnListSelect();
+	}
 
-    ULONG gray = 0;
-    if ((! m_hwndTree) && (FolderIndex <= 1))
-        gray = MF_GRAYED;
+	ULONG gray = 0;
+	if ((!m_hwndTree) && (FolderIndex <= 1))
+	{
+		gray = MF_GRAYED;
+	}
 
-    CString msg3981 = CMyMsg(MSG_3981);
-    msg3981.Remove(L'&');
+	CString msg3981 = CMyMsg(MSG_3981);
+	msg3981.Remove(L'&');
 
-    CMenu menu;
-    menu.CreatePopupMenu();
-    menu.AppendMenu(MF_STRING | gray, 3981, msg3981);
-    menu.AppendMenu(MF_STRING | gray, 3982, CMyMsg(MSG_3982));
-    menu.AppendMenu(MF_STRING,        3983, CMyMsg(MSG_3983));
-    ULONG menucmd = menu.TrackPopupMenu(
-        TPM_NONOTIFY | TPM_RETURNCMD | TPM_TOPALIGN, pt.x, pt.y, this);
+	CMenu menu;
+	menu.CreatePopupMenu();
+	menu.AppendMenu(MF_STRING | gray, 3981, msg3981);
+	menu.AppendMenu(MF_STRING | gray, 3982, CMyMsg(MSG_3982));
+	menu.AppendMenu(MF_STRING, 3983, CMyMsg(MSG_3983));
+	ULONG menucmd = menu.TrackPopupMenu(TPM_NONOTIFY | TPM_RETURNCMD | TPM_TOPALIGN, pt.x, pt.y, this);
 
-    //
-    // process menu selection
-    //
+	//
+	// process menu selection
+	//
 
-    bool UpdateList = false;
+	bool UpdateList = false;
 
-    if (menucmd == 3981) {
+	if (menucmd == 3981)
+	{
+		CString path = m_list.GetAt(m_list.FindIndex(FolderIndex));
+		ShellExecute(m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
+	}
+	else if (menucmd == 3982)
+	{
+		//
+		// delete the selected item
+		//
 
-        CString path = m_list.GetAt(m_list.FindIndex(FolderIndex));
-        ShellExecute(m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
+		POSITION pos = m_list.FindIndex(FolderIndex);
+		m_list.RemoveAt(pos);
+		pListBox->DeleteString(FolderIndex);
+		UpdateList = true;
+	}
+	else if (menucmd == 3983)
+	{
+		//
+		// delete everything, except the items Recovery to Same/Any Folder
+		//
 
-    } else if (menucmd == 3982) {
+		ULONG FolderCount = (m_hwndTree) ? 0 : 2;
+		while (m_list.GetCount() != FolderCount)
+		{
+			POSITION pos = m_list.FindIndex(FolderCount);
+			m_list.RemoveAt(pos);
+			pListBox->DeleteString(FolderCount);
+		}
+		UpdateList = true;
+	}
 
-        //
-        // delete the selected item
-        //
+	//
+	// store the new list, except the items Recovery Same/Any Folder
+	//
 
-        POSITION pos = m_list.FindIndex(FolderIndex);
-        m_list.RemoveAt(pos);
-        pListBox->DeleteString(FolderIndex);
-        UpdateList = true;
+	if (UpdateList)
+	{
+		if (!gray)
+		{
+			pListBox->SetCurSel(0);
+		}
 
-    } else if (menucmd == 3983) {
+		CUserSettings& ini = CUserSettings::GetInstance();
 
-        //
-        // delete everything, except the items Recovery to Same/Any Folder
-        //
+		POSITION pos = m_list.GetHeadPosition();
+		if (!m_hwndTree)
+		{
+			m_list.GetNext(pos); // Recover to Same Folder
+			m_list.GetNext(pos); // Recover to Any Folder
+		}
 
-        ULONG FolderCount = (m_hwndTree) ? 0 : 2;
-        while (m_list.GetCount() != FolderCount) {
-            POSITION pos = m_list.FindIndex(FolderCount);
-            m_list.RemoveAt(pos);
-            pListBox->DeleteString(FolderCount);
-        }
-        UpdateList = true;
-    }
+		CString value;
+		while (pos)
+		{
+			if (!value.IsEmpty())
+			{
+				value += L"\n";
+			}
+			value += m_list.GetNext(pos);
+		}
 
-    //
-    // store the new list, except the items Recovery Same/Any Folder
-    //
+		ini.SetText(_RecoverTarget, value);
 
-    if (UpdateList) {
-
-        if (! gray)
-            pListBox->SetCurSel(0);
-
-        CUserSettings &ini = CUserSettings::GetInstance();
-
-        POSITION pos = m_list.GetHeadPosition();
-        if (! m_hwndTree) {
-            m_list.GetNext(pos);    // Recover to Same Folder
-            m_list.GetNext(pos);    // Recover to Any Folder
-        }
-
-        CString value;
-        while (pos) {
-            if (! value.IsEmpty())
-                value += L"\n";
-            value += m_list.GetNext(pos);
-        }
-
-        ini.SetText(_RecoverTarget, value);
-
-        int FolderCount = (m_hwndTree) ? 0 : 2;
-        GetDlgItem(ID_RECOVER_RIGHT_CLICK)->ShowWindow(
-            (m_list.GetCount() > FolderCount) ? SW_SHOW : SW_HIDE);
-    }
+		int FolderCount = (m_hwndTree) ? 0 : 2;
+		GetDlgItem(ID_RECOVER_RIGHT_CLICK)->ShowWindow((m_list.GetCount() > FolderCount) ? SW_SHOW : SW_HIDE);
+	}
 }
 
 
@@ -367,16 +415,17 @@ void CQuickRecover::OnContextMenu(CWnd *pWnd, CPoint pt)
 
 void CQuickRecover::OnCheckBoxClick()
 {
-    m_check = ! m_check;
+	m_check = !m_check;
 
-    CButton *pCheckBox = (CButton *)GetDlgItem(ID_RECOVER_DISABLE);
-    pCheckBox->SetCheck(m_check ? BST_CHECKED : BST_UNCHECKED);
+	CButton* pCheckBox = (CButton*)GetDlgItem(ID_RECOVER_DISABLE);
+	pCheckBox->SetCheck(m_check ? BST_CHECKED : BST_UNCHECKED);
 
-    if (! m_hwndTree) {
-        GetDlgItem(IDOK)->EnableWindow(! m_check);
-        CBox &box = CBoxes::GetInstance().GetBox(m_BoxName);
-        box.SetImmediateRecoveryState(! m_check, TRUE);
-    }
+	if (!m_hwndTree)
+	{
+		GetDlgItem(IDOK)->EnableWindow(!m_check);
+		CBox& box = CBoxes::GetInstance().GetBox(m_BoxName);
+		box.SetImmediateRecoveryState(!m_check, TRUE);
+	}
 }
 
 
@@ -387,22 +436,29 @@ void CQuickRecover::OnCheckBoxClick()
 
 void CQuickRecover::OnCycleRecover()
 {
-    ULONG msgid1, msgid2;
-    ++m_recover_mode;
-    if (m_recover_mode == 3) {
-        msgid1 = 3718;
-        msgid2 = 3736;
-        m_recover_mode = 0;
-    } else if (m_recover_mode == 2) {
-        msgid1 = 3737;
-        msgid2 = 3718;
-    } else if (m_recover_mode == 1) {
-        msgid1 = 3736;
-        msgid2 = 3737;
-    }
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(msgid1));
-    if (CycleRecoverButton.m_hWnd)
-        CycleRecoverButton.SetText(CMyMsg(msgid2));
+	ULONG msgid1, msgid2;
+	++m_recover_mode;
+	if (m_recover_mode == 3)
+	{
+		msgid1         = 3718;
+		msgid2         = 3736;
+		m_recover_mode = 0;
+	}
+	else if (m_recover_mode == 2)
+	{
+		msgid1 = 3737;
+		msgid2 = 3718;
+	}
+	else if (m_recover_mode == 1)
+	{
+		msgid1 = 3736;
+		msgid2 = 3737;
+	}
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(msgid1));
+	if (CycleRecoverButton.m_hWnd)
+	{
+		CycleRecoverButton.SetText(CMyMsg(msgid2));
+	}
 }
 
 
@@ -413,47 +469,56 @@ void CQuickRecover::OnCycleRecover()
 
 void CQuickRecover::InitFolderList(bool AddHead, int SelectIndex)
 {
-    //
-    // ReadFolderList
-    //
+	//
+	// ReadFolderList
+	//
 
-    m_list.RemoveAll();
-    m_listbox.ResetContent();
+	m_list.RemoveAll();
+	m_listbox.ResetContent();
 
-    CUserSettings &ini = CUserSettings::GetInstance();
-    ini.GetBool(_SaveRecoverTargets, m_check, TRUE);
-    if (m_check) {
-        ini.GetTextList(_RecoverTarget, m_list);
-        while (m_list.GetCount() > 10)
-            m_list.RemoveTail();
-    }
+	CUserSettings& ini = CUserSettings::GetInstance();
+	ini.GetBool(_SaveRecoverTargets, m_check, TRUE);
+	if (m_check)
+	{
+		ini.GetTextList(_RecoverTarget, m_list);
+		while (m_list.GetCount() > 10)
+		{
+			m_list.RemoveTail();
+		}
+	}
 
-    if (AddHead) {
+	if (AddHead)
+	{
+		AddHeadFolderList(MSG_3721);
+		AddHeadFolderList(MSG_3720);
+	}
 
-        AddHeadFolderList(MSG_3721);
-        AddHeadFolderList(MSG_3720);
-    }
+	//
+	// ShowFolderList
+	//
 
-    //
-    // ShowFolderList
-    //
+	POSITION pos = m_list.GetHeadPosition();
+	while (pos)
+	{
+		CString text = m_list.GetNext(pos);
+		int index    = 0;
+		while (text.GetLength() - index > 45)
+		{
+			int index2 = text.Find(L'\\', index);
+			if (index2 == -1)
+			{
+				break;
+			}
+			index = index2 + 1;
+		}
+		if (index)
+		{
+			text = CString(L"...\\") + text.Mid(index);
+		}
+		m_listbox.AddString(text);
+	}
 
-    POSITION pos = m_list.GetHeadPosition();
-    while (pos) {
-        CString text = m_list.GetNext(pos);
-        int index = 0;
-        while (text.GetLength() - index > 45) {
-            int index2 = text.Find(L'\\', index);
-            if (index2 == -1)
-                break;
-            index = index2 + 1;
-        }
-        if (index)
-            text = CString(L"...\\") + text.Mid(index);
-        m_listbox.AddString(text);
-    }
-
-    m_listbox.SetCurSel(SelectIndex);
+	m_listbox.SetCurSel(SelectIndex);
 }
 
 
@@ -464,18 +529,20 @@ void CQuickRecover::InitFolderList(bool AddHead, int SelectIndex)
 
 void CQuickRecover::AddHeadFolderList(ULONG msgid)
 {
-    CString text = CMyMsg(msgid);
+	CString text = CMyMsg(msgid);
 
-    int index = text.Find(L'(');
-    if (index != -1)
-        text = text.Left(index);
-    text.Remove(L'&');
-    text.Remove(L'\r');
-    text.Replace(L'\n', L' ');
-    text.TrimLeft();
-    text.TrimRight();
+	int index = text.Find(L'(');
+	if (index != -1)
+	{
+		text = text.Left(index);
+	}
+	text.Remove(L'&');
+	text.Remove(L'\r');
+	text.Replace(L'\n', L' ');
+	text.TrimLeft();
+	text.TrimRight();
 
-    m_list.AddHead(text);
+	m_list.AddHead(text);
 }
 
 
@@ -484,39 +551,40 @@ void CQuickRecover::AddHeadFolderList(ULONG msgid)
 //---------------------------------------------------------------------------
 
 
-CString CQuickRecover::GetDestPlusRelative(
-    const CString &DestPath, const CString &RelativePath)
+CString CQuickRecover::GetDestPlusRelative(const CString& DestPath, const CString& RelativePath)
 {
-    //
-    // combine destination and relative paths.  but if the
-    //
+	//
+	// combine destination and relative paths.  but if the
+	//
 
-    CString Result = DestPath;
+	CString Result = DestPath;
 
-    if (RelativePath.GetLength() > 1) {
+	if (RelativePath.GetLength() > 1)
+	{
+		int dIndex = DestPath.ReverseFind(L'\\');
+		if (dIndex != -1)
+		{
+			int rIndex = RelativePath.Find(L'\\', 1);
+			if (rIndex == -1)
+			{
+				rIndex = RelativePath.GetLength();
+			}
 
-        int dIndex = DestPath.ReverseFind(L'\\');
-        if (dIndex != -1) {
+			CString LastPart  = DestPath.Mid(dIndex);
+			CString FirstPart = RelativePath.Left(rIndex);
 
-            int rIndex = RelativePath.Find(L'\\', 1);
-            if (rIndex == -1)
-                rIndex = RelativePath.GetLength();
+			if (FirstPart.CompareNoCase(LastPart) == 0)
+			{
+				Result = DestPath.Left(dIndex);
+			}
+		}
 
-            CString LastPart = DestPath.Mid(dIndex);
-            CString FirstPart = RelativePath.Left(rIndex);
+		Result += RelativePath;
 
-            if (FirstPart.CompareNoCase(LastPart) == 0) {
+		SHCreateDirectory(m_pParentWnd->m_hWnd, Result);
+	}
 
-                Result = DestPath.Left(dIndex);
-            }
-        }
-
-        Result += RelativePath;
-
-        SHCreateDirectory(m_pParentWnd->m_hWnd, Result);
-    }
-
-    return Result;
+	return Result;
 }
 
 
@@ -525,64 +593,71 @@ CString CQuickRecover::GetDestPlusRelative(
 //---------------------------------------------------------------------------
 
 
-BOOL CQuickRecover::RecoverToAnyFolder(const CString &RelativePath)
+BOOL CQuickRecover::RecoverToAnyFolder(const CString& RelativePath)
 {
-    BOOL ok = FALSE;
+	BOOL ok = FALSE;
 
-    //
-    // invoke Browse For Folder dialog box
-    //
+	//
+	// invoke Browse For Folder dialog box
+	//
 
-    WCHAR path[MAX_PATH + 32];
+	WCHAR path[MAX_PATH + 32];
 
-    CMyMsg title(MSG_3723);
+	CMyMsg title(MSG_3723);
 
-    BROWSEINFO bi;
-    memzero(&bi, sizeof(BROWSEINFO));
-    bi.hwndOwner = m_pParentWnd->m_hWnd;
-    bi.pszDisplayName = path;
-    bi.lpszTitle = title;
-    bi.ulFlags = BIF_RETURNONLYFSDIRS;
-    bi.lpfn = BrowseCallback;
-    bi.lParam = (LPARAM)this;
-    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
-    if (pidl) {
+	BROWSEINFO bi;
+	memzero(&bi, sizeof(BROWSEINFO));
+	bi.hwndOwner      = m_pParentWnd->m_hWnd;
+	bi.pszDisplayName = path;
+	bi.lpszTitle      = title;
+	bi.ulFlags        = BIF_RETURNONLYFSDIRS;
+	bi.lpfn           = BrowseCallback;
+	bi.lParam         = (LPARAM)this;
+	LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+	if (pidl)
+	{
+		ok = SHGetPathFromIDList(pidl, path);
+		CoTaskMemFree(pidl);
 
-        ok = SHGetPathFromIDList(pidl, path);
-        CoTaskMemFree(pidl);
+		//
+		// update list of stored folders
+		//
 
-        //
-        // update list of stored folders
-        //
+		if (ok)
+		{
+			CUserSettings& ini = CUserSettings::GetInstance();
 
-        if (ok) {
+			if (m_check)
+			{
+				CString value = path;
+				while (!m_list.IsEmpty())
+				{
+					CString add = m_list.RemoveHead();
+					if (add.CompareNoCase(path) != 0)
+					{
+						value += L"\n" + add;
+					}
+				}
+				ini.SetText(_RecoverTarget, value);
+			}
 
-            CUserSettings &ini = CUserSettings::GetInstance();
+			ini.SetBool(_SaveRecoverTargets, m_check);
 
-            if (m_check) {
+			ok = RecoverFile(GetDestPlusRelative(path, RelativePath));
+		}
 
-                CString value = path;
-                while (! m_list.IsEmpty()) {
-                    CString add = m_list.RemoveHead();
-                    if (add.CompareNoCase(path) != 0)
-                        value += L"\n" + add;
-                }
-                ini.SetText(_RecoverTarget, value);
-            }
+		if (ok)
+		{
+			m_DstPath = path;
+		}
+	}
 
-            ini.SetBool(_SaveRecoverTargets, m_check);
+	if (!ok)
+	{
+		m_DstPath = CString();
+	}
 
-            ok = RecoverFile(GetDestPlusRelative(path, RelativePath));
-        }
-
-        if (ok)
-            m_DstPath = path;
-    }
-
-    if (! ok)
-        m_DstPath = CString();
-
-    return ok;
+	return ok;
 }
 
 
@@ -591,15 +666,15 @@ BOOL CQuickRecover::RecoverToAnyFolder(const CString &RelativePath)
 //---------------------------------------------------------------------------
 
 
-int CALLBACK CQuickRecover::BrowseCallback(
-    HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData)
+int CALLBACK CQuickRecover::BrowseCallback(HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData)
 {
-    if (msg == BFFM_INITIALIZED) {
-        CQuickRecover *pThis = (CQuickRecover *)lpData;
-        pThis->SubclassWindow(hwnd);
-        pThis->OnInitDialogAnyFolder();
-    }
-    return 0;
+	if (msg == BFFM_INITIALIZED)
+	{
+		CQuickRecover* pThis = (CQuickRecover*)lpData;
+		pThis->SubclassWindow(hwnd);
+		pThis->OnInitDialogAnyFolder();
+	}
+	return 0;
 }
 
 
@@ -610,97 +685,96 @@ int CALLBACK CQuickRecover::BrowseCallback(
 
 void CQuickRecover::OnInitDialogAnyFolder()
 {
-    //
-    // add box name in title bar
-    //
+	//
+	// add box name in title bar
+	//
 
-    CString caption;
-    GetWindowText(caption);
-    caption += L" - " + m_BoxName;
-    SetWindowText(caption);
+	CString caption;
+	GetWindowText(caption);
+	caption += L" - " + m_BoxName;
+	SetWindowText(caption);
 
-    //
-    // remove context help button from dialog caption
-    //
+	//
+	// remove context help button from dialog caption
+	//
 
-    ModifyStyle(DS_CONTEXTHELP, 0);
-    ModifyStyleEx(WS_EX_CONTEXTHELP, 0);
+	ModifyStyle(DS_CONTEXTHELP, 0);
+	ModifyStyleEx(WS_EX_CONTEXTHELP, 0);
 
-    //
-    // find the folder tree and make dialog larger
-    //
+	//
+	// find the folder tree and make dialog larger
+	//
 
-    //m_hwndTree = ::FindWindowEx(m_hWnd, NULL, L"SHBrowseForFolder ShellNameSpace Control", NULL);
-    m_hwndTree = ::FindWindowEx(m_hWnd, NULL, L"SysTreeView32", NULL);
-    if (! m_hwndTree)
-        return;
+	//m_hwndTree = ::FindWindowEx(m_hWnd, NULL, L"SHBrowseForFolder ShellNameSpace Control", NULL);
+	m_hwndTree = ::FindWindowEx(m_hWnd, NULL, L"SysTreeView32", NULL);
+	if (!m_hwndTree)
+	{
+		return;
+	}
 
-    //
-    // add static text below the folder tree
-    //
+	//
+	// add static text below the folder tree
+	//
 
-    CRect rc, rc2;
+	CRect rc, rc2;
 
-    ::GetWindowRect(m_hwndTree, &rc);
-    ScreenToClient(&rc);
-    ::GetWindowRect(GetDlgItem(IDOK)->m_hWnd, &rc2);
-    ScreenToClient(&rc2);
-    rc.top = rc2.bottom + 10;
-    rc.bottom = rc.top + 25;
+	::GetWindowRect(m_hwndTree, &rc);
+	ScreenToClient(&rc);
+	::GetWindowRect(GetDlgItem(IDOK)->m_hWnd, &rc2);
+	ScreenToClient(&rc2);
+	rc.top    = rc2.bottom + 10;
+	rc.bottom = rc.top + 25;
 
-    m_static.Create(CMyMsg(MSG_3724), SS_SIMPLE | WS_CHILD | WS_VISIBLE,
-                    rc, this, IDC_STATIC);
-    m_static.SetFont(GetFont());
+	m_static.Create(CMyMsg(MSG_3724), SS_SIMPLE | WS_CHILD | WS_VISIBLE, rc, this, IDC_STATIC);
+	m_static.SetFont(GetFont());
 
-    //
-    // add listbox below the static text
-    //
+	//
+	// add listbox below the static text
+	//
 
-    rc.top += 30;
-    rc.bottom = rc.top + 140;
+	rc.top += 30;
+	rc.bottom = rc.top + 140;
 
-    m_listbox.Create(WS_TABSTOP | WS_BORDER | WS_CHILD | WS_VISIBLE |
-                     WS_HSCROLL | WS_VSCROLL | LBS_NOTIFY,
-                     rc, this, ID_RECOVER_FOLDERS);
-    m_listbox.ModifyStyleEx(0, WS_EX_CLIENTEDGE);
-    m_listbox.SetFont(GetFont());
+	m_listbox.Create(WS_TABSTOP | WS_BORDER | WS_CHILD | WS_VISIBLE | WS_HSCROLL | WS_VSCROLL | LBS_NOTIFY, rc, this, ID_RECOVER_FOLDERS);
+	m_listbox.ModifyStyleEx(0, WS_EX_CLIENTEDGE);
+	m_listbox.SetFont(GetFont());
 
-    m_listbox.SetItemHeight(0, m_listbox.GetItemHeight(0) * 3 / 2);
+	m_listbox.SetItemHeight(0, m_listbox.GetItemHeight(0) * 3 / 2);
 
-    InitFolderList(false, -1);
+	InitFolderList(false, -1);
 
-    //
-    // add checkbox below the listbox
-    //
+	//
+	// add checkbox below the listbox
+	//
 
-    m_listbox.GetWindowRect(&rc);
-    ScreenToClient(&rc);
-    rc.top = rc.bottom + 10;
-    rc.bottom = rc.top + 30;
+	m_listbox.GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	rc.top    = rc.bottom + 10;
+	rc.bottom = rc.top + 30;
 
-    m_checkbox.Create(CMyMsg(MSG_3725),
-                      BS_CHECKBOX | WS_TABSTOP | WS_CHILD | WS_VISIBLE,
-                      rc, this, ID_RECOVER_DISABLE);
-    m_checkbox.SetFont(GetFont());
+	m_checkbox.Create(CMyMsg(MSG_3725), BS_CHECKBOX | WS_TABSTOP | WS_CHILD | WS_VISIBLE, rc, this, ID_RECOVER_DISABLE);
+	m_checkbox.SetFont(GetFont());
 
-    if (m_check)
-        m_checkbox.SetCheck(BST_CHECKED);
+	if (m_check)
+	{
+		m_checkbox.SetCheck(BST_CHECKED);
+	}
 
-    //
-    // resize dialog vertically
-    //
+	//
+	// resize dialog vertically
+	//
 
-    GetWindowRect(&rc2);
-    ScreenToClient(&rc2);
-    rc2.bottom = rc.bottom + 10;
-    ClientToScreen(&rc2);
-    MoveWindow(rc2, TRUE);
+	GetWindowRect(&rc2);
+	ScreenToClient(&rc2);
+	rc2.bottom = rc.bottom + 10;
+	ClientToScreen(&rc2);
+	MoveWindow(rc2, TRUE);
 
-    //
-    // enable list interaction
-    //
+	//
+	// enable list interaction
+	//
 
-    m_ready = TRUE;
+	m_ready = TRUE;
 }
 
 
@@ -711,7 +785,7 @@ void CQuickRecover::OnInitDialogAnyFolder()
 
 void CQuickRecover::AutoRecover()
 {
-    SetDialogTemplate(L"AUTORECOVER_DIALOG");
+	SetDialogTemplate(L"AUTORECOVER_DIALOG");
 }
 
 
@@ -720,44 +794,51 @@ void CQuickRecover::AutoRecover()
 //---------------------------------------------------------------------------
 
 
-void CQuickRecover::AddAutoRecoverItem(const CString &SrcPath)
+void CQuickRecover::AddAutoRecoverItem(const CString& SrcPath)
 {
-    CBox &box = CBoxes::GetInstance().GetBox(m_BoxName);
-    CBoxFile &boxfile = box.GetBoxFile();
-    CString CopyPath = boxfile.GetCopyPathForTruePath(SrcPath);
+	CBox& box         = CBoxes::GetInstance().GetBox(m_BoxName);
+	CBoxFile& boxfile = box.GetBoxFile();
+	CString CopyPath  = boxfile.GetCopyPathForTruePath(SrcPath);
 
-    POSITION pos = m_items.GetHeadPosition();
-    while (pos) {
-        const CString &OldCopyPath = m_items.GetNext(pos);
-        if (OldCopyPath == CopyPath)
-            return;
-    }
+	POSITION pos = m_items.GetHeadPosition();
+	while (pos)
+	{
+		const CString& OldCopyPath = m_items.GetNext(pos);
+		if (OldCopyPath == CopyPath)
+		{
+			return;
+		}
+	}
 
-    m_items.AddTail(CopyPath);
+	m_items.AddTail(CopyPath);
 
-    GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow(
-        (m_items.GetCount() > 1) ? SW_SHOW : SW_HIDE);
+	GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow((m_items.GetCount() > 1) ? SW_SHOW : SW_HIDE);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    CString TruePath = SrcPath;
-    boxfile.TranslateNtToDosPath(TruePath);
+	CString TruePath = SrcPath;
+	boxfile.TranslateNtToDosPath(TruePath);
 
-    CString text = TruePath;
-    int index = 0;
-    while (text.GetLength() - index > 65) {
-        int index2 = text.Find(L'\\', index);
-        if (index2 == -1)
-            break;
-        index = index2 + 1;
-    }
-    if (index)
-        text = CString(L"...\\") + text.Mid(index);
+	CString text = TruePath;
+	int index    = 0;
+	while (text.GetLength() - index > 65)
+	{
+		int index2 = text.Find(L'\\', index);
+		if (index2 == -1)
+		{
+			break;
+		}
+		index = index2 + 1;
+	}
+	if (index)
+	{
+		text = CString(L"...\\") + text.Mid(index);
+	}
 
-    CListBox *items = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    items->AddString(text);
+	CListBox* items = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	items->AddString(text);
 }
 
 
@@ -766,30 +847,30 @@ void CQuickRecover::AddAutoRecoverItem(const CString &SrcPath)
 //---------------------------------------------------------------------------
 
 
-void CQuickRecover::MoveButtonIntoList(
-    CButton *pButton, CListBox *pListBox, HBITMAP hBitmap)
+void CQuickRecover::MoveButtonIntoList(CButton* pButton, CListBox* pListBox, HBITMAP hBitmap)
 {
-    pButton->ModifyStyle(0, BS_BITMAP | BS_CENTER);
-    pButton->SetBitmap(hBitmap);
+	pButton->ModifyStyle(0, BS_BITMAP | BS_CENTER);
+	pButton->SetBitmap(hBitmap);
 
-    RECT rc;
-    pListBox->GetWindowRect(&rc);
-    ScreenToClient(&rc);
-    rc.top = rc.bottom - 25;
+	RECT rc;
+	pListBox->GetWindowRect(&rc);
+	ScreenToClient(&rc);
+	rc.top = rc.bottom - 25;
 
-    if (! CMyApp::m_LayoutRTL) {
-        rc.right -= GetSystemMetrics(SM_CXHTHUMB) + 5;
-        rc.left = rc.right - 25;
-    } else {
-        rc.left += GetSystemMetrics(SM_CXHTHUMB) + 5;
-        rc.right = rc.left + 25;
-        pButton->ModifyStyleEx(WS_EX_LAYOUTRTL, 0);
-    }
+	if (!CMyApp::m_LayoutRTL)
+	{
+		rc.right -= GetSystemMetrics(SM_CXHTHUMB) + 5;
+		rc.left = rc.right - 25;
+	}
+	else
+	{
+		rc.left += GetSystemMetrics(SM_CXHTHUMB) + 5;
+		rc.right = rc.left + 25;
+		pButton->ModifyStyleEx(WS_EX_LAYOUTRTL, 0);
+	}
 
-    pButton->SetWindowPos(&wndTop,
-        rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
-        SWP_SHOWWINDOW);
-    pListBox->ModifyStyle(0, WS_CLIPSIBLINGS);
+	pButton->SetWindowPos(&wndTop, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_SHOWWINDOW);
+	pListBox->ModifyStyle(0, WS_CLIPSIBLINGS);
 }
 
 
@@ -800,138 +881,153 @@ void CQuickRecover::MoveButtonIntoList(
 
 BOOL CQuickRecover::OnInitDialog()
 {
-    //
-    // init bitmap resources
-    //
+	//
+	// init bitmap resources
+	//
 
-    static HBITMAP checkmark_bitmap = NULL;
-    static HBITMAP questionmark_bitmap = NULL;
-    static HBITMAP cycle_bitmap = NULL;
-    if (! checkmark_bitmap)
-        checkmark_bitmap = MyGdi_CreateFromResource(L"BLUE_CHECKMARK");
-    if (! questionmark_bitmap)
-        questionmark_bitmap = MyGdi_CreateFromResource(L"BLUE_QUESTIONMARK");
-    if (! cycle_bitmap)
-        cycle_bitmap = MyGdi_CreateFromResource(L"BLUE_CYCLE");
+	static HBITMAP checkmark_bitmap    = NULL;
+	static HBITMAP questionmark_bitmap = NULL;
+	static HBITMAP cycle_bitmap        = NULL;
+	if (!checkmark_bitmap)
+	{
+		checkmark_bitmap = MyGdi_CreateFromResource(L"BLUE_CHECKMARK");
+	}
+	if (!questionmark_bitmap)
+	{
+		questionmark_bitmap = MyGdi_CreateFromResource(L"BLUE_QUESTIONMARK");
+	}
+	if (!cycle_bitmap)
+	{
+		cycle_bitmap = MyGdi_CreateFromResource(L"BLUE_CYCLE");
+	}
 
-    //
-    // we're not SHBrowseForFolder
-    //
+	//
+	// we're not SHBrowseForFolder
+	//
 
-    m_hwndTree = NULL;
+	m_hwndTree = NULL;
 
-    AddMinimizeButton();
+	AddMinimizeButton();
 
-    //
-    // branch to Recovery Log if necessary
-    //
+	//
+	// branch to Recovery Log if necessary
+	//
 
-    if (m_BoxName.IsEmpty())
-        return OnInitDialogRecoveryLog();
+	if (m_BoxName.IsEmpty())
+	{
+		return OnInitDialogRecoveryLog();
+	}
 
-    //
-    // set dialog texts and adjust dialog position
-    //
+	//
+	// set dialog texts and adjust dialog position
+	//
 
-    SetWindowText(CMyMsg(MSG_3715));
+	SetWindowText(CMyMsg(MSG_3715));
 
-    GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3716));
-    GetDlgItem(ID_DELETE_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_3717));
+	GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3716));
+	GetDlgItem(ID_DELETE_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_3717));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3718));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3718));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
 
-    GetDlgItem(ID_RECOVER_DISABLE)->SetWindowText(CMyMsg(MSG_3719));
+	GetDlgItem(ID_RECOVER_DISABLE)->SetWindowText(CMyMsg(MSG_3719));
 
-    SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-    //
-    // add box name in title bar
-    //
+	//
+	// add box name in title bar
+	//
 
-    CString caption;
-    GetWindowText(caption);
-    caption += L" - " + m_BoxName;
-    SetWindowText(caption);
+	CString caption;
+	GetWindowText(caption);
+	caption += L" - " + m_BoxName;
+	SetWindowText(caption);
 
-    //
-    // populate items and show the Select All button
-    //
+	//
+	// populate items and show the Select All button
+	//
 
-    MakeLTR(ID_RECOVER_ITEMS);
+	MakeLTR(ID_RECOVER_ITEMS);
 
-    CListBox *pListBox = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    CButton *pButton = (CButton *)GetDlgItem(ID_RECOVER_SELECT_ALL);
+	CListBox* pListBox = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	CButton* pButton   = (CButton*)GetDlgItem(ID_RECOVER_SELECT_ALL);
 
-    MoveButtonIntoList(pButton, pListBox, checkmark_bitmap);
+	MoveButtonIntoList(pButton, pListBox, checkmark_bitmap);
 
-    AddAutoRecoverItem(m_SrcPath);
-    pListBox->SetSel(0, TRUE);
+	AddAutoRecoverItem(m_SrcPath);
+	pListBox->SetSel(0, TRUE);
 
-    if (! SelectAllButton.m_hWnd) {
-        CString tip = CMyMsg(MSG_3360);
-        tip.Remove(L'&');
-        SelectAllButton.Init(pButton->m_hWnd, tip);
-    }
+	if (!SelectAllButton.m_hWnd)
+	{
+		CString tip = CMyMsg(MSG_3360);
+		tip.Remove(L'&');
+		SelectAllButton.Init(pButton->m_hWnd, tip);
+	}
 
-    //
-    // populate folder list
-    //
+	//
+	// populate folder list
+	//
 
-    MakeLTR(ID_RECOVER_FOLDERS);
+	MakeLTR(ID_RECOVER_FOLDERS);
 
-    HWND hwnd = GetDlgItem(ID_RECOVER_FOLDERS)->m_hWnd;
-    m_listbox.Attach(hwnd);
+	HWND hwnd = GetDlgItem(ID_RECOVER_FOLDERS)->m_hWnd;
+	m_listbox.Attach(hwnd);
 
-    m_listbox.SetItemHeight(0, m_listbox.GetItemHeight(0) * 3 / 2);
+	m_listbox.SetItemHeight(0, m_listbox.GetItemHeight(0) * 3 / 2);
 
-    InitFolderList(true, 0);
+	InitFolderList(true, 0);
 
-    //
-    // prepare the folder list tip button and the recover tool tip
-    //
+	//
+	// prepare the folder list tip button and the recover tool tip
+	//
 
-    pListBox = (CListBox *)GetDlgItem(ID_RECOVER_FOLDERS);
-    pButton = (CButton *)GetDlgItem(ID_RECOVER_RIGHT_CLICK);
+	pListBox = (CListBox*)GetDlgItem(ID_RECOVER_FOLDERS);
+	pButton  = (CButton*)GetDlgItem(ID_RECOVER_RIGHT_CLICK);
 
-    MoveButtonIntoList(pButton, pListBox, questionmark_bitmap);
-    if (! RightClickButton.m_hWnd)
-        RightClickButton.Init(pButton->m_hWnd, CMyMsg(MSG_3734));
+	MoveButtonIntoList(pButton, pListBox, questionmark_bitmap);
+	if (!RightClickButton.m_hWnd)
+	{
+		RightClickButton.Init(pButton->m_hWnd, CMyMsg(MSG_3734));
+	}
 
-    if (m_list.GetCount() <= 2)
-        pButton->ShowWindow(SW_HIDE);
+	if (m_list.GetCount() <= 2)
+	{
+		pButton->ShowWindow(SW_HIDE);
+	}
 
-    //
-    // prepare the cycle button for the recover button
-    //
+	//
+	// prepare the cycle button for the recover button
+	//
 
-    pButton = (CButton *)GetDlgItem(ID_RECOVER_CYCLE);
-    pButton->SetBitmap(cycle_bitmap);
-    pButton->SetWindowPos(NULL, 0, 0, 25, 25, SWP_NOMOVE | SWP_SHOWWINDOW);
+	pButton = (CButton*)GetDlgItem(ID_RECOVER_CYCLE);
+	pButton->SetBitmap(cycle_bitmap);
+	pButton->SetWindowPos(NULL, 0, 0, 25, 25, SWP_NOMOVE | SWP_SHOWWINDOW);
 
-    if (! CycleRecoverButton.m_hWnd)
-        CycleRecoverButton.Init(pButton->m_hWnd, CMyMsg(MSG_3736));
+	if (!CycleRecoverButton.m_hWnd)
+	{
+		CycleRecoverButton.Init(pButton->m_hWnd, CMyMsg(MSG_3736));
+	}
 
-    //
-    // make sure the checkbox is reset
-    //
+	//
+	// make sure the checkbox is reset
+	//
 
-    m_check = FALSE;
+	m_check = FALSE;
 
-    //
-    // enable list interaction
-    //
+	//
+	// enable list interaction
+	//
 
-    m_ready = TRUE;
+	m_ready = TRUE;
 
-    //
-    // flash window
-    //
+	//
+	// flash window
+	//
 
-    FlashTitle();
+	FlashTitle();
 
-    GetDlgItem(IDOK)->SetFocus();
-    return FALSE;
+	GetDlgItem(IDOK)->SetFocus();
+	return FALSE;
 }
 
 
@@ -942,144 +1038,165 @@ BOOL CQuickRecover::OnInitDialog()
 
 void CQuickRecover::OnOK()
 {
-    //
-    // if this is OnOK for the customized SHBrowseForFolder, do nothing
-    //
+	//
+	// if this is OnOK for the customized SHBrowseForFolder, do nothing
+	//
 
-    if (m_hwndTree) {
-        CWnd::Default();
-        return;
-    }
+	if (m_hwndTree)
+	{
+		CWnd::Default();
+		return;
+	}
 
-    if (m_log) {
-        OnOKRecoveryLog();
-        return;
-    }
+	if (m_log)
+	{
+		OnOKRecoveryLog();
+		return;
+	}
 
-    //
-    // get destination folder
-    //
+	//
+	// get destination folder
+	//
 
-    BOOL ReorderFolders = FALSE;
+	BOOL ReorderFolders = FALSE;
 
-    CListBox *list = (CListBox *)GetDlgItem(ID_RECOVER_FOLDERS);
-    int index = list->GetCurSel();
-    if (index == LB_ERR)
-        return;
-    BOOL sameFolder = FALSE;
-    CString destFolder;
-    if (index == 0)
-        sameFolder = TRUE;
-    else if (index != 1) {
+	CListBox* list = (CListBox*)GetDlgItem(ID_RECOVER_FOLDERS);
+	int index      = list->GetCurSel();
+	if (index == LB_ERR)
+	{
+		return;
+	}
+	BOOL sameFolder = FALSE;
+	CString destFolder;
+	if (index == 0)
+	{
+		sameFolder = TRUE;
+	}
+	else if (index != 1)
+	{
+		destFolder = m_list.GetAt(m_list.FindIndex(index));
 
-        destFolder = m_list.GetAt(m_list.FindIndex(index));
+		//
+		// if selected from folder history, move folder to top
+		//
 
-        //
-        // if selected from folder history, move folder to top
-        //
+		if (!destFolder.IsEmpty())
+		{
+			CUserSettings& ini = CUserSettings::GetInstance();
 
-        if (! destFolder.IsEmpty()) {
+			POSITION pos = m_list.GetHeadPosition();
+			m_list.GetNext(pos); // Recover to Same Folder
+			m_list.GetNext(pos); // Recover to Any Folder
 
-            CUserSettings &ini = CUserSettings::GetInstance();
+			CString value = destFolder;
+			while (pos)
+			{
+				const CString& add = m_list.GetNext(pos);
+				if (add.CompareNoCase(destFolder) != 0)
+				{
+					value += L"\n" + add;
+				}
+			}
 
-            POSITION pos = m_list.GetHeadPosition();
-            m_list.GetNext(pos);    // Recover to Same Folder
-            m_list.GetNext(pos);    // Recover to Any Folder
+			ini.SetText(_RecoverTarget, value);
 
-            CString value = destFolder;
-            while (pos) {
-                const CString &add = m_list.GetNext(pos);
-                if (add.CompareNoCase(destFolder) != 0)
-                    value += L"\n" + add;
-            }
+			ReorderFolders = TRUE;
+		}
+	}
 
-            ini.SetText(_RecoverTarget, value);
+	//
+	// recover selected items
+	//
 
-            ReorderFolders = TRUE;
-        }
-    }
+	BOOL AnySelected = FALSE;
 
-    //
-    // recover selected items
-    //
+	list = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	while (1)
+	{
+		int size = list->GetCount();
 
-    BOOL AnySelected = FALSE;
+		for (index = 0; index < size; ++index)
+		{
+			if (list->GetSel(index) <= 0)
+			{
+				continue;
+			}
+			AnySelected  = TRUE;
+			POSITION pos = m_items.FindIndex(index);
+			if (!pos)
+			{
+				continue;
+			}
+			m_SrcPath = m_items.GetAt(pos);
 
-    list = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    while (1) {
+			BOOL ok;
 
-        int size = list->GetCount();
+			if (sameFolder)
+			{
+				ok = RecoverToSameFolder();
+			}
+			else
+			{
+				if (destFolder.IsEmpty())
+				{
+					CQuickRecover* qr2 = new CQuickRecover(this, m_BoxName, m_SrcPath, QR_ANY);
+					destFolder         = qr2->m_DstPath;
+					m_replace          = qr2->m_replace;
+					delete qr2;
 
-        for (index = 0; index < size; ++index) {
-            if (list->GetSel(index) <= 0)
-                continue;
-            AnySelected = TRUE;
-            POSITION pos = m_items.FindIndex(index);
-            if (! pos)
-                continue;
-            m_SrcPath = m_items.GetAt(pos);
+					if (destFolder.IsEmpty())
+					{
+						return;
+					}
 
-            BOOL ok;
+					ReorderFolders = TRUE;
+				}
 
-            if (sameFolder) {
+				if (ReorderFolders)
+				{
+					InitFolderList(true, 1);
+					GetDlgItem(ID_RECOVER_RIGHT_CLICK)->ShowWindow((m_list.GetCount() > 2) ? SW_SHOW : SW_HIDE);
 
-                ok = RecoverToSameFolder();
+					m_check = FALSE;
 
-            } else {
+					ReorderFolders = FALSE;
+				}
 
-                if (destFolder.IsEmpty()) {
+				ok = RecoverFile(destFolder);
+			}
 
-                    CQuickRecover *qr2 = new CQuickRecover(
-                            this, m_BoxName, m_SrcPath, QR_ANY);
-                    destFolder = qr2->m_DstPath;
-                    m_replace = qr2->m_replace;
-                    delete qr2;
+			if (ok)
+			{
+				m_items.RemoveAt(pos);
+				GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow((m_items.GetCount() > 1) ? SW_SHOW : SW_HIDE);
+				list->DeleteString(index);
+			}
+			else
+			{
+				list->SetSel(index, FALSE);
+			}
+			break;
+		}
 
-                    if (destFolder.IsEmpty())
-                        return;
+		if (index == size)
+		{
+			break;
+		}
+	}
 
-                    ReorderFolders = TRUE;
-                }
+	//
+	// done
+	//
 
-                if (ReorderFolders) {
+	if (!AnySelected)
+	{
+		CMyApp::MsgBox(this, MSG_3728, MB_OK);
+	}
 
-                    InitFolderList(true, 1);
-                    GetDlgItem(ID_RECOVER_RIGHT_CLICK)->ShowWindow(
-                        (m_list.GetCount() > 2) ? SW_SHOW : SW_HIDE);
-
-                    m_check = FALSE;
-
-                    ReorderFolders = FALSE;
-                }
-
-                ok = RecoverFile(destFolder);
-            }
-
-            if (ok) {
-
-                m_items.RemoveAt(pos);
-                GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow(
-                    (m_items.GetCount() > 1) ? SW_SHOW : SW_HIDE);
-                list->DeleteString(index);
-
-            } else
-                list->SetSel(index, FALSE);
-            break;
-        }
-
-        if (index == size)
-            break;
-    }
-
-    //
-    // done
-    //
-
-    if (! AnySelected)
-        CMyApp::MsgBox(this, MSG_3728, MB_OK);
-
-    if (list->GetCount() == 0)
-        EndDialog(0);
+	if (list->GetCount() == 0)
+	{
+		EndDialog(0);
+	}
 }
 
 
@@ -1090,29 +1207,36 @@ void CQuickRecover::OnOK()
 
 BOOL CQuickRecover::RecoverToSameFolder()
 {
-    CBox &box = CBoxes::GetInstance().GetBox(m_BoxName);
-    CBoxFile &boxfile = box.GetBoxFile();
+	CBox& box         = CBoxes::GetInstance().GetBox(m_BoxName);
+	CBoxFile& boxfile = box.GetBoxFile();
 
-    CString CopyPath = m_SrcPath;
-    CString TruePath = boxfile.GetTruePathForCopyPath(CopyPath);
+	CString CopyPath = m_SrcPath;
+	CString TruePath = boxfile.GetTruePathForCopyPath(CopyPath);
 
-    bool JustCreateDir = false;
-    int index = TruePath.ReverseFind(L'\\');
-    if (index != -1) {
-        if (TruePath.Mid(index + 1) == L"\\*?|") // see RecoverFolder
-            JustCreateDir = true;
-        TruePath = TruePath.Mid(0, index);
-    }
+	bool JustCreateDir = false;
+	int index          = TruePath.ReverseFind(L'\\');
+	if (index != -1)
+	{
+		if (TruePath.Mid(index + 1) == L"\\*?|") // see RecoverFolder
+		{
+			JustCreateDir = true;
+		}
+		TruePath = TruePath.Mid(0, index);
+	}
 
-    CString TruePathDos = TruePath;
-    boxfile.TranslateNtToDosPath(TruePathDos);
-    if (TruePathDos.GetLength() > 3)
-        SHCreateDirectory(m_pParentWnd->m_hWnd, TruePathDos);
+	CString TruePathDos = TruePath;
+	boxfile.TranslateNtToDosPath(TruePathDos);
+	if (TruePathDos.GetLength() > 3)
+	{
+		SHCreateDirectory(m_pParentWnd->m_hWnd, TruePathDos);
+	}
 
-    if (JustCreateDir)
-        return TRUE;
+	if (JustCreateDir)
+	{
+		return TRUE;
+	}
 
-    return RecoverFile(TruePath, TRUE);
+	return RecoverFile(TruePath, TRUE);
 }
 
 
@@ -1121,60 +1245,66 @@ BOOL CQuickRecover::RecoverToSameFolder()
 //---------------------------------------------------------------------------
 
 
-BOOL CQuickRecover::RecoverFile(const CString &DestPath, BOOL SameFolder)
+BOOL CQuickRecover::RecoverFile(const CString& DestPath, BOOL SameFolder)
 {
-    //
-    // prepare double-NULL-terminated versions of the
-    // source and target paths
-    //
+	//
+	// prepare double-NULL-terminated versions of the
+	// source and target paths
+	//
 
-    ULONG src_len = wcslen(m_SrcPath);
-    WCHAR *src = malloc_WCHAR((src_len + 8) * sizeof(WCHAR));
-    wmemcpy(src, m_SrcPath, src_len);
-    wmemzero(src + src_len, 4);
-    SbieDll_TranslateNtToDosPath(src);
-    wmemzero(src + wcslen(src), 4);
+	ULONG src_len = wcslen(m_SrcPath);
+	WCHAR* src    = malloc_WCHAR((src_len + 8) * sizeof(WCHAR));
+	wmemcpy(src, m_SrcPath, src_len);
+	wmemzero(src + src_len, 4);
+	SbieDll_TranslateNtToDosPath(src);
+	wmemzero(src + wcslen(src), 4);
 
-    ULONG dst_len = wcslen(DestPath);
-    WCHAR *dst = malloc_WCHAR((dst_len + 8) * sizeof(WCHAR));
-    wmemcpy(dst, DestPath, dst_len);
-    wmemzero(dst + dst_len, 4);
-    SbieDll_TranslateNtToDosPath(dst);
-    wmemzero(dst + wcslen(dst), 4);
+	ULONG dst_len = wcslen(DestPath);
+	WCHAR* dst    = malloc_WCHAR((dst_len + 8) * sizeof(WCHAR));
+	wmemcpy(dst, DestPath, dst_len);
+	wmemzero(dst + dst_len, 4);
+	SbieDll_TranslateNtToDosPath(dst);
+	wmemzero(dst + wcslen(dst), 4);
 
-    //
-    // if destination path is too long, abort
-    // if source path is too long, rename to a shorter folder
-    //
+	//
+	// if destination path is too long, abort
+	// if source path is too long, rename to a shorter folder
+	//
 
-    BOOL ok = FALSE;
+	BOOL ok = FALSE;
 
-    WCHAR *ptr = wcsrchr(src, L'\\');
-    if (ptr) {
+	WCHAR* ptr = wcsrchr(src, L'\\');
+	if (ptr)
+	{
+		if (wcslen(dst) + wcslen(ptr) >= 250)
+		{
+			CWnd* pWnd = m_hWnd ? this : m_pParentWnd;
+			CMyApp::MsgBox(pWnd, CMyMsg(MSG_3733), MB_OK);
+		}
+		else
+		{
+			m_DstPath = DestPath;
 
-        if (wcslen(dst) + wcslen(ptr) >= 250) {
+			if (wcslen(src) < 250)
+			{
+				ok = RecoverFile2(src, dst, SameFolder);
+			}
+			else
+			{
+				ok = RecoverFile3(src, dst, SameFolder);
+			}
+		}
+	}
 
-            CWnd *pWnd = m_hWnd ? this : m_pParentWnd;
-            CMyApp::MsgBox(pWnd, CMyMsg(MSG_3733), MB_OK);
+	if (!ok)
+	{
+		m_DstPath = CString();
+	}
 
-        } else {
+	free(dst);
+	free(src);
 
-            m_DstPath = DestPath;
-
-            if (wcslen(src) < 250)
-                ok = RecoverFile2(src, dst, SameFolder);
-            else
-                ok = RecoverFile3(src, dst, SameFolder);
-        }
-    }
-
-    if (! ok)
-        m_DstPath = CString();
-
-    free(dst);
-    free(src);
-
-    return ok;
+	return ok;
 }
 
 
@@ -1183,110 +1313,116 @@ BOOL CQuickRecover::RecoverFile(const CString &DestPath, BOOL SameFolder)
 //---------------------------------------------------------------------------
 
 
-BOOL CQuickRecover::RecoverFile2(WCHAR *src, WCHAR *dst, BOOL SameFolder)
+BOOL CQuickRecover::RecoverFile2(WCHAR* src, WCHAR* dst, BOOL SameFolder)
 {
-    //
-    // handle missing files and directories
-    //
+	//
+	// handle missing files and directories
+	//
 
-    ULONG attrs = GetFileAttributes(src);
+	ULONG attrs = GetFileAttributes(src);
 
-    if (attrs & FILE_ATTRIBUTE_DIRECTORY) {
+	if (attrs & FILE_ATTRIBUTE_DIRECTORY)
+	{
+		BOOL ok;
 
-        BOOL ok;
+		if (attrs == INVALID_FILE_ATTRIBUTES)
+		{
+			ULONG LastError = GetLastError();
+			ok = (LastError == 0 || LastError == ERROR_FILE_NOT_FOUND || LastError == ERROR_PATH_NOT_FOUND);
+		}
+		else
+		{
+			ok = RecoverFolder(SameFolder);
+		}
 
-        if (attrs == INVALID_FILE_ATTRIBUTES) {
+		return ok;
+	}
 
-            ULONG LastError = GetLastError();
-            ok = (LastError == 0 ||
-                  LastError == ERROR_FILE_NOT_FOUND ||
-                  LastError == ERROR_PATH_NOT_FOUND);
+	//
+	// recover the file by moving it out of the sandbox
+	//
 
-        } else {
+	CWnd* pWnd = m_hWnd ? this : m_pParentWnd;
 
-            ok = RecoverFolder(SameFolder);
-        }
+	SHFILEOPSTRUCT op;
+	memzero(&op, sizeof(SHFILEOPSTRUCT));
 
-        return ok;
-    }
+	op.hwnd   = pWnd->m_hWnd;
+	op.wFunc  = FO_MOVE;
+	op.fFlags = FOF_NOCONFIRMMKDIR | FOF_SILENT | FOF_NOCOPYSECURITYATTRIBS;
+	if (m_replace)
+	{
+		op.fFlags |= FOF_NOCONFIRMATION;
+	}
+	op.pFrom = src;
+	op.pTo   = dst;
 
-    //
-    // recover the file by moving it out of the sandbox
-    //
-
-    CWnd *pWnd = m_hWnd ? this : m_pParentWnd;
-
-    SHFILEOPSTRUCT op;
-    memzero(&op, sizeof(SHFILEOPSTRUCT));
-
-    op.hwnd = pWnd->m_hWnd;
-    op.wFunc = FO_MOVE;
-    op.fFlags = FOF_NOCONFIRMMKDIR | FOF_SILENT
-              | FOF_NOCOPYSECURITYATTRIBS;
-    if (m_replace)
-        op.fFlags |= FOF_NOCONFIRMATION;
-    op.pFrom = src;
-    op.pTo = dst;
-
-    // The default operation is to Move the file -> Check if we have Delete access
-    // If not, we'll switch to a Copy operation.  This allows Office or Adobe files
-    // to be recovered while they are still in use.
-    HANDLE hDeleteTest = CreateFile(src, DELETE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
-    if (hDeleteTest == INVALID_HANDLE_VALUE)
-    {
-        if (GetLastError() == ERROR_SHARING_VIOLATION)
-        {
-            op.wFunc = FO_COPY;
-        }
-    }
-    else
-    {
-        CloseHandle(hDeleteTest);
-        hDeleteTest = NULL;
-    }
+	// The default operation is to Move the file -> Check if we have Delete access
+	// If not, we'll switch to a Copy operation.  This allows Office or Adobe files
+	// to be recovered while they are still in use.
+	HANDLE hDeleteTest = CreateFile(src, DELETE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hDeleteTest == INVALID_HANDLE_VALUE)
+	{
+		if (GetLastError() == ERROR_SHARING_VIOLATION)
+		{
+			op.wFunc = FO_COPY;
+		}
+	}
+	else
+	{
+		CloseHandle(hDeleteTest);
+		hDeleteTest = NULL;
+	}
 
 
-    if (! ReplaceButtonText)
-        ReplaceButtonText = _wcsdup(CMyMsg(MSG_3735));
+	if (!ReplaceButtonText)
+	{
+		ReplaceButtonText = _wcsdup(CMyMsg(MSG_3735));
+	}
 
-    BOOL YesToAll;
-    int rc = Common_SHFileOperation(&op, &YesToAll, ReplaceButtonText);
-    if (YesToAll) {
-        m_replace = TRUE;
-        op.fFlags |= FOF_NOCONFIRMATION;
-        rc = Common_SHFileOperation(&op, &YesToAll, ReplaceButtonText);
-    }
+	BOOL YesToAll;
+	int rc = Common_SHFileOperation(&op, &YesToAll, ReplaceButtonText);
+	if (YesToAll)
+	{
+		m_replace = TRUE;
+		op.fFlags |= FOF_NOCONFIRMATION;
+		rc = Common_SHFileOperation(&op, &YesToAll, ReplaceButtonText);
+	}
 
-    //
-    // complain (on error) or add to log (on success)
-    //
+	//
+	// complain (on error) or add to log (on success)
+	//
 
-    if (GetFileAttributes(dst) == INVALID_FILE_ATTRIBUTES) {
-        rc = 1;
-        op.fAnyOperationsAborted = FALSE;
-    }
-    if ((rc != 0) && (! op.fAnyOperationsAborted))
-        RecoverFileX(src);
+	if (GetFileAttributes(dst) == INVALID_FILE_ATTRIBUTES)
+	{
+		rc                       = 1;
+		op.fAnyOperationsAborted = FALSE;
+	}
+	if ((rc != 0) && (!op.fAnyOperationsAborted))
+	{
+		RecoverFileX(src);
+	}
 
-    if ((rc == 0) && (! op.fAnyOperationsAborted)) {
+	if ((rc == 0) && (!op.fAnyOperationsAborted))
+	{
+		const WCHAR* backslash = wcsrchr(src, L'\\');
+		if (backslash)
+		{
+			CString item = CString(dst) + CString(backslash);
+			if (GetFileAttributes(item) != INVALID_FILE_ATTRIBUTES)
+			{
+				m_past_files.AddTail(item);
 
-        const WCHAR *backslash = wcsrchr(src, L'\\');
-        if (backslash) {
-            CString item = CString(dst) + CString(backslash);
-            if (GetFileAttributes(item) != INVALID_FILE_ATTRIBUTES) {
+				if (m_recover_mode)
+				{
+					const WCHAR* path = (m_recover_mode == 1) ? dst : item;
+					ShellExecute(m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
+				}
+			}
+		}
+	}
 
-                m_past_files.AddTail(item);
-
-                if (m_recover_mode) {
-                    const WCHAR *path = (m_recover_mode == 1) ? dst : item;
-                    ShellExecute(
-                        m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
-                }
-            }
-        }
-    }
-
-    return (rc == 0 ? TRUE : FALSE);
+	return (rc == 0 ? TRUE : FALSE);
 }
 
 
@@ -1295,85 +1431,90 @@ BOOL CQuickRecover::RecoverFile2(WCHAR *src, WCHAR *dst, BOOL SameFolder)
 //---------------------------------------------------------------------------
 
 
-BOOL CQuickRecover::RecoverFile3(WCHAR *src, WCHAR *dst, BOOL SameFolder)
+BOOL CQuickRecover::RecoverFile3(WCHAR* src, WCHAR* dst, BOOL SameFolder)
 {
-    BOOL complain = TRUE;
-    BOOL ok;
+	BOOL complain = TRUE;
+	BOOL ok;
 
-    CBox &box = CBoxes::GetInstance().GetBox(m_BoxName);
-    CBoxFile &boxfile = box.GetBoxFile();
+	CBox& box         = CBoxes::GetInstance().GetBox(m_BoxName);
+	CBoxFile& boxfile = box.GetBoxFile();
 
-    //
-    // the source path is too long, rename it to something shorter.
-    // first, create a temporary directory
-    //
+	//
+	// the source path is too long, rename it to something shorter.
+	// first, create a temporary directory
+	//
 
-    ++m_TempFolderCounter;
-    CString StringCounter;
-    StringCounter.Format(L"\\temp-%04X", m_TempFolderCounter % 0x10000);
+	++m_TempFolderCounter;
+	CString StringCounter;
+	StringCounter.Format(L"\\temp-%04X", m_TempFolderCounter % 0x10000);
 
-    CString TempFolder = boxfile.GetPathDos() + StringCounter;
+	CString TempFolder = boxfile.GetPathDos() + StringCounter;
 
-    int SrcIndex = m_SrcPath.ReverseFind(L'\\');
-    if (SrcIndex == -1)
-        return FALSE;
-    CString NewSrcPath = TempFolder + m_SrcPath.Mid(SrcIndex);
-    if (NewSrcPath.GetLength() >= 250) {
-        RecoverFileX(src);
-        return FALSE;
-    }
+	int SrcIndex = m_SrcPath.ReverseFind(L'\\');
+	if (SrcIndex == -1)
+	{
+		return FALSE;
+	}
+	CString NewSrcPath = TempFolder + m_SrcPath.Mid(SrcIndex);
+	if (NewSrcPath.GetLength() >= 250)
+	{
+		RecoverFileX(src);
+		return FALSE;
+	}
 
-    ok = CreateDirectory(TempFolder, NULL);
-    if ((! ok) && GetLastError() == ERROR_ALREADY_EXISTS)
-        ok = TRUE;
+	ok = CreateDirectory(TempFolder, NULL);
+	if ((!ok) && GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		ok = TRUE;
+	}
 
-    if (ok) {
+	if (ok)
+	{
+		//
+		// move the source file into the temporary directory
+		//
 
-        //
-        // move the source file into the temporary directory
-        //
+		ok = MoveFile(_LongPathPrefix + src, NewSrcPath);
+		if (ok)
+		{
+			ULONG src2_len = NewSrcPath.GetLength();
+			WCHAR* src2    = malloc_WCHAR((src2_len + 4) * sizeof(WCHAR));
+			wmemcpy(src2, NewSrcPath, src2_len);
+			wmemzero(src2 + src2_len, 4);
 
-        ok = MoveFile(_LongPathPrefix + src, NewSrcPath);
-        if (ok) {
+			CString SaveSrcPath(m_SrcPath);
+			m_SrcPath = boxfile.GetPathDos() + StringCounter + SaveSrcPath.Mid(SrcIndex);
 
-            ULONG src2_len = NewSrcPath.GetLength();
-            WCHAR *src2 = malloc_WCHAR((src2_len + 4) * sizeof(WCHAR));
-            wmemcpy(src2, NewSrcPath, src2_len);
-            wmemzero(src2 + src2_len, 4);
+			complain = FALSE;
+			ok       = RecoverFile2(src2, dst, SameFolder);
 
-            CString SaveSrcPath(m_SrcPath);
-            m_SrcPath = boxfile.GetPathDos()
-                      + StringCounter
-                      + SaveSrcPath.Mid(SrcIndex);
+			m_SrcPath = SaveSrcPath;
 
-            complain = FALSE;
-            ok = RecoverFile2(src2, dst, SameFolder);
+			if (!ok)
+			{
+				//
+				// if recovery failed, move the file back
+				//
 
-            m_SrcPath = SaveSrcPath;
+				MoveFile(NewSrcPath, _LongPathPrefix + src);
+			}
 
-            if (! ok) {
+			free(src2);
+		}
 
-                //
-                // if recovery failed, move the file back
-                //
+		//
+		// remove the temporary directory
+		//
 
-                MoveFile(NewSrcPath, _LongPathPrefix + src);
-            }
+		RemoveDirectory(TempFolder);
+	}
 
-            free(src2);
-        }
+	if ((!ok) && complain)
+	{
+		RecoverFileX(src);
+	}
 
-        //
-        // remove the temporary directory
-        //
-
-        RemoveDirectory(TempFolder);
-    }
-
-    if ((! ok) && complain)
-        RecoverFileX(src);
-
-    return ok;
+	return ok;
 }
 
 
@@ -1382,14 +1523,14 @@ BOOL CQuickRecover::RecoverFile3(WCHAR *src, WCHAR *dst, BOOL SameFolder)
 //---------------------------------------------------------------------------
 
 
-NOINLINE void CQuickRecover::RecoverFileX(WCHAR *src)
+NOINLINE void CQuickRecover::RecoverFileX(WCHAR* src)
 {
-    CWnd *pWnd = m_hWnd ? this : m_pParentWnd;
+	CWnd* pWnd = m_hWnd ? this : m_pParentWnd;
 
-    CString msg = CMyMsg(MSG_3729);
-    msg += L"\n\n";
-    msg += src;
-    CMyApp::MsgBox(pWnd, msg, MB_OK);
+	CString msg = CMyMsg(MSG_3729);
+	msg += L"\n\n";
+	msg += src;
+	CMyApp::MsgBox(pWnd, msg, MB_OK);
 }
 
 
@@ -1400,90 +1541,93 @@ NOINLINE void CQuickRecover::RecoverFileX(WCHAR *src)
 
 BOOL CQuickRecover::RecoverFolder(BOOL SameFolder)
 {
-    if (! SameFolder) {
+	if (!SameFolder)
+	{
+		int SrcIndex = m_SrcPath.ReverseFind(L'\\');
+		int DstIndex = m_DstPath.ReverseFind(L'\\');
+		if (SrcIndex != -1 && DstIndex != -1)
+		{
+			CString SrcName = m_SrcPath.Mid(SrcIndex);
+			CString DstName = m_DstPath.Mid(DstIndex);
 
-        int SrcIndex = m_SrcPath.ReverseFind(L'\\');
-        int DstIndex = m_DstPath.ReverseFind(L'\\');
-        if (SrcIndex != -1 && DstIndex != -1) {
+			if (SrcName.CompareNoCase(DstName) != 0)
+			{
+				m_DstPath += SrcName;
+				SHCreateDirectory(m_pParentWnd->m_hWnd, m_DstPath);
+			}
+		}
+	}
 
-            CString SrcName = m_SrcPath.Mid(SrcIndex);
-            CString DstName = m_DstPath.Mid(DstIndex);
+	CString SaveSrcPath(m_SrcPath);
+	CString SaveDstPath(m_DstPath);
 
-            if (SrcName.CompareNoCase(DstName) != 0) {
+	CString SearchString;
+	if (m_SrcPath.GetLength() >= 250)
+	{
+		SearchString = _LongPathPrefix;
+	}
+	SearchString += SaveSrcPath + L"\\*";
 
-                m_DstPath += SrcName;
-                SHCreateDirectory(m_pParentWnd->m_hWnd, m_DstPath);
-            }
-        }
-    }
+	bool FoundAtLeastOneFile = false;
 
-    CString SaveSrcPath(m_SrcPath);
-    CString SaveDstPath(m_DstPath);
+	WIN32_FIND_DATA data;
+	HANDLE handle = FindFirstFile(SearchString, &data);
+	while (handle != INVALID_HANDLE_VALUE)
+	{
+		CString FileName(data.cFileName);
+		if (FileName != L"." && FileName != L".."
+		    && (data.ftCreationTime.dwHighDateTime != 0x01B01234 || data.ftCreationTime.dwLowDateTime != 0xDEAD44A0))
+		{
+			m_SrcPath += L"\\" + FileName;
 
-    CString SearchString;
-    if (m_SrcPath.GetLength() >= 250)
-        SearchString = _LongPathPrefix;
-    SearchString += SaveSrcPath + L"\\*";
+			BOOL ok;
+			if (SameFolder)
+			{
+				FoundAtLeastOneFile = true;
 
-    bool FoundAtLeastOneFile = false;
+				ok = RecoverToSameFolder();
+			}
+			else if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+			{
+				m_DstPath += L"\\" + FileName;
 
-    WIN32_FIND_DATA data;
-    HANDLE handle = FindFirstFile(SearchString, &data);
-    while (handle != INVALID_HANDLE_VALUE) {
+				SHCreateDirectory(m_pParentWnd->m_hWnd, m_DstPath);
 
-        CString FileName(data.cFileName);
-        if (FileName != L"." && FileName != L".." &&
-                (data.ftCreationTime.dwHighDateTime != 0x01B01234 ||
-                 data.ftCreationTime.dwLowDateTime  != 0xDEAD44A0)) {
+				ok = RecoverFolder(FALSE);
 
-            m_SrcPath += L"\\" + FileName;
+				m_DstPath = SaveDstPath;
+			}
+			else
+			{
+				ok = RecoverFile(m_DstPath);
+			}
 
-            BOOL ok;
-            if (SameFolder) {
+			m_SrcPath = SaveSrcPath;
 
-                FoundAtLeastOneFile = true;
+			if (!ok)
+			{
+				FindClose(handle);
+				return FALSE;
+			}
+		}
 
-                ok = RecoverToSameFolder();
+		if (!FindNextFile(handle, &data))
+		{
+			FindClose(handle);
+			handle = INVALID_HANDLE_VALUE;
+		}
+	}
 
-            } else if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+	if (SameFolder && (!FoundAtLeastOneFile))
+	{
+		// make sure the folder itself is created even when it
+		// doesn't contain any files or sub-folders
+		m_SrcPath += L"\\*?|";
+		RecoverToSameFolder();
+		m_SrcPath = SaveSrcPath;
+	}
 
-                m_DstPath += L"\\" + FileName;
-
-                SHCreateDirectory(m_pParentWnd->m_hWnd, m_DstPath);
-
-                ok = RecoverFolder(FALSE);
-
-                m_DstPath = SaveDstPath;
-
-            } else {
-
-                ok = RecoverFile(m_DstPath);
-
-            }
-
-            m_SrcPath = SaveSrcPath;
-
-            if (! ok) {
-                FindClose(handle);
-                return FALSE;
-            }
-        }
-
-        if (! FindNextFile(handle, &data)) {
-            FindClose(handle);
-            handle = INVALID_HANDLE_VALUE;
-        }
-    }
-
-    if (SameFolder && (! FoundAtLeastOneFile)) {
-        // make sure the folder itself is created even when it
-        // doesn't contain any files or sub-folders
-        m_SrcPath += L"\\*?|";
-        RecoverToSameFolder();
-        m_SrcPath = SaveSrcPath;
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -1494,9 +1638,9 @@ BOOL CQuickRecover::RecoverFolder(BOOL SameFolder)
 
 void CQuickRecover::RecoveryLog()
 {
-    AutoRecover();  // just for SetDialogTemplate
+	AutoRecover(); // just for SetDialogTemplate
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -1507,97 +1651,97 @@ void CQuickRecover::RecoveryLog()
 
 BOOL CQuickRecover::OnInitDialogRecoveryLog()
 {
-    //
-    // set dialog texts and adjust dialog position
-    //
+	//
+	// set dialog texts and adjust dialog position
+	//
 
-    SetWindowText(CMyMsg(MSG_3986));
+	SetWindowText(CMyMsg(MSG_3986));
 
-    GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3987));
-    GetDlgItem(ID_DELETE_EXPLAIN_2)->ShowWindow(SW_HIDE);
+	GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3987));
+	GetDlgItem(ID_DELETE_EXPLAIN_2)->ShowWindow(SW_HIDE);
 
-    GetDlgItem(ID_RECOVER_DISABLE)->ShowWindow(SW_HIDE);
+	GetDlgItem(ID_RECOVER_DISABLE)->ShowWindow(SW_HIDE);
 
-    //
-    // stretch items list on top of folders list
-    //
+	//
+	// stretch items list on top of folders list
+	//
 
-    CListBox *pListBox1 = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    CListBox *pListBox2 = (CListBox *)GetDlgItem(ID_RECOVER_FOLDERS);
+	CListBox* pListBox1 = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	CListBox* pListBox2 = (CListBox*)GetDlgItem(ID_RECOVER_FOLDERS);
 
-    RECT rc1, rc2, rc3;
-    pListBox1->GetWindowRect(&rc1);
-    pListBox2->GetWindowRect(&rc2);
-    rc1.bottom = rc2.bottom;
-    ScreenToClient(&rc1);
+	RECT rc1, rc2, rc3;
+	pListBox1->GetWindowRect(&rc1);
+	pListBox2->GetWindowRect(&rc2);
+	rc1.bottom = rc2.bottom;
+	ScreenToClient(&rc1);
 
-    pListBox2->ShowWindow(SW_HIDE);
-    pListBox1->SetWindowPos(NULL,
-        rc1.left, rc1.top, rc1.right - rc1.left, rc1.bottom - rc1.top, 0);
+	pListBox2->ShowWindow(SW_HIDE);
+	pListBox1->SetWindowPos(NULL, rc1.left, rc1.top, rc1.right - rc1.left, rc1.bottom - rc1.top, 0);
 
-    pListBox1->SetItemHeight(0, pListBox1->GetItemHeight(0) * 3 / 2);
+	pListBox1->SetItemHeight(0, pListBox1->GetItemHeight(0) * 3 / 2);
 
-    pListBox1->ModifyStyle(LBS_EXTENDEDSEL, 0);
+	pListBox1->ModifyStyle(LBS_EXTENDEDSEL, 0);
 
-    //
-    // reposition the CLOSE button
-    //
+	//
+	// reposition the CLOSE button
+	//
 
-    CButton *pButton1 = (CButton *)GetDlgItem(IDOK);
-    CButton *pButton2 = (CButton *)GetDlgItem(IDCANCEL);
-    CButton *pButton3 = (CButton *)GetDlgItem(ID_RECOVER_REMOVE);
+	CButton* pButton1 = (CButton*)GetDlgItem(IDOK);
+	CButton* pButton2 = (CButton*)GetDlgItem(IDCANCEL);
+	CButton* pButton3 = (CButton*)GetDlgItem(ID_RECOVER_REMOVE);
 
-    pButton1->GetWindowRect(&rc1);
-    pButton2->GetWindowRect(&rc2);
-    rc2.top = rc1.bottom + 5;
-    rc2.bottom = rc2.top + (rc1.bottom - rc1.top);
-    rc1.right = rc2.right;
-    rc1.top -= 5;
-    rc1.bottom -= 5;
-    ScreenToClient(&rc1);
-    ScreenToClient(&rc2);
-    rc3.left = rc1.left;
-    rc3.top = rc2.top;
-    rc3.right = rc2.left - 15;
-    rc3.bottom = rc2.bottom;
+	pButton1->GetWindowRect(&rc1);
+	pButton2->GetWindowRect(&rc2);
+	rc2.top    = rc1.bottom + 5;
+	rc2.bottom = rc2.top + (rc1.bottom - rc1.top);
+	rc1.right  = rc2.right;
+	rc1.top -= 5;
+	rc1.bottom -= 5;
+	ScreenToClient(&rc1);
+	ScreenToClient(&rc2);
+	rc3.left   = rc1.left;
+	rc3.top    = rc2.top;
+	rc3.right  = rc2.left - 15;
+	rc3.bottom = rc2.bottom;
 
-    pButton1->SetWindowPos(NULL,
-        rc1.left, rc1.top, rc1.right - rc1.left, rc1.bottom - rc1.top, 0);
-    pButton2->SetWindowPos(NULL,
-        rc2.left, rc2.top, rc2.right - rc2.left, rc2.bottom - rc2.top, 0);
-    pButton3->SetWindowPos(NULL,
-        rc3.left, rc3.top, rc3.right - rc3.left, rc3.bottom - rc3.top,
-        SWP_SHOWWINDOW);
+	pButton1->SetWindowPos(NULL, rc1.left, rc1.top, rc1.right - rc1.left, rc1.bottom - rc1.top, 0);
+	pButton2->SetWindowPos(NULL, rc2.left, rc2.top, rc2.right - rc2.left, rc2.bottom - rc2.top, 0);
+	pButton3->SetWindowPos(NULL, rc3.left, rc3.top, rc3.right - rc3.left, rc3.bottom - rc3.top, SWP_SHOWWINDOW);
 
-    pButton1->SetWindowText(CMyMsg(MSG_3981));
-    pButton2->SetWindowText(CMyMsg(MSG_3004));
-    pButton3->SetWindowText(CMyMsg(MSG_3983));
+	pButton1->SetWindowText(CMyMsg(MSG_3981));
+	pButton2->SetWindowText(CMyMsg(MSG_3004));
+	pButton3->SetWindowText(CMyMsg(MSG_3983));
 
-    //
-    // populate list of recently recovered files
-    //
+	//
+	// populate list of recently recovered files
+	//
 
-    POSITION pos = m_past_files.GetHeadPosition();
-    while (pos) {
-        CString &item = m_past_files.GetNext(pos);
-        pListBox1->InsertString(0, item);
-    }
+	POSITION pos = m_past_files.GetHeadPosition();
+	while (pos)
+	{
+		CString& item = m_past_files.GetNext(pos);
+		pListBox1->InsertString(0, item);
+	}
 
-    m_log_count = (ULONG)(ULONG_PTR)m_past_files.GetCount();
-    if (! m_log_count) {
-        pButton1->EnableWindow(FALSE);
-        pButton3->EnableWindow(FALSE);
-    } else
-        pListBox1->SetCurSel(0);
+	m_log_count = (ULONG)(ULONG_PTR)m_past_files.GetCount();
+	if (!m_log_count)
+	{
+		pButton1->EnableWindow(FALSE);
+		pButton3->EnableWindow(FALSE);
+	}
+	else
+	{
+		pListBox1->SetCurSel(0);
+	}
 
-    //
-    // set recovery log mode of operation
-    //
+	//
+	// set recovery log mode of operation
+	//
 
-    m_log = TRUE;
-    m_ready = TRUE;
+	m_log   = TRUE;
+	m_ready = TRUE;
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -1608,19 +1752,21 @@ BOOL CQuickRecover::OnInitDialogRecoveryLog()
 
 void CQuickRecover::OnOKRecoveryLog()
 {
-    CListBox *list = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
-    int index = list->GetCurSel();
-    if (index == LB_ERR)
-        return;
+	CListBox* list = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
+	int index      = list->GetCurSel();
+	if (index == LB_ERR)
+	{
+		return;
+	}
 
-    CString path = m_past_files.GetAt(m_past_files.FindIndex(index));
-    index = path.ReverseFind(L'\\');
-    if (index != -1) {
-        path = path.Mid(0, index);
-        ShellExecute(m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
-    }
+	CString path = m_past_files.GetAt(m_past_files.FindIndex(index));
+	index        = path.ReverseFind(L'\\');
+	if (index != -1)
+	{
+		path = path.Mid(0, index);
+		ShellExecute(m_hWnd, NULL, path, NULL, NULL, SW_SHOWNORMAL);
+	}
 }
-
 
 
 //---------------------------------------------------------------------------
@@ -1628,25 +1774,26 @@ void CQuickRecover::OnOKRecoveryLog()
 //---------------------------------------------------------------------------
 
 
-void CQuickRecover::OnActivate(UINT nState, CWnd *pWndOther, BOOL bMinimized)
+void CQuickRecover::OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized)
 {
-    if (m_log && nState != WA_INACTIVE &&
-            m_log_count != (ULONG)(ULONG_PTR)m_past_files.GetCount()) {
+	if (m_log && nState != WA_INACTIVE && m_log_count != (ULONG)(ULONG_PTR)m_past_files.GetCount())
+	{
+		CListBox* pListBox1 = (CListBox*)GetDlgItem(ID_RECOVER_ITEMS);
 
-        CListBox *pListBox1 = (CListBox *)GetDlgItem(ID_RECOVER_ITEMS);
+		POSITION pos = m_past_files.FindIndex(m_log_count);
+		while (pos)
+		{
+			CString& item = m_past_files.GetNext(pos);
+			pListBox1->InsertString(0, item);
+		}
 
-        POSITION pos = m_past_files.FindIndex(m_log_count);
-        while (pos) {
-            CString &item = m_past_files.GetNext(pos);
-            pListBox1->InsertString(0, item);
-        }
-
-        m_log_count = (ULONG)(ULONG_PTR)m_past_files.GetCount();
-        if (m_log_count) {
-            GetDlgItem(IDOK)->EnableWindow(TRUE);
-            GetDlgItem(ID_RECOVER_REMOVE)->EnableWindow(TRUE);
-        }
-    }
+		m_log_count = (ULONG)(ULONG_PTR)m_past_files.GetCount();
+		if (m_log_count)
+		{
+			GetDlgItem(IDOK)->EnableWindow(TRUE);
+			GetDlgItem(ID_RECOVER_REMOVE)->EnableWindow(TRUE);
+		}
+	}
 }
 
 
@@ -1657,11 +1804,11 @@ void CQuickRecover::OnActivate(UINT nState, CWnd *pWndOther, BOOL bMinimized)
 
 void CQuickRecover::OnRemoveFolders()
 {
-    m_past_files.RemoveAll();
-    m_log_count = 0;
-    ((CListBox *)GetDlgItem(ID_RECOVER_ITEMS))->ResetContent();
-    GetDlgItem(IDOK)->EnableWindow(FALSE);
-    GetDlgItem(ID_RECOVER_REMOVE)->EnableWindow(FALSE);
+	m_past_files.RemoveAll();
+	m_log_count = 0;
+	((CListBox*)GetDlgItem(ID_RECOVER_ITEMS))->ResetContent();
+	GetDlgItem(IDOK)->EnableWindow(FALSE);
+	GetDlgItem(ID_RECOVER_REMOVE)->EnableWindow(FALSE);
 }
 
 
@@ -1673,19 +1820,19 @@ void CQuickRecover::OnRemoveFolders()
 #if 0
 
 
-#define BS_DEFSPLITBUTTON       0x0000000DL
-#define BCN_DROPDOWN            (BCN_FIRST + 0x0002)
-#define BCM_SETSPLITINFO        (BCM_FIRST + 0x0007)
+	#define BS_DEFSPLITBUTTON 0x0000000DL
+	#define BCN_DROPDOWN (BCN_FIRST + 0x0002)
+	#define BCM_SETSPLITINFO (BCM_FIRST + 0x0007)
 // SPLIT BUTTON INFO mask flags
-#define BCSIF_GLYPH             0x0001
-#define BCSIF_IMAGE             0x0002
-#define BCSIF_STYLE             0x0004
-#define BCSIF_SIZE              0x0008
+	#define BCSIF_GLYPH 0x0001
+	#define BCSIF_IMAGE 0x0002
+	#define BCSIF_STYLE 0x0004
+	#define BCSIF_SIZE 0x0008
 // SPLIT BUTTON STYLE flags
-#define BCSS_NOSPLIT            0x0001
-#define BCSS_STRETCH            0x0002
-#define BCSS_ALIGNLEFT          0x0004
-#define BCSS_IMAGE              0x0008
+	#define BCSS_NOSPLIT 0x0001
+	#define BCSS_STRETCH 0x0002
+	#define BCSS_ALIGNLEFT 0x0004
+	#define BCSS_IMAGE 0x0008
 
 
 ON_NOTIFY(BCN_DROPDOWN,     IDOK,               OnDropDownRecover)

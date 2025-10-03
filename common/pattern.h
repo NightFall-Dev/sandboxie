@@ -50,19 +50,19 @@ typedef struct _PATTERN PATTERN;
 // LIST_ELEM member (see list.h), so it can be inserted into a list.
 //
 
-PATTERN *Pattern_Create(POOL *pool, const WCHAR *string, BOOLEAN lower);
+PATTERN* Pattern_Create(POOL* pool, const WCHAR* string, BOOLEAN lower);
 
 //
 // Pattern_Free:  free the PATTERN object 'pattern'
 //
 
-void Pattern_Free(PATTERN *pat);
+void Pattern_Free(PATTERN* pat);
 
 //
 // Pattern_Source:  returns the string used to create 'pattern'.
 //
 
-const WCHAR *Pattern_Source(PATTERN *pat);
+const WCHAR* Pattern_Source(PATTERN* pat);
 
 //
 // Pattern_Match:  returns TRUE if 'string' matches PATTERN object 'pattern'.
@@ -70,7 +70,7 @@ const WCHAR *Pattern_Source(PATTERN *pat);
 // should be all lowercase characters.
 //
 
-BOOLEAN Pattern_Match(PATTERN *pat, const WCHAR *string, int string_len);
+BOOLEAN Pattern_Match(PATTERN* pat, const WCHAR* string, int string_len);
 
 
 //---------------------------------------------------------------------------

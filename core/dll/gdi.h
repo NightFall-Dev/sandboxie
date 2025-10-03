@@ -23,32 +23,23 @@
 #define GDI_H_INCLUDED
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-typedef UINT (*P_GetEnhMetaFileBits)(
-    HENHMETAFILE hemf,
-    UINT cbBuffer,
-    LPBYTE lpbBuffer
-    );
+	typedef UINT (*P_GetEnhMetaFileBits)(HENHMETAFILE hemf, UINT cbBuffer, LPBYTE lpbBuffer);
 
-typedef UINT (*P_GetBitmapBits)(
-    HBITMAP hBitmap,
-    UINT cbBuffer,
-    LPBYTE lpbBuffer
-    );
+	typedef UINT (*P_GetBitmapBits)(HBITMAP hBitmap, UINT cbBuffer, LPBYTE lpbBuffer);
 
 
-typedef BOOL (*P_DeleteObject)(
-    HGDIOBJ hObject);
+	typedef BOOL (*P_DeleteObject)(HGDIOBJ hObject);
 
-typedef BOOL (*P_DeleteEnhMetaFile)(
-    HENHMETAFILE hemf );
+	typedef BOOL (*P_DeleteEnhMetaFile)(HENHMETAFILE hemf);
 
-extern P_GetEnhMetaFileBits         __sys_GetEnhMetaFileBits;
-extern P_GetBitmapBits              __sys_GetBitmapBits;
-extern P_DeleteObject               __sys_DeleteObject;
-extern P_DeleteEnhMetaFile          __sys_DeleteEnhMetaFile;
+	extern P_GetEnhMetaFileBits __sys_GetEnhMetaFileBits;
+	extern P_GetBitmapBits __sys_GetBitmapBits;
+	extern P_DeleteObject __sys_DeleteObject;
+	extern P_DeleteEnhMetaFile __sys_DeleteEnhMetaFile;
 
 #ifdef __cplusplus
 }; // extern "C"

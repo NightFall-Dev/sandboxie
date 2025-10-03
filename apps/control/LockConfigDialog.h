@@ -26,24 +26,22 @@
 
 class CLockConfigDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnEnablePassword();
-    afx_msg void OnChangePassword();
+	afx_msg void OnEnablePassword();
+	afx_msg void OnChangePassword();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 private:
-
-    WCHAR m_NewPassword[66];
-    BOOL  m_RemovePassword;
+	WCHAR m_NewPassword[66];
+	BOOL m_RemovePassword;
 
 public:
-
-    CLockConfigDialog(CWnd *pParentWnd);
-    ~CLockConfigDialog();
+	CLockConfigDialog(CWnd* pParentWnd);
+	~CLockConfigDialog();
 };
 
 

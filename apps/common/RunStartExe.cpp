@@ -20,7 +20,6 @@
 //---------------------------------------------------------------------------
 
 #include "..\control\stdafx.h"
-
 #include "CommonUtils.h"
 #include "common/defines.h"
 #include "common/my_version.h"
@@ -32,67 +31,72 @@
 //---------------------------------------------------------------------------
 
 
-void Common_RunStartExe(
-    const CString &cmd, const CString &box, BOOL wait, BOOL inherit)
+void Common_RunStartExe(const CString& cmd, const CString& box, BOOL wait, BOOL inherit)
 {
-    WCHAR *cmdline = (WCHAR *)LocalAlloc(LMEM_FIXED, 2048 * sizeof(WCHAR));
+	WCHAR* cmdline = (WCHAR*)LocalAlloc(LMEM_FIXED, 2048 * sizeof(WCHAR));
 
-    wcscpy(cmdline, L"/box:");
-    if (box.IsEmpty())
-        wcscat(cmdline, L"__ask__");
-    else
-        wcscat(cmdline, box);
-    wcscat(cmdline, L" ");
-    wcscat(cmdline, cmd);
+	wcscpy(cmdline, L"/box:");
+	if (box.IsEmpty())
+	{
+		wcscat(cmdline, L"__ask__");
+	}
+	else
+	{
+		wcscat(cmdline, box);
+	}
+	wcscat(cmdline, L" ");
+	wcscat(cmdline, cmd);
 
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-    memzero(&si, sizeof(si));
-    si.cb = sizeof(STARTUPINFO);
-    if (inherit)
-        si.lpReserved = (LPTSTR)1;
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	memzero(&si, sizeof(si));
+	si.cb = sizeof(STARTUPINFO);
+	if (inherit)
+	{
+		si.lpReserved = (LPTSTR)1;
+	}
 
-    if (! SbieDll_RunFromHome(START_EXE, cmdline, &si, &pi)) {
+	if (!SbieDll_RunFromHome(START_EXE, cmdline, &si, &pi))
+	{
+		ULONG ErrorCode   = GetLastError();
+		WCHAR* msg        = (WCHAR*)LocalAlloc(LMEM_FIXED, 2560 * sizeof(WCHAR));
+		DWORD FormatFlags = FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
+		FormatMessage(FormatFlags, NULL, ErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)msg, 500, NULL);
+		wcscat(msg, L"\r\n\r\n" START_EXE L" ");
+		wcscat(msg, cmdline);
 
-        ULONG ErrorCode = GetLastError();
-        WCHAR *msg = (WCHAR *)LocalAlloc(LMEM_FIXED, 2560 * sizeof(WCHAR));
-        DWORD FormatFlags = FORMAT_MESSAGE_FROM_SYSTEM |
-                            FORMAT_MESSAGE_IGNORE_INSERTS;
-        FormatMessage(FormatFlags, NULL, ErrorCode,
-                      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                      (LPTSTR)msg, 500, NULL);
-        wcscat(msg, L"\r\n\r\n" START_EXE L" ");
-        wcscat(msg, cmdline);
+		MessageBox(NULL, msg, SANDBOXIE L" " START_EXE L" Failed", MB_OK | MB_TOPMOST);
 
-        MessageBox(NULL, msg, SANDBOXIE L" " START_EXE L" Failed",
-                   MB_OK | MB_TOPMOST);
+		LocalFree(msg);
+	}
+	else
+	{
+		CWaitCursor waitcursor;
 
-        LocalFree(msg);
+		while (wait)
+		{
+			waitcursor.Restore();
+			ULONG rc = MsgWaitForMultipleObjects(1, &pi.hProcess, FALSE, INFINITE, QS_ALLEVENTS);
+			if (rc == WAIT_OBJECT_0)
+			{
+				break;
+			}
 
-    } else {
+			MSG msg;
+			while (1)
+			{
+				if (!PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+				{
+					break;
+				}
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			}
+		}
 
-        CWaitCursor waitcursor;
+		CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread);
+	}
 
-        while (wait) {
-
-            waitcursor.Restore();
-            ULONG rc = MsgWaitForMultipleObjects(
-                        1, &pi.hProcess, FALSE, INFINITE, QS_ALLEVENTS);
-            if (rc == WAIT_OBJECT_0)
-                break;
-
-            MSG msg;
-            while (1) {
-                if (! PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-                    break;
-                ::TranslateMessage(&msg);
-                ::DispatchMessage(&msg);
-            }
-        }
-
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-    }
-
-    LocalFree(cmdline);
+	LocalFree(cmdline);
 }

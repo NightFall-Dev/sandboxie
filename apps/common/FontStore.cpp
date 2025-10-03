@@ -19,10 +19,10 @@
 // Font Store
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-
 #include "FontStore.h"
+
 #include "common/defines.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------
 
 
-CFontStore *CFontStore::m_instance = NULL;
+CFontStore* CFontStore::m_instance = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -38,40 +38,44 @@ CFontStore *CFontStore::m_instance = NULL;
 //---------------------------------------------------------------------------
 
 
-CFont *CFontStore::Get(
-    const CString &TypeFaceName, int PointSize, int Weight)
+CFont* CFontStore::Get(const CString& TypeFaceName, int PointSize, int Weight)
 {
-    if (! m_instance)
-        m_instance = new CFontStore();
+	if (!m_instance)
+	{
+		m_instance = new CFontStore();
+	}
 
-    CString key;
-    key.Format(L"%s:%d:%d", TypeFaceName, PointSize, Weight);
+	CString key;
+	key.Format(L"%s:%d:%d", TypeFaceName, PointSize, Weight);
 
-    void *ptr;
-    if (m_instance->Lookup(key, ptr))
-        return (CFont *)ptr;
+	void* ptr;
+	if (m_instance->Lookup(key, ptr))
+	{
+		return (CFont*)ptr;
+	}
 
-    HDC hDC = ::GetDC(NULL);
-    int dpi = GetDeviceCaps(hDC, LOGPIXELSY);
-    if (dpi > 96) {
-        // reduce one point size for every 25% increase over the base 96 DPI
-        PointSize -= (dpi - 96) / 24;
-    }
-    ::ReleaseDC(NULL, hDC);
+	HDC hDC = ::GetDC(NULL);
+	int dpi = GetDeviceCaps(hDC, LOGPIXELSY);
+	if (dpi > 96)
+	{
+		// reduce one point size for every 25% increase over the base 96 DPI
+		PointSize -= (dpi - 96) / 24;
+	}
+	::ReleaseDC(NULL, hDC);
 
-    LOGFONT logfont;
-    memzero(&logfont, sizeof(LOGFONT));
-    logfont.lfCharSet = DEFAULT_CHARSET;
-    logfont.lfHeight = PointSize * 10;  // see CreatePointFontIndirect in MFC
-    logfont.lfWeight = Weight;
-    int len = max(TypeFaceName.GetLength(), 30);
-    wmemcpy(logfont.lfFaceName, TypeFaceName, len);
-    logfont.lfFaceName[len] = L'\0';
+	LOGFONT logfont;
+	memzero(&logfont, sizeof(LOGFONT));
+	logfont.lfCharSet = DEFAULT_CHARSET;
+	logfont.lfHeight  = PointSize * 10; // see CreatePointFontIndirect in MFC
+	logfont.lfWeight  = Weight;
+	int len           = max(TypeFaceName.GetLength(), 30);
+	wmemcpy(logfont.lfFaceName, TypeFaceName, len);
+	logfont.lfFaceName[len] = L'\0';
 
-    CFont *font = new CFont();
-    font->CreatePointFontIndirect(&logfont, NULL);
+	CFont* font = new CFont();
+	font->CreatePointFontIndirect(&logfont, NULL);
 
-    m_instance->SetAt(key, font);
+	m_instance->SetAt(key, font);
 
-    return font;
+	return font;
 }

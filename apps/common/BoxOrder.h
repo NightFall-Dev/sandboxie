@@ -25,44 +25,44 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-//---------------------------------------------------------------------------
-// Types and Structures
-//---------------------------------------------------------------------------
+	//---------------------------------------------------------------------------
+	// Types and Structures
+	//---------------------------------------------------------------------------
 
 
-typedef struct _BOX_ORDER_ENTRY {
+	typedef struct _BOX_ORDER_ENTRY
+	{
+		struct _BOX_ORDER_ENTRY* next;
+		struct _BOX_ORDER_ENTRY* children;
+		WCHAR name[1];
 
-    struct _BOX_ORDER_ENTRY *next;
-    struct _BOX_ORDER_ENTRY *children;
-    WCHAR name[1];
-
-} BOX_ORDER_ENTRY;
-
-
-//---------------------------------------------------------------------------
-// Functions
-//---------------------------------------------------------------------------
+	} BOX_ORDER_ENTRY;
 
 
-BOX_ORDER_ENTRY *BoxOrder_Alloc(const WCHAR *name);
-
-void BoxOrder_Free(BOX_ORDER_ENTRY *entry);
-
-void BoxOrder_Append(BOX_ORDER_ENTRY *parent, BOX_ORDER_ENTRY *child);
-
-BOX_ORDER_ENTRY *BoxOrder_Read(void);
-
-BOX_ORDER_ENTRY *BoxOrder_ReadDefault(void);
-
-int BoxOrder_Write(BOX_ORDER_ENTRY *root);
+	//---------------------------------------------------------------------------
+	// Functions
+	//---------------------------------------------------------------------------
 
 
+	BOX_ORDER_ENTRY* BoxOrder_Alloc(const WCHAR* name);
 
-//---------------------------------------------------------------------------
+	void BoxOrder_Free(BOX_ORDER_ENTRY* entry);
+
+	void BoxOrder_Append(BOX_ORDER_ENTRY* parent, BOX_ORDER_ENTRY* child);
+
+	BOX_ORDER_ENTRY* BoxOrder_Read(void);
+
+	BOX_ORDER_ENTRY* BoxOrder_ReadDefault(void);
+
+	int BoxOrder_Write(BOX_ORDER_ENTRY* root);
+
+
+	//---------------------------------------------------------------------------
 
 
 #ifdef __cplusplus

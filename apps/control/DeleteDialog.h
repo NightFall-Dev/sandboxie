@@ -31,43 +31,40 @@
 
 class CDeleteDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    BOOL m_WithDelete;
-    BOOL m_AutoDelete;
+	BOOL m_WithDelete;
+	BOOL m_AutoDelete;
 
-    CFileListCtrl m_filelist;
-    CFlashingButton m_DeleteButton;
+	CFileListCtrl m_filelist;
+	CFlashingButton m_DeleteButton;
 
-    CToolTipButton SelectAllButton;
+	CToolTipButton SelectAllButton;
 
-    BOOL m_empty;
-    int m_files;
-    int m_folders;
-    ULONG64 m_size;
-    CStringList m_stack;
+	BOOL m_empty;
+	int m_files;
+	int m_folders;
+	ULONG64 m_size;
+	CStringList m_stack;
 
-    BOOL m_spawned;
+	BOOL m_spawned;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    afx_msg void OnCmdAddFolder();
-    afx_msg void OnCmdRecoverSameAny();
+	afx_msg void OnCmdAddFolder();
+	afx_msg void OnCmdRecoverSameAny();
 
-    afx_msg void OnSelectAll();
+	afx_msg void OnSelectAll();
 
-    afx_msg void OnContextMenu(CWnd *pWnd, CPoint pt);
+	afx_msg void OnContextMenu(CWnd* pWnd, CPoint pt);
 
 public:
-
-    CDeleteDialog(CWnd *pParentWnd, const WCHAR *BoxName,
-                  BOOL WithDelete, BOOL AutoDelete,
-                  BOOL *DeleteSpawned);
-    ~CDeleteDialog();
+	CDeleteDialog(CWnd* pParentWnd, const WCHAR* BoxName, BOOL WithDelete, BOOL AutoDelete, BOOL* DeleteSpawned);
+	~CDeleteDialog();
 };
 
 

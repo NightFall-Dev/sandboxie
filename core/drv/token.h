@@ -34,29 +34,25 @@
 
 BOOLEAN Token_Init(void);
 
-void *Token_Query(
-    void *TokenObject, TOKEN_INFORMATION_CLASS InfoClass, ULONG SessionId);
+void* Token_Query(void* TokenObject, TOKEN_INFORMATION_CLASS InfoClass, ULONG SessionId);
 
-NTSTATUS Token_QuerySidString(void *TokenObject, UNICODE_STRING *SidString);
+NTSTATUS Token_QuerySidString(void* TokenObject, UNICODE_STRING* SidString);
 
-BOOLEAN Token_CheckPrivilege(
-    void *TokenObject, ULONG PrivilegeLowPart, ULONG SessionId);
+BOOLEAN Token_CheckPrivilege(void* TokenObject, ULONG PrivilegeLowPart, ULONG SessionId);
 
-void *Token_QueryPrimary(TOKEN_INFORMATION_CLASS InfoClass, ULONG SessionId);
+void* Token_QueryPrimary(TOKEN_INFORMATION_CLASS InfoClass, ULONG SessionId);
 
-void *Token_Filter(void *TokenObject, ULONG DropRights, ULONG SessionId);
+void* Token_Filter(void* TokenObject, ULONG DropRights, ULONG SessionId);
 
-void *Token_Restrict(
-    void *TokenObject, ULONG FilterFlags, ULONG *OutIntegrityLevel, PROCESS *proc);
+void* Token_Restrict(void* TokenObject, ULONG FilterFlags, ULONG* OutIntegrityLevel, PROCESS* proc);
 
-NTSTATUS Token_AssignPrimaryHandle(
-    void *ProcessObject, HANDLE TokenKernelHandle, ULONG SessionId);
+NTSTATUS Token_AssignPrimaryHandle(void* ProcessObject, HANDLE TokenKernelHandle, ULONG SessionId);
 
-BOOLEAN Token_ReplacePrimary(PROCESS *proc);
+BOOLEAN Token_ReplacePrimary(PROCESS* proc);
 
-void Token_ReleaseProcess(PROCESS *proc);
+void Token_ReleaseProcess(PROCESS* proc);
 
-BOOLEAN Token_ResetPrimary(PROCESS *proc);
+BOOLEAN Token_ResetPrimary(PROCESS* proc);
 ULONG GetThreadTokenOwnerPid();
 //---------------------------------------------------------------------------
 

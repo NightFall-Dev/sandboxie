@@ -20,8 +20,9 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "WindowTitleMap.h"
+
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -29,11 +30,9 @@
 //---------------------------------------------------------------------------
 
 
-extern "C" DWORD GetModuleFileNameExW(
-    HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize);
+extern "C" DWORD GetModuleFileNameExW(HANDLE hProcess, HMODULE hModule, LPTSTR lpFilename, DWORD nSize);
 
-typedef int (*P_InternalGetWindowText)(
-    HWND hWnd, LPWSTR lpString, int nMaxCount);
+typedef int (*P_InternalGetWindowText)(HWND hWnd, LPWSTR lpString, int nMaxCount);
 
 
 //---------------------------------------------------------------------------
@@ -41,13 +40,12 @@ typedef int (*P_InternalGetWindowText)(
 //---------------------------------------------------------------------------
 
 
-struct MapEntry {
-
-   WCHAR name[100];
-   HICON icon;
-   FILETIME time;
-   BOOL valid;
-
+struct MapEntry
+{
+	WCHAR name[100];
+	HICON icon;
+	FILETIME time;
+	BOOL valid;
 };
 
 
@@ -56,7 +54,7 @@ struct MapEntry {
 //---------------------------------------------------------------------------
 
 
-CWindowTitleMap *CWindowTitleMap::m_instance = new CWindowTitleMap();
+CWindowTitleMap* CWindowTitleMap::m_instance = new CWindowTitleMap();
 
 
 //---------------------------------------------------------------------------
@@ -66,14 +64,13 @@ CWindowTitleMap *CWindowTitleMap::m_instance = new CWindowTitleMap();
 
 CWindowTitleMap::CWindowTitleMap()
 {
-    m_counter = 0;
+	m_counter = 0;
 
-    m_nullIcon = LoadIcon(NULL, IDI_APPLICATION);
+	m_nullIcon = LoadIcon(NULL, IDI_APPLICATION);
 
-    m_pGetWindowText = GetProcAddress(
-        GetModuleHandle(L"user32.dll"), "InternalGetWindowText");
+	m_pGetWindowText = GetProcAddress(GetModuleHandle(L"user32.dll"), "InternalGetWindowText");
 
-    InitHashTable(100, TRUE);
+	InitHashTable(100, TRUE);
 }
 
 
@@ -84,7 +81,7 @@ CWindowTitleMap::CWindowTitleMap()
 
 CWindowTitleMap::~CWindowTitleMap()
 {
-    Clear();
+	Clear();
 }
 
 
@@ -93,9 +90,9 @@ CWindowTitleMap::~CWindowTitleMap()
 //---------------------------------------------------------------------------
 
 
-CWindowTitleMap &CWindowTitleMap::GetInstance()
+CWindowTitleMap& CWindowTitleMap::GetInstance()
 {
-    return *m_instance;
+	return *m_instance;
 }
 
 
@@ -106,14 +103,15 @@ CWindowTitleMap &CWindowTitleMap::GetInstance()
 
 void CWindowTitleMap::Clear()
 {
-    void *key, *ptr;
-    POSITION pos = GetStartPosition();
-    while (pos) {
-        GetNextAssoc(pos, key, ptr);
-        MapEntry *entry = (MapEntry *)ptr;
-        delete entry;
-    }
-    RemoveAll();
+	void *key, *ptr;
+	POSITION pos = GetStartPosition();
+	while (pos)
+	{
+		GetNextAssoc(pos, key, ptr);
+		MapEntry* entry = (MapEntry*)ptr;
+		delete entry;
+	}
+	RemoveAll();
 }
 
 
@@ -124,10 +122,10 @@ void CWindowTitleMap::Clear()
 
 void CWindowTitleMap::Refresh()
 {
-    ++m_counter;
-    SbieApi_EnumProcess(NULL, m_pids);
-    EnumWindows(CWindowTitleMap::EnumProc, (LPARAM)this);
-    RefreshIcons();
+	++m_counter;
+	SbieApi_EnumProcess(NULL, m_pids);
+	EnumWindows(CWindowTitleMap::EnumProc, (LPARAM)this);
+	RefreshIcons();
 }
 
 
@@ -138,17 +136,23 @@ void CWindowTitleMap::Refresh()
 
 BOOL CWindowTitleMap::ShouldIgnoreProcess(ULONG pid)
 {
-    ULONG i, num;
+	ULONG i, num;
 
-    num = m_pids[0];
-    if (num > 500)
-        return FALSE;
+	num = m_pids[0];
+	if (num > 500)
+	{
+		return FALSE;
+	}
 
-    for (i = 1; i <= num; ++i)
-        if (m_pids[i] == pid)
-            return FALSE;
+	for (i = 1; i <= num; ++i)
+	{
+		if (m_pids[i] == pid)
+		{
+			return FALSE;
+		}
+	}
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -159,59 +163,72 @@ BOOL CWindowTitleMap::ShouldIgnoreProcess(ULONG pid)
 
 BOOL CWindowTitleMap::EnumProc(HWND hwnd, LPARAM lParam)
 {
-    if (GetParent(hwnd) || GetWindow(hwnd, GW_OWNER))
-        return TRUE;
-    ULONG style = GetWindowLong(hwnd, GWL_STYLE);
-    if ((style & (WS_CAPTION | WS_SYSMENU)) != (WS_CAPTION | WS_SYSMENU))
-        return TRUE;
-    if (! IsWindowVisible(hwnd))
-        return TRUE;
-    /*
+	if (GetParent(hwnd) || GetWindow(hwnd, GW_OWNER))
+	{
+		return TRUE;
+	}
+	ULONG style = GetWindowLong(hwnd, GWL_STYLE);
+	if ((style & (WS_CAPTION | WS_SYSMENU)) != (WS_CAPTION | WS_SYSMENU))
+	{
+		return TRUE;
+	}
+	if (!IsWindowVisible(hwnd))
+	{
+		return TRUE;
+	}
+	/*
     if ((style & WS_OVERLAPPEDWINDOW) != WS_OVERLAPPEDWINDOW &&
         (style & WS_POPUPWINDOW)      != WS_POPUPWINDOW)
         return TRUE;
     */
 
-    CWindowTitleMap &map = *(CWindowTitleMap *)lParam;
+	CWindowTitleMap& map = *(CWindowTitleMap*)lParam;
 
 #ifdef _WIN64
-    ULONG64 pid;
-    ULONG pid32;
-    GetWindowThreadProcessId(hwnd, &pid32);
-    pid = pid32;
+	ULONG64 pid;
+	ULONG pid32;
+	GetWindowThreadProcessId(hwnd, &pid32);
+	pid = pid32;
 #else
-    ULONG pid;
-    GetWindowThreadProcessId(hwnd, &pid);
+	ULONG pid;
+	GetWindowThreadProcessId(hwnd, &pid);
 #endif
 
-    if (map.ShouldIgnoreProcess((ULONG)(ULONG_PTR)pid))
-        return TRUE;
+	if (map.ShouldIgnoreProcess((ULONG)(ULONG_PTR)pid))
+	{
+		return TRUE;
+	}
 
-    MapEntry *entry;
-    void *ptr;
-    BOOL ok = map.Lookup((void *)pid, ptr);
-    if (ok && ptr) {
-        entry = (MapEntry *)ptr;
-        if ((map.m_counter % 5) == 0)
-            entry->name[0] = L'\0';
-    } else {
-        entry = new MapEntry();
-        entry->name[0] = L'\0';
-        entry->icon = NULL;
-        entry->time.dwLowDateTime = 0;
-        entry->time.dwHighDateTime = 0;
-    }
-    entry->valid = TRUE;
+	MapEntry* entry;
+	void* ptr;
+	BOOL ok = map.Lookup((void*)pid, ptr);
+	if (ok && ptr)
+	{
+		entry = (MapEntry*)ptr;
+		if ((map.m_counter % 5) == 0)
+		{
+			entry->name[0] = L'\0';
+		}
+	}
+	else
+	{
+		entry                      = new MapEntry();
+		entry->name[0]             = L'\0';
+		entry->icon                = NULL;
+		entry->time.dwLowDateTime  = 0;
+		entry->time.dwHighDateTime = 0;
+	}
+	entry->valid = TRUE;
 
-    if (! entry->name[0]) {
+	if (!entry->name[0])
+	{
+		((P_InternalGetWindowText)map.m_pGetWindowText)(hwnd, entry->name, 99);
+		entry->name[99] = L'\0';
 
-        ((P_InternalGetWindowText)map.m_pGetWindowText)(hwnd, entry->name, 99);
-        entry->name[99] = L'\0';
+		map.SetAt((void*)pid, entry);
+	}
 
-        map.SetAt((void *)pid, entry);
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -222,91 +239,99 @@ BOOL CWindowTitleMap::EnumProc(HWND hwnd, LPARAM lParam)
 
 void CWindowTitleMap::RefreshIcons()
 {
-    WCHAR path[300];
-    //SHFILEINFO shfi;
+	WCHAR path[300];
+	//SHFILEINFO shfi;
 
-    void *key, *ptr;
-    POSITION pos = GetStartPosition();
-    while (pos) {
-        GetNextAssoc(pos, key, ptr);
-        MapEntry *entry = (MapEntry *)ptr;
-        if (! entry->valid)
-            continue;
+	void *key, *ptr;
+	POSITION pos = GetStartPosition();
+	while (pos)
+	{
+		GetNextAssoc(pos, key, ptr);
+		MapEntry* entry = (MapEntry*)ptr;
+		if (!entry->valid)
+		{
+			continue;
+		}
 
-        //
-        // open the process object to extract its icon
-        //
+		//
+		// open the process object to extract its icon
+		//
 
-        HANDLE hProcess = NULL;
+		HANDLE hProcess = NULL;
 
-        if (! ShouldIgnoreProcess((ULONG)(ULONG_PTR)key)) {
+		if (!ShouldIgnoreProcess((ULONG)(ULONG_PTR)key))
+		{
+			hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, (ULONG)(ULONG_PTR)key);
+		}
 
-            hProcess = OpenProcess(
-                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                FALSE, (ULONG)(ULONG_PTR)key);
-        }
+		if (!hProcess)
+		{
+			if (entry->icon)
+			{
+				DestroyIcon(entry->icon);
+				entry->icon = NULL;
+			}
+			entry->name[0] = L'\0';
+			entry->valid   = FALSE;
 
-        if (! hProcess) {
+			continue;
+		}
 
-            if (entry->icon) {
-                DestroyIcon(entry->icon);
-                entry->icon = NULL;
-            }
-            entry->name[0] = L'\0';
-            entry->valid = FALSE;
+		//
+		// check the process creation time, if it's the same
+		// as the recorded time, then skip
+		//
 
-            continue;
-        }
+		FILETIME time, time1, time2, time3;
+		BOOL ok = GetProcessTimes(hProcess, &time, &time1, &time2, &time3);
+		if (!ok)
+		{
+			if (entry->icon)
+			{
+				DestroyIcon(entry->icon);
+				entry->icon = NULL;
+			}
+			entry->name[0] = L'\0';
+			entry->valid   = FALSE;
+		}
+		else if (time.dwLowDateTime == entry->time.dwLowDateTime && time.dwHighDateTime == entry->time.dwHighDateTime)
+		{
+			ok = FALSE;
+		}
 
-        //
-        // check the process creation time, if it's the same
-        // as the recorded time, then skip
-        //
+		if (!ok)
+		{
+			CloseHandle(hProcess);
+			continue;
+		}
 
-        FILETIME time, time1, time2, time3;
-        BOOL ok = GetProcessTimes(hProcess, &time, &time1, &time2, &time3);
-        if (! ok) {
+		entry->time.dwLowDateTime  = time.dwLowDateTime;
+		entry->time.dwHighDateTime = time.dwHighDateTime;
 
-            if (entry->icon) {
-                DestroyIcon(entry->icon);
-                entry->icon = NULL;
-            }
-            entry->name[0] = L'\0';
-            entry->valid = FALSE;
+		//
+		// extract the icon
+		//
 
-        } else if (time.dwLowDateTime == entry->time.dwLowDateTime
-                && time.dwHighDateTime == entry->time.dwHighDateTime)
-            ok = FALSE;
+		if (entry->icon)
+		{
+			DestroyIcon(entry->icon);
+			entry->icon = NULL;
+		}
 
-        if (! ok) {
-            CloseHandle(hProcess);
-            continue;
-        }
+		path[299] = L'\0';
+		int sz    = GetModuleFileNameExW(hProcess, NULL, path, 299);
 
-        entry->time.dwLowDateTime  = time.dwLowDateTime;
-        entry->time.dwHighDateTime = time.dwHighDateTime;
+		CloseHandle(hProcess);
 
-        //
-        // extract the icon
-        //
+		if (sz == 0)
+		{
+			continue;
+		}
 
-        if (entry->icon) {
-            DestroyIcon(entry->icon);
-            entry->icon = NULL;
-        }
-
-        path[299] = L'\0';
-        int sz = GetModuleFileNameExW(hProcess, NULL, path, 299);
-
-        CloseHandle(hProcess);
-
-        if (sz == 0)
-            continue;
-
-        HICON hIcon;
-        ExtractIconEx(path, 0, &hIcon, NULL, 1);
-        entry->icon = hIcon;
-    }
+		HICON hIcon;
+		ExtractIconEx(path, 0, &hIcon, NULL, 1);
+		entry->icon = hIcon;
+	}
 }
 
 
@@ -315,17 +340,20 @@ void CWindowTitleMap::RefreshIcons()
 //---------------------------------------------------------------------------
 
 
-const WCHAR *CWindowTitleMap::Get(ULONG pid, HICON &icon)
+const WCHAR* CWindowTitleMap::Get(ULONG pid, HICON& icon)
 {
-    void *ptr;
-    BOOL ok = CMapPtrToPtr::Lookup((void *)(ULONG_PTR)pid, ptr);
-    if (ok) {
-        MapEntry *entry = (MapEntry *)ptr;
-        icon = entry->icon;
-        if (! icon)
-            icon = m_nullIcon;
-        return (const WCHAR *)entry->name;
-    }
-    icon = m_nullIcon;
-    return NULL;
+	void* ptr;
+	BOOL ok = CMapPtrToPtr::Lookup((void*)(ULONG_PTR)pid, ptr);
+	if (ok)
+	{
+		MapEntry* entry = (MapEntry*)ptr;
+		icon            = entry->icon;
+		if (!icon)
+		{
+			icon = m_nullIcon;
+		}
+		return (const WCHAR*)entry->name;
+	}
+	icon = m_nullIcon;
+	return NULL;
 }

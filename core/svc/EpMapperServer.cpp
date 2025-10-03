@@ -19,12 +19,12 @@
 // EpMapperServer -- using PipeServer
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-
 #include "EpMapperServer.h"
+
 #include "EpMapperWire.h"
-#include "core/dll/sbiedll.h"
 #include "common/defines.h"
+#include "core/dll/sbiedll.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -32,9 +32,9 @@
 //---------------------------------------------------------------------------
 
 
-EpMapperServer::EpMapperServer(PipeServer *pipeServer)
+EpMapperServer::EpMapperServer(PipeServer* pipeServer)
 {
-    pipeServer->Register(MSGID_EPMAPPER, this, Handler);
+	pipeServer->Register(MSGID_EPMAPPER, this, Handler);
 }
 
 
@@ -43,14 +43,16 @@ EpMapperServer::EpMapperServer(PipeServer *pipeServer)
 //---------------------------------------------------------------------------
 
 
-MSG_HEADER *EpMapperServer::Handler(void *_this, MSG_HEADER *msg)
+MSG_HEADER* EpMapperServer::Handler(void* _this, MSG_HEADER* msg)
 {
-    EpMapperServer *pThis = (EpMapperServer *)_this;
+	EpMapperServer* pThis = (EpMapperServer*)_this;
 
-    if (msg->msgid == MSGID_EPMAPPER_GET_PORT_NAME)
-        return pThis->EpmapperGetPortNameHandler(msg);
+	if (msg->msgid == MSGID_EPMAPPER_GET_PORT_NAME)
+	{
+		return pThis->EpmapperGetPortNameHandler(msg);
+	}
 
-    return NULL;
+	return NULL;
 }
 
 
@@ -59,43 +61,46 @@ MSG_HEADER *EpMapperServer::Handler(void *_this, MSG_HEADER *msg)
 //---------------------------------------------------------------------------
 
 
-MSG_HEADER *EpMapperServer::EpmapperGetPortNameHandler(MSG_HEADER *msg)
+MSG_HEADER* EpMapperServer::EpmapperGetPortNameHandler(MSG_HEADER* msg)
 {
-    EPMAPPER_GET_PORT_NAME_REQ *req = (EPMAPPER_GET_PORT_NAME_REQ *)msg;
-    if (req->h.length < sizeof(EPMAPPER_GET_PORT_NAME_REQ))
-        return SHORT_REPLY(E_INVALIDARG);
+	EPMAPPER_GET_PORT_NAME_REQ* req = (EPMAPPER_GET_PORT_NAME_REQ*)msg;
+	if (req->h.length < sizeof(EPMAPPER_GET_PORT_NAME_REQ))
+	{
+		return SHORT_REPLY(E_INVALIDARG);
+	}
 
-    EPMAPPER_GET_PORT_NAME_RPL *rpl =
-        (EPMAPPER_GET_PORT_NAME_RPL *)LONG_REPLY(sizeof(EPMAPPER_GET_PORT_NAME_RPL));
-    if (rpl == NULL)
-        return SHORT_REPLY(E_OUTOFMEMORY);
+	EPMAPPER_GET_PORT_NAME_RPL* rpl = (EPMAPPER_GET_PORT_NAME_RPL*)LONG_REPLY(sizeof(EPMAPPER_GET_PORT_NAME_RPL));
+	if (rpl == NULL)
+	{
+		return SHORT_REPLY(E_OUTOFMEMORY);
+	}
 
-    RPC_EP_INQ_HANDLE hContext = 0;
+	RPC_EP_INQ_HANDLE hContext = 0;
 
-    // ask EpMapper for dynamic endpoint names for the desired RPC_IF_ID
-    RPC_STATUS status = RpcMgmtEpEltInqBegin(NULL, RPC_C_EP_MATCH_BY_IF, &req->ifidRequest, RPC_C_VERS_ALL, NULL, &hContext);
-    if (status == RPC_S_OK)
-    {
-        RPC_BINDING_HANDLE hBinding = 0;
-        RPC_IF_ID ifidEndpoint;
+	// ask EpMapper for dynamic endpoint names for the desired RPC_IF_ID
+	RPC_STATUS status = RpcMgmtEpEltInqBegin(NULL, RPC_C_EP_MATCH_BY_IF, &req->ifidRequest, RPC_C_VERS_ALL, NULL, &hContext);
+	if (status == RPC_S_OK)
+	{
+		RPC_BINDING_HANDLE hBinding = 0;
+		RPC_IF_ID ifidEndpoint;
 
-        // return the 1st match that contains "LRPC-"
-        while ((status = RpcMgmtEpEltInqNextW(hContext, &ifidEndpoint, &hBinding, NULL, NULL)) == RPC_S_OK)
-        {
-            RPC_WSTR pwszPortName = NULL;
+		// return the 1st match that contains "LRPC-"
+		while ((status = RpcMgmtEpEltInqNextW(hContext, &ifidEndpoint, &hBinding, NULL, NULL)) == RPC_S_OK)
+		{
+			RPC_WSTR pwszPortName = NULL;
 
-            status = RpcBindingToStringBindingW(hBinding, &pwszPortName);   // Get string port name. Format is "ncalrpc:[LRPC-f760d5b40689a98168]"
-            memset(rpl->wszPortName, 0, sizeof(rpl->wszPortName));
-            wcsncpy(rpl->wszPortName, (wchar_t *)pwszPortName, DYNAMIC_PORT_NAME_CHARS);
-            RpcStringFreeW(&pwszPortName);
-            if (wcsstr(rpl->wszPortName, L"LRPC-"))
-                break;
-        }
-        RpcMgmtEpEltInqDone(&hContext);
-    }
+			status = RpcBindingToStringBindingW(hBinding, &pwszPortName); // Get string port name. Format is "ncalrpc:[LRPC-f760d5b40689a98168]"
+			memset(rpl->wszPortName, 0, sizeof(rpl->wszPortName));
+			wcsncpy(rpl->wszPortName, (wchar_t*)pwszPortName, DYNAMIC_PORT_NAME_CHARS);
+			RpcStringFreeW(&pwszPortName);
+			if (wcsstr(rpl->wszPortName, L"LRPC-"))
+			{
+				break;
+			}
+		}
+		RpcMgmtEpEltInqDone(&hContext);
+	}
 
-    rpl->hr = status;
-    return (MSG_HEADER *)rpl;
+	rpl->hr = status;
+	return (MSG_HEADER*)rpl;
 }
-
-

@@ -26,22 +26,21 @@
 
 class CAboutDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    static HBITMAP m_bitmap;
+	static HBITMAP m_bitmap;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnRegister();
+	afx_msg void OnRegister();
 
-    afx_msg void OnTutorial();
+	afx_msg void OnTutorial();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
-
-    CAboutDialog(CWnd *pParentWnd);
-    ~CAboutDialog();
+	CAboutDialog(CWnd* pParentWnd);
+	~CAboutDialog();
 };
 
 

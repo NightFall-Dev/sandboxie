@@ -26,72 +26,70 @@
 
 class CBoxFile
 {
-    const CString &m_name;
+	const CString& m_name;
 
-    CString m_FilePath;
-    CString m_FilePathDos;
-    void *m_root;
-    void *m_curdir;
+	CString m_FilePath;
+	CString m_FilePathDos;
+	void* m_root;
+	void* m_curdir;
 
-    BOOL m_IncludeDeleted;
+	BOOL m_IncludeDeleted;
 
-    static int m_RefreshCounter;
+	static int m_RefreshCounter;
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    void CreateSkeletonTree();
-    void CreateQuickRecoveryFolders();
-    bool GetAbsolutePathForRecoveryFolder(WCHAR *buf, ULONG buf_len);
+	void CreateSkeletonTree();
+	void CreateQuickRecoveryFolders();
+	bool GetAbsolutePathForRecoveryFolder(WCHAR* buf, ULONG buf_len);
 
-    void DeleteFolder(void *voidfolder, BOOL DeleteSelf);
-    void *AddFolder(const WCHAR *name, void *parent);
-    BOOL ReadFolder(void *voidfolder);
+	void DeleteFolder(void* voidfolder, BOOL DeleteSelf);
+	void* AddFolder(const WCHAR* name, void* parent);
+	BOOL ReadFolder(void* voidfolder);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
 public:
+	CBoxFile(const CString& name);
+	~CBoxFile();
 
-    CBoxFile(const CString &name);
-    ~CBoxFile();
+	const CString& GetPathNt() const;
+	const CString& GetPathDos() const;
 
-    const CString &GetPathNt() const;
-    const CString &GetPathDos() const;
+	void RebuildSkeletonTree();
+	void RebuildQuickRecoveryFolders();
 
-    void RebuildSkeletonTree();
-    void RebuildQuickRecoveryFolders();
+	CString GetCopyPathForTruePath(const WCHAR* TruePath) const;
+	CString GetTruePathForCopyPath(const WCHAR* CopyPath) const;
+	CString GetDriveNameForTruePath(const WCHAR* TruePath) const;
+	void TranslateNtToDosPath(CString& InOutPath) const;
 
-    CString GetCopyPathForTruePath(const WCHAR *TruePath) const;
-    CString GetTruePathForCopyPath(const WCHAR *CopyPath) const;
-    CString GetDriveNameForTruePath(const WCHAR *TruePath) const;
-    void TranslateNtToDosPath(CString &InOutPath) const;
+	int ChangeFolder(const CString& path, BOOL ForceRead = FALSE);
 
-    int ChangeFolder(const CString &path, BOOL ForceRead = FALSE);
+	BOOL IsFolderExpandedView() const;
+	void SetFolderExpandedView(BOOL view);
+	BOOL IsQuickRecoverFolder() const;
+	BOOL IsPhysicalFolder() const;
+	void GetFolderPaths(CString& TruePath, CString& CopyPath) const;
+	void GetFolderCreationTime(FILETIME* out_time) const;
 
-    BOOL IsFolderExpandedView() const;
-    void SetFolderExpandedView(BOOL view);
-    BOOL IsQuickRecoverFolder() const;
-    BOOL IsPhysicalFolder() const;
-    void GetFolderPaths(CString &TruePath, CString &CopyPath) const;
-    void GetFolderCreationTime(FILETIME *out_time) const;
+	int GetFolderNumChildren() const;
+	POSITION GetFolderHeadPosition() const;
+	const WCHAR* GetNextFolder(POSITION& pos, BOOL& IsExpandedView) const;
+	const WCHAR* GetNextFile(POSITION& pos, ULONG64& size) const;
 
-    int GetFolderNumChildren() const;
-    POSITION GetFolderHeadPosition() const;
-    const WCHAR *GetNextFolder(POSITION &pos, BOOL &IsExpandedView) const;
-    const WCHAR *GetNextFile(POSITION &pos, ULONG64 &size) const;
+	void SetIncludeDeleted(BOOL include);
 
-    void SetIncludeDeleted(BOOL include);
+	BOOL IsEmpty();
 
-    BOOL IsEmpty();
+	BOOL GetBoxCreationTime(FILETIME* out_time);
+	int GetBoxRefreshCounter() const;
 
-    BOOL GetBoxCreationTime(FILETIME *out_time);
-    int GetBoxRefreshCounter() const;
-
-    BOOL QueryFileAttributes(const WCHAR *path, ULONG *attrs, ULONG64 *size);
-
+	BOOL QueryFileAttributes(const WCHAR* path, ULONG* attrs, ULONG64* size);
 };
 
 

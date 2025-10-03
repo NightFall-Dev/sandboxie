@@ -26,33 +26,32 @@
 
 class CWindowTitleMap : public CMapPtrToPtr
 {
-    static CWindowTitleMap *m_instance;
+	static CWindowTitleMap* m_instance;
 
-    ULONG m_counter;
-    HICON m_nullIcon;
-    ULONG m_pids[512];
+	ULONG m_counter;
+	HICON m_nullIcon;
+	ULONG m_pids[512];
 
-    void *m_pGetWindowText;
+	void* m_pGetWindowText;
 
-    CWindowTitleMap();
+	CWindowTitleMap();
 
-    void Clear();
+	void Clear();
 
-    BOOL ShouldIgnoreProcess(ULONG pid);
+	BOOL ShouldIgnoreProcess(ULONG pid);
 
-    static BOOL EnumProc(HWND hwnd, LPARAM lParam);
+	static BOOL EnumProc(HWND hwnd, LPARAM lParam);
 
-    void RefreshIcons();
+	void RefreshIcons();
 
 public:
+	~CWindowTitleMap();
 
-    ~CWindowTitleMap();
+	static CWindowTitleMap& GetInstance();
 
-    static CWindowTitleMap &GetInstance();
+	void Refresh();
 
-    void Refresh();
-
-    const WCHAR *Get(ULONG pid, HICON &icon);
+	const WCHAR* Get(ULONG pid, HICON& icon);
 };
 
 

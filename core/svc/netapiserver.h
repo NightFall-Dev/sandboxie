@@ -29,20 +29,17 @@
 
 class NetApiServer
 {
-
 public:
+	NetApiServer(PipeServer* pipeServer);
 
-    NetApiServer(PipeServer *pipeServer);
-
-    static void RunSlave(const WCHAR *cmdline);
+	static void RunSlave(const WCHAR* cmdline);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
+	MSG_HEADER* UseAdd(MSG_HEADER* msg);
 
-    MSG_HEADER *UseAdd(MSG_HEADER *msg);
-
-    void LaunchSlave(ULONG len, const WCHAR *drive);
+	void LaunchSlave(ULONG len, const WCHAR* drive);
 
 #if 0
 
@@ -51,7 +48,6 @@ protected:
     MSG_HEADER *ServerGetInfo(MSG_HEADER *msg);
 
 #endif
-
 };
 
 

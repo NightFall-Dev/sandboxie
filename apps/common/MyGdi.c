@@ -21,13 +21,12 @@
 
 
 #define COBJMACROS
-#include <objbase.h>
-
-#include <windows.h>
 #include "MyGdi.h"
 
 #include <common/defines.h>
-#if _MSC_VER == 1200        // Visual C++ 6.0
+#include <objbase.h>
+#include <windows.h>
+#if _MSC_VER == 1200 // Visual C++ 6.0
 typedef ULONG ULONG_PTR;
 #endif
 
@@ -39,24 +38,22 @@ typedef ULONG ULONG_PTR;
 
 struct GdiplusStartupInput
 {
-    UINT32 GdiplusVersion;             // Must be 1
-    ULONG_PTR      DebugEventCallback; // Ignored on free builds
-    BOOL SuppressBackgroundThread;     // FALSE unless you're prepared to call
-                                       // the hook/unhook functions properly
-    BOOL SuppressExternalCodecs;       // FALSE unless you want GDI+ only to use
-                                       // its internal image codecs.
+	UINT32 GdiplusVersion;         // Must be 1
+	ULONG_PTR DebugEventCallback;  // Ignored on free builds
+	BOOL SuppressBackgroundThread; // FALSE unless you're prepared to call
+	                               // the hook/unhook functions properly
+	BOOL SuppressExternalCodecs;   // FALSE unless you want GDI+ only to use
+	                               // its internal image codecs.
 };
 
-ULONG GdiplusStartup(
-    ULONG_PTR *token, struct GdiplusStartupInput *input, ULONG_PTR *output);
+ULONG GdiplusStartup(ULONG_PTR* token, struct GdiplusStartupInput* input, ULONG_PTR* output);
 
 typedef ULONG_PTR GpImage;
 typedef ULONG_PTR GpBitmap;
 
-ULONG GdipCreateBitmapFromStream(IStream* stream, GpBitmap **bitmap);
-ULONG GdipCreateHBITMAPFromBitmap(
-    GpBitmap* bitmap, HBITMAP* hbmReturn, ULONG background);
-ULONG GdipDisposeImage(GpImage *image);
+ULONG GdipCreateBitmapFromStream(IStream* stream, GpBitmap** bitmap);
+ULONG GdipCreateHBITMAPFromBitmap(GpBitmap* bitmap, HBITMAP* hbmReturn, ULONG background);
+ULONG GdipDisposeImage(GpImage* image);
 
 
 //---------------------------------------------------------------------------
@@ -66,11 +63,11 @@ ULONG GdipDisposeImage(GpImage *image);
 
 void MyGdi_Init(void)
 {
-    static ULONG_PTR token = 0;
-    struct GdiplusStartupInput input;
-    memzero(&input, sizeof(input));
-    input.GdiplusVersion = 1;
-    GdiplusStartup(&token, &input, NULL);
+	static ULONG_PTR token = 0;
+	struct GdiplusStartupInput input;
+	memzero(&input, sizeof(input));
+	input.GdiplusVersion = 1;
+	GdiplusStartup(&token, &input, NULL);
 }
 
 
@@ -79,47 +76,57 @@ void MyGdi_Init(void)
 //---------------------------------------------------------------------------
 
 
-void *MyGdi_CreateResourceStream(const WCHAR *rsrcName)
+void* MyGdi_CreateResourceStream(const WCHAR* rsrcName)
 {
-    HINSTANCE hInst;
-    HRSRC hResource;
-    ULONG rsrcSize;
-    const void *rsrcData;
-    HGLOBAL hGlobal;
-    void *pGlobal;
-    IStream *pStream;
+	HINSTANCE hInst;
+	HRSRC hResource;
+	ULONG rsrcSize;
+	const void* rsrcData;
+	HGLOBAL hGlobal;
+	void* pGlobal;
+	IStream* pStream;
 
-    hInst = GetModuleHandle(NULL);
+	hInst = GetModuleHandle(NULL);
 
-    hResource = FindResource(hInst, rsrcName, L"IMAGE");
-    if (! hResource)
-        return NULL;
+	hResource = FindResource(hInst, rsrcName, L"IMAGE");
+	if (!hResource)
+	{
+		return NULL;
+	}
 
-    rsrcSize = SizeofResource(hInst, hResource);
-    if (! rsrcSize)
-        return NULL;
+	rsrcSize = SizeofResource(hInst, hResource);
+	if (!rsrcSize)
+	{
+		return NULL;
+	}
 
-    rsrcData = LockResource(LoadResource(hInst, hResource));
-    if (! rsrcData)
-        return NULL;
+	rsrcData = LockResource(LoadResource(hInst, hResource));
+	if (!rsrcData)
+	{
+		return NULL;
+	}
 
-    hGlobal = GlobalAlloc(GMEM_MOVEABLE, rsrcSize);
-    if (! hGlobal)
-        return NULL;
-    pGlobal = GlobalLock(hGlobal);
-    if (! pGlobal) {
-        GlobalFree(hGlobal);
-        return NULL;
-    }
-    memcpy(pGlobal, rsrcData, rsrcSize);
-    GlobalUnlock(hGlobal);
+	hGlobal = GlobalAlloc(GMEM_MOVEABLE, rsrcSize);
+	if (!hGlobal)
+	{
+		return NULL;
+	}
+	pGlobal = GlobalLock(hGlobal);
+	if (!pGlobal)
+	{
+		GlobalFree(hGlobal);
+		return NULL;
+	}
+	memcpy(pGlobal, rsrcData, rsrcSize);
+	GlobalUnlock(hGlobal);
 
-    if (CreateStreamOnHGlobal(hGlobal, TRUE, &pStream) != S_OK) {
-        GlobalFree(hGlobal);
-        pStream = NULL;
-    }
+	if (CreateStreamOnHGlobal(hGlobal, TRUE, &pStream) != S_OK)
+	{
+		GlobalFree(hGlobal);
+		pStream = NULL;
+	}
 
-    return pStream;
+	return pStream;
 }
 
 
@@ -128,24 +135,26 @@ void *MyGdi_CreateResourceStream(const WCHAR *rsrcName)
 //---------------------------------------------------------------------------
 
 
-HBITMAP MyGdi_CreateFromResource(const WCHAR *rsrcName)
+HBITMAP MyGdi_CreateFromResource(const WCHAR* rsrcName)
 {
-    HBITMAP hBitmap = NULL;
+	HBITMAP hBitmap = NULL;
 
-    IStream *pStream = (IStream *)MyGdi_CreateResourceStream(rsrcName);
-    if (pStream) {
+	IStream* pStream = (IStream*)MyGdi_CreateResourceStream(rsrcName);
+	if (pStream)
+	{
+		GpBitmap* gdiBitmap;
+		if (GdipCreateBitmapFromStream(pStream, &gdiBitmap) == S_OK)
+		{
+			if (GdipCreateHBITMAPFromBitmap(gdiBitmap, &hBitmap, -1) != S_OK)
+			{
+				hBitmap = NULL;
+			}
 
-        GpBitmap *gdiBitmap;
-        if (GdipCreateBitmapFromStream(pStream, &gdiBitmap) == S_OK) {
+			GdipDisposeImage((GpImage*)gdiBitmap);
+		}
 
-            if (GdipCreateHBITMAPFromBitmap(gdiBitmap, &hBitmap, -1) != S_OK)
-                hBitmap = NULL;
+		IStream_Release(pStream);
+	}
 
-            GdipDisposeImage((GpImage *)gdiBitmap);
-        }
-
-        IStream_Release(pStream);
-    }
-
-    return hBitmap;
+	return hBitmap;
 }

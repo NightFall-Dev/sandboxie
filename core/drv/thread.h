@@ -36,22 +36,19 @@ BOOLEAN Thread_Init(void);
 
 void Thread_Unload(void);
 
-BOOLEAN Thread_InitProcess(PROCESS *proc);
+BOOLEAN Thread_InitProcess(PROCESS* proc);
 
-void Thread_ReleaseProcess(PROCESS *proc);
+void Thread_ReleaseProcess(PROCESS* proc);
 
 BOOLEAN Thread_AdjustGrantedAccess(void);
 
-void Thread_SetThreadToken(PROCESS *proc);
+void Thread_SetThreadToken(PROCESS* proc);
 
-NTSTATUS Thread_StoreThreadToken(PROCESS *proc);
+NTSTATUS Thread_StoreThreadToken(PROCESS* proc);
 
-#define Thread_ClearThreadToken()                                   \
-            PsImpersonateClient(PsGetCurrentThread(), NULL,         \
-            FALSE, FALSE, SecurityAnonymous);
+#define Thread_ClearThreadToken() PsImpersonateClient(PsGetCurrentThread(), NULL, FALSE, FALSE, SecurityAnonymous);
 
-NTSTATUS Thread_CheckTokenObject(
-    PROCESS *proc, void *Object, ACCESS_MASK GrantedAccess);
+NTSTATUS Thread_CheckTokenObject(PROCESS* proc, void* Object, ACCESS_MASK GrantedAccess);
 
 
 //---------------------------------------------------------------------------

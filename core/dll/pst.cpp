@@ -19,12 +19,14 @@
 // Protected Storage
 //---------------------------------------------------------------------------
 
-extern "C" {
+extern "C"
+{
 #include "dll.h"
 }
 
-#include <windows.h>
 #include "ipstore_impl.h"
+
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -32,13 +34,11 @@ extern "C" {
 //---------------------------------------------------------------------------
 
 
-typedef HRESULT (*P_PStoreCreateInstance)(
-    IPStore **ppProvider, PST_PROVIDERID *pProviderID,
-    void *pReserved, DWORD dwFlags);
+typedef HRESULT (*P_PStoreCreateInstance)(IPStore** ppProvider, PST_PROVIDERID* pProviderID, void* pReserved, DWORD dwFlags);
 
 static P_PStoreCreateInstance __sys_PStoreCreateInstance = NULL;
 
-static void *__sys_CoTaskMemAlloc = NULL;
+static void* __sys_CoTaskMemAlloc = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -46,9 +46,9 @@ static void *__sys_CoTaskMemAlloc = NULL;
 //---------------------------------------------------------------------------
 
 
-static const char *Pst_PStoreCreateInstanceProcName = "PStoreCreateInstance";
+static const char* Pst_PStoreCreateInstanceProcName = "PStoreCreateInstance";
 
-extern "C" const WCHAR *Pst_OpenProtectedStorage = L"OpenProtectedStorage";
+extern "C" const WCHAR* Pst_OpenProtectedStorage = L"OpenProtectedStorage";
 
 
 //---------------------------------------------------------------------------
@@ -56,20 +56,19 @@ extern "C" const WCHAR *Pst_OpenProtectedStorage = L"OpenProtectedStorage";
 //---------------------------------------------------------------------------
 
 
-_FX HRESULT Pst_PStoreCreateInstance(
-    IPStore **ppProvider,
-    PST_PROVIDERID *pProviderID,
-    void *pReserved,
-    DWORD dwFlags)
+_FX HRESULT Pst_PStoreCreateInstance(IPStore** ppProvider, PST_PROVIDERID* pProviderID, void* pReserved, DWORD dwFlags)
 {
-    if (! __sys_CoTaskMemAlloc) {
-        HMODULE ole32 = GetModuleHandle(DllName_ole32_or_combase);
-        __sys_CoTaskMemAlloc = GetProcAddress(ole32, "CoTaskMemAlloc");
-        if (! __sys_CoTaskMemAlloc)
-            return E_FAIL;
-    }
-    *ppProvider = new IPStoreImpl(__sys_CoTaskMemAlloc);
-    return S_OK;
+	if (!__sys_CoTaskMemAlloc)
+	{
+		HMODULE ole32        = GetModuleHandle(DllName_ole32_or_combase);
+		__sys_CoTaskMemAlloc = GetProcAddress(ole32, "CoTaskMemAlloc");
+		if (!__sys_CoTaskMemAlloc)
+		{
+			return E_FAIL;
+		}
+	}
+	*ppProvider = new IPStoreImpl(__sys_CoTaskMemAlloc);
+	return S_OK;
 }
 
 
@@ -80,25 +79,26 @@ _FX HRESULT Pst_PStoreCreateInstance(
 
 extern "C" _FX BOOLEAN Pst_Init(HMODULE module)
 {
-    P_PStoreCreateInstance PStoreCreateInstance;
+	P_PStoreCreateInstance PStoreCreateInstance;
 
-    //
-    // if OpenProtectedStorage is specified, don't hook anything
-    //
+	//
+	// if OpenProtectedStorage is specified, don't hook anything
+	//
 
-    if (SbieApi_QueryConfBool(NULL, Pst_OpenProtectedStorage, FALSE))
-        return TRUE;
+	if (SbieApi_QueryConfBool(NULL, Pst_OpenProtectedStorage, FALSE))
+	{
+		return TRUE;
+	}
 
-    //
-    // hook Protected Storage entry point
-    //
+	//
+	// hook Protected Storage entry point
+	//
 
-    PStoreCreateInstance = (P_PStoreCreateInstance)
-        GetProcAddress(module, Pst_PStoreCreateInstanceProcName);
+	PStoreCreateInstance = (P_PStoreCreateInstance)GetProcAddress(module, Pst_PStoreCreateInstanceProcName);
 
-    SBIEDLL_HOOK(Pst_,PStoreCreateInstance)
+	SBIEDLL_HOOK(Pst_, PStoreCreateInstance)
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -107,27 +107,28 @@ extern "C" _FX BOOLEAN Pst_Init(HMODULE module)
 //---------------------------------------------------------------------------
 
 
-extern "C" void *SbieDll_InitPStore(void)
+extern "C" void* SbieDll_InitPStore(void)
 {
-    static const WCHAR *_pstorec = L"pstorec.dll";
-    void *pst = NULL;
+	static const WCHAR* _pstorec = L"pstorec.dll";
+	void* pst                    = NULL;
 
-    HMODULE module = GetModuleHandle(_pstorec);
-    if (! module)
-        module = LoadLibrary(_pstorec);
-    if (module) {
+	HMODULE module = GetModuleHandle(_pstorec);
+	if (!module)
+	{
+		module = LoadLibrary(_pstorec);
+	}
+	if (module)
+	{
+		P_PStoreCreateInstance pPStoreCreateInstance = (P_PStoreCreateInstance)GetProcAddress(module, Pst_PStoreCreateInstanceProcName);
+		if (pPStoreCreateInstance)
+		{
+			HRESULT hr = pPStoreCreateInstance((IPStore**)&pst, NULL, NULL, 0);
+			if (hr != S_OK)
+			{
+				pst = NULL;
+			}
+		}
+	}
 
-        P_PStoreCreateInstance pPStoreCreateInstance =
-            (P_PStoreCreateInstance)
-                GetProcAddress(module, Pst_PStoreCreateInstanceProcName);
-        if (pPStoreCreateInstance) {
-
-            HRESULT hr = pPStoreCreateInstance(
-                                (IPStore **)&pst, NULL, NULL, 0);
-            if (hr != S_OK)
-                pst = NULL;
-        }
-    }
-
-    return pst;
+	return pst;
 }

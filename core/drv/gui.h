@@ -36,9 +36,9 @@ BOOLEAN Gui_Init(void);
 
 void Gui_Unload(void);
 
-BOOLEAN Gui_InitProcess(PROCESS *proc);
+BOOLEAN Gui_InitProcess(PROCESS* proc);
 
-void Gui_Check_OpenWinClass(PROCESS *proc);
+void Gui_Check_OpenWinClass(PROCESS* proc);
 
 
 //---------------------------------------------------------------------------

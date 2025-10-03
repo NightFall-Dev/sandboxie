@@ -25,34 +25,27 @@
 //---------------------------------------------------------------------------
 
 
-static HANDLE Scm_RegisterEventSourceW(WCHAR *ServerName, WCHAR *SourceName);
+static HANDLE Scm_RegisterEventSourceW(WCHAR* ServerName, WCHAR* SourceName);
 
-static HANDLE Scm_RegisterEventSourceA(UCHAR *ServerName, UCHAR *SourceName);
+static HANDLE Scm_RegisterEventSourceA(UCHAR* ServerName, UCHAR* SourceName);
 
 static BOOL Scm_DeregisterEventSource(HANDLE hEventLog);
 
-static BOOL Scm_ReportEventW(
-    HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID,
-    PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize,
-    WCHAR *Strings, void *RawData);
+static BOOL Scm_ReportEventW(HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID, PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize, WCHAR* Strings, void* RawData);
 
-static BOOL Scm_ReportEventA(
-    HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID,
-    PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize,
-    UCHAR *Strings, void *RawData);
+static BOOL Scm_ReportEventA(HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID, PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize, UCHAR* Strings, void* RawData);
 
-static BOOL Scm_CloseEventLog(
-    HANDLE hEventLog);
+static BOOL Scm_CloseEventLog(HANDLE hEventLog);
 
 //---------------------------------------------------------------------------
 // Scm_RegisterEventSourceW
 //---------------------------------------------------------------------------
 
 
-_FX HANDLE Scm_RegisterEventSourceW(WCHAR *ServerName, WCHAR *SourceName)
+_FX HANDLE Scm_RegisterEventSourceW(WCHAR* ServerName, WCHAR* SourceName)
 {
-    SetLastError(0);
-    return (HANDLE)HANDLE_EVENT_LOG;
+	SetLastError(0);
+	return (HANDLE)HANDLE_EVENT_LOG;
 }
 
 /*
@@ -123,23 +116,23 @@ _FX HANDLE Scm_RegisterEventSourceW(WCHAR *ServerName, WCHAR *SourceName)
 //---------------------------------------------------------------------------
 
 
-_FX HANDLE Scm_RegisterEventSourceA(UCHAR *ServerName, UCHAR *SourceName)
+_FX HANDLE Scm_RegisterEventSourceA(UCHAR* ServerName, UCHAR* SourceName)
 {
-    ANSI_STRING ansi;
-    UNICODE_STRING uni;
-    HANDLE handle;
-    ULONG error;
+	ANSI_STRING ansi;
+	UNICODE_STRING uni;
+	HANDLE handle;
+	ULONG error;
 
-    RtlInitString(&ansi, SourceName);
-    RtlAnsiStringToUnicodeString(&uni, &ansi, TRUE);
+	RtlInitString(&ansi, SourceName);
+	RtlAnsiStringToUnicodeString(&uni, &ansi, TRUE);
 
-    handle = Scm_RegisterEventSourceW(NULL, uni.Buffer);
-    error = GetLastError();
+	handle = Scm_RegisterEventSourceW(NULL, uni.Buffer);
+	error  = GetLastError();
 
-    RtlFreeUnicodeString(&uni);
+	RtlFreeUnicodeString(&uni);
 
-    SetLastError(error);
-    return handle;
+	SetLastError(error);
+	return handle;
 }
 
 
@@ -150,8 +143,8 @@ _FX HANDLE Scm_RegisterEventSourceA(UCHAR *ServerName, UCHAR *SourceName)
 
 _FX BOOL Scm_DeregisterEventSource(HANDLE hEventLog)
 {
-    SetLastError(0);
-    return TRUE;
+	SetLastError(0);
+	return TRUE;
 }
 
 
@@ -160,13 +153,10 @@ _FX BOOL Scm_DeregisterEventSource(HANDLE hEventLog)
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Scm_ReportEventW(
-    HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID,
-    PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize,
-    WCHAR *Strings, void *RawData)
+_FX BOOL Scm_ReportEventW(HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID, PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize, WCHAR* Strings, void* RawData)
 {
-    SetLastError(0);
-    return TRUE;
+	SetLastError(0);
+	return TRUE;
 }
 
 
@@ -175,13 +165,10 @@ _FX BOOL Scm_ReportEventW(
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Scm_ReportEventA(
-    HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID,
-    PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize,
-    UCHAR *Strings, void *RawData)
+_FX BOOL Scm_ReportEventA(HANDLE hEventLog, WORD wType, WORD wCategory, DWORD dwEventID, PSID lpUserSid, WORD wNumStrings, DWORD dwDataSize, UCHAR* Strings, void* RawData)
 {
-    SetLastError(0);
-    return TRUE;
+	SetLastError(0);
+	return TRUE;
 }
 
 
@@ -190,13 +177,12 @@ _FX BOOL Scm_ReportEventA(
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Scm_CloseEventLog(
-    HANDLE hEventLog)
+_FX BOOL Scm_CloseEventLog(HANDLE hEventLog)
 {
-    if (hEventLog == (HANDLE)HANDLE_EVENT_LOG)
-    {
-        SetLastError(0);
-        return TRUE;
-    }
-    return __sys_CloseEventLog(hEventLog);
+	if (hEventLog == (HANDLE)HANDLE_EVENT_LOG)
+	{
+		SetLastError(0);
+		return TRUE;
+	}
+	return __sys_CloseEventLog(hEventLog);
 }

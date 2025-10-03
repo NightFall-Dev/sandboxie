@@ -26,51 +26,48 @@
 
 class CBorderGuard
 {
-    static CBorderGuard *m_instance;
+	static CBorderGuard* m_instance;
 
-    static void *m_DwmIsCompositionEnabled;
-    static void *m_DwmGetWindowAttribute;
+	static void* m_DwmIsCompositionEnabled;
+	static void* m_DwmGetWindowAttribute;
 
-    static void MyTimerProc(
-        HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+	static void MyTimerProc(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
 
-    void RefreshBorder(
-        HWND hwnd, ULONG style, RECT *rect, const WCHAR *boxname);
+	void RefreshBorder(HWND hwnd, ULONG style, RECT* rect, const WCHAR* boxname);
 
-    void RefreshConf2();
+	void RefreshConf2();
 
-    UINT_PTR m_timer_id;
-    int m_fast_timer_start_ticks;
+	UINT_PTR m_timer_id;
+	int m_fast_timer_start_ticks;
 
-    CPtrArray m_boxes;
+	CPtrArray m_boxes;
 
-    ULONG m_active_pid;
-    HWND m_active_hwnd;
-    RECT m_active_rect;
-    RECT m_title_rect;
-    int  m_title_mode;
+	ULONG m_active_pid;
+	HWND m_active_hwnd;
+	RECT m_active_rect;
+	RECT m_title_rect;
+	int m_title_mode;
 
-    HWND m_border_hwnd;
-    BOOL m_border_visible;
-    HBRUSH m_border_brush;
-    COLORREF m_border_brush_color;
+	HWND m_border_hwnd;
+	BOOL m_border_visible;
+	HBRUSH m_border_brush;
+	COLORREF m_border_brush_color;
 
-    int m_thumb_width;
-    int m_thumb_height;
+	int m_thumb_width;
+	int m_thumb_height;
 
-    //ULONG m_border_width;
+	//ULONG m_border_width;
 
-    bool m_windows_8;
+	bool m_windows_8;
 
 public:
+	CBorderGuard();
 
-    CBorderGuard();
+	~CBorderGuard();
 
-    ~CBorderGuard();
+	void Refresh();
 
-    void Refresh();
-
-    static void RefreshConf();
+	static void RefreshConf();
 };
 
 

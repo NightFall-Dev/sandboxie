@@ -24,102 +24,91 @@
 #define _MY_GETTINGSTARTEDWIZARD_H
 
 
-#include "MyWizard.h"
-#include "FlashingButton.h"
-#include "FileListCtrl.h"
 #include "AnimatedBitmap.h"
+#include "FileListCtrl.h"
+#include "FlashingButton.h"
+#include "MyWizard.h"
 
 
 class CGettingStartedPage : public CMyWizardPage
 {
+protected:
+	DECLARE_MESSAGE_MAP()
+
+	union {
+		struct
+		{
+			CAnimatedBitmap* m_animation;
+			CBitmap* m_legend_bitmap;
+
+		} page2;
+
+		struct
+		{
+			HICON m_runsandbox_icon;
+			CWnd* m_runsandbox_pwnd;
+
+		} page3;
+
+		struct
+		{
+			CWnd* m_shadow_wnd;
+			bool m_open_tray;
+			bool m_tray_opened;
+
+		} page5;
+
+	} u;
 
 protected:
+	virtual BOOL OnInitDialog();
+	void OnInitDialog_Page1();
+	void OnInitDialog_Page2();
+	void OnInitDialog_Page3();
+	void OnInitDialog_Page4();
+	void OnInitDialog_Page5();
+	void OnInitDialog_Page6();
 
-    DECLARE_MESSAGE_MAP()
+	virtual BOOL OnKillActive();
 
-    union {
+	virtual void OnCancel();
 
-        struct {
+	afx_msg void OnImageFrame_Page2(NMHDR* pNMHDR, LRESULT* pResult);
 
-            CAnimatedBitmap *m_animation;
-            CBitmap *m_legend_bitmap;
+	afx_msg void OnShowDesktop_Page3();
 
-        } page2;
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 
-        struct {
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
-            HICON m_runsandbox_icon;
-            CWnd *m_runsandbox_pwnd;
+	afx_msg void OnImmediateRecover_Page4();
 
-        } page3;
+	afx_msg void OnShowBalloon_Page5();
 
-        struct {
+	afx_msg void OnHideBalloon_Page5();
 
-            CWnd *m_shadow_wnd;
-            bool m_open_tray;
-            bool m_tray_opened;
+	afx_msg void OnDeleteContents_Page5();
 
-        } page5;
-
-    } u;
-
-protected:
-
-    virtual BOOL OnInitDialog();
-    void OnInitDialog_Page1();
-    void OnInitDialog_Page2();
-    void OnInitDialog_Page3();
-    void OnInitDialog_Page4();
-    void OnInitDialog_Page5();
-    void OnInitDialog_Page6();
-
-    virtual BOOL OnKillActive();
-
-    virtual void OnCancel();
-
-    afx_msg void OnImageFrame_Page2(NMHDR *pNMHDR, LRESULT *pResult);
-
-    afx_msg void OnShowDesktop_Page3();
-
-    afx_msg HBRUSH OnCtlColor(CDC *pDC, CWnd *pWnd, UINT nCtlColor);
-
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
-
-    afx_msg void OnImmediateRecover_Page4();
-
-    afx_msg void OnShowBalloon_Page5();
-
-    afx_msg void OnHideBalloon_Page5();
-
-    afx_msg void OnDeleteContents_Page5();
-
-    static HWND FindTrayButton(HWND hwnd, LPARAM lParam);
+	static HWND FindTrayButton(HWND hwnd, LPARAM lParam);
 
 public:
-
-    CGettingStartedPage(int page_num);
-    ~CGettingStartedPage();
-
+	CGettingStartedPage(int page_num);
+	~CGettingStartedPage();
 };
 
 
 class CGettingStartedWizard : public CMyWizard
 {
-
-    friend class CGettingStartedPage;
-
-protected:
-
-    CFlashingButton m_next_button;
+	friend class CGettingStartedPage;
 
 protected:
+	CFlashingButton m_next_button;
 
-    void FlashNextButton(bool enable);
+protected:
+	void FlashNextButton(bool enable);
 
 public:
-
-    CGettingStartedWizard(CWnd *pParentWnd);
-
+	CGettingStartedWizard(CWnd* pParentWnd);
 };
 
 

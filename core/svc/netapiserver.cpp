@@ -19,14 +19,15 @@
 // Net Api Services Server -- using PipeServer
 //---------------------------------------------------------------------------
 
+#include "netapiserver.h"
+
+#include "common/defines.h"
+#include "common/my_version.h"
+#include "core/dll/sbiedll.h"
+#include "msgids.h"
+#include "netapiwire.h"
 #include "stdafx.h"
 
-#include "netapiserver.h"
-#include "netapiwire.h"
-#include "msgids.h"
-#include "core/dll/sbiedll.h"
-#include "common/my_version.h"
-#include "common/defines.h"
 #include <lm.h>
 
 
@@ -35,9 +36,9 @@
 //---------------------------------------------------------------------------
 
 
-NetApiServer::NetApiServer(PipeServer *pipeServer)
+NetApiServer::NetApiServer(PipeServer* pipeServer)
 {
-    pipeServer->Register(MSGID_NETAPI, this, Handler);
+	pipeServer->Register(MSGID_NETAPI, this, Handler);
 }
 
 
@@ -46,12 +47,14 @@ NetApiServer::NetApiServer(PipeServer *pipeServer)
 //---------------------------------------------------------------------------
 
 
-MSG_HEADER *NetApiServer::Handler(void *_this, MSG_HEADER *msg)
+MSG_HEADER* NetApiServer::Handler(void* _this, MSG_HEADER* msg)
 {
-    NetApiServer *pThis = (NetApiServer *)_this;
+	NetApiServer* pThis = (NetApiServer*)_this;
 
-    if (msg->msgid == MSGID_NETAPI_USE_ADD)
-        return pThis->UseAdd(msg);
+	if (msg->msgid == MSGID_NETAPI_USE_ADD)
+	{
+		return pThis->UseAdd(msg);
+	}
 
 #if 0
 
@@ -63,7 +66,7 @@ MSG_HEADER *NetApiServer::Handler(void *_this, MSG_HEADER *msg)
 
 #endif
 
-    return NULL;
+	return NULL;
 }
 
 
@@ -72,155 +75,190 @@ MSG_HEADER *NetApiServer::Handler(void *_this, MSG_HEADER *msg)
 //---------------------------------------------------------------------------
 
 
-MSG_HEADER *NetApiServer::UseAdd(MSG_HEADER *msg)
+MSG_HEADER* NetApiServer::UseAdd(MSG_HEADER* msg)
 {
-    typedef struct _USE_INFO_4 {
-        USE_INFO_3  ui4_ui3;
-        ULONG       ui4_auth_identity_length;
-        UCHAR      *ui4_auth_identity;
-    } USE_INFO_4;
+	typedef struct _USE_INFO_4
+	{
+		USE_INFO_3 ui4_ui3;
+		ULONG ui4_auth_identity_length;
+		UCHAR* ui4_auth_identity;
+	} USE_INFO_4;
 
-    USE_INFO_4 info;
-    ULONG parm_index = 0;
-    ULONG error_code = 0;
+	USE_INFO_4 info;
+	ULONG parm_index = 0;
+	ULONG error_code = 0;
 
-    //
-    // validate request structure
-    //
+	//
+	// validate request structure
+	//
 
-    NETAPI_USE_ADD_REQ *req = (NETAPI_USE_ADD_REQ *)msg;
-    if (req->h.length != sizeof(NETAPI_USE_ADD_REQ)) {
-        error_code = ERROR_INVALID_PARAMETER;
-        goto finish;
-    }
-    if (req->level > 4) {
-        error_code = ERROR_INVALID_PARAMETER;
-        goto finish;
-    }
+	NETAPI_USE_ADD_REQ* req = (NETAPI_USE_ADD_REQ*)msg;
+	if (req->h.length != sizeof(NETAPI_USE_ADD_REQ))
+	{
+		error_code = ERROR_INVALID_PARAMETER;
+		goto finish;
+	}
+	if (req->level > 4)
+	{
+		error_code = ERROR_INVALID_PARAMETER;
+		goto finish;
+	}
 
-    if (req->level >= 0) {
+	if (req->level >= 0)
+	{
+		USE_INFO_0
+			*info0 = (USE_INFO_0*)&info;
 
-        USE_INFO_0 *info0 = (USE_INFO_0 *)&info;
+			if (req->ui0_local_len == -1)
+			{
+				info0
+					->ui0_local                                   = NULL;
+					else if (req->ui0_local_len > 256) parm_index = USE_LOCAL_PARMNUM;
+					else
+					{
+						req->ui0_local[256]                = L'\0';
+						req->ui0_local[req->ui0_local_len] = L'\0';
+						info0
+							->ui0_local = req->ui0_local;
+					}
 
-        if (req->ui0_local_len == -1)
-            info0->ui0_local = NULL;
-        else if (req->ui0_local_len > 256)
-            parm_index = USE_LOCAL_PARMNUM;
-        else {
-            req->ui0_local[256] = L'\0';
-            req->ui0_local[req->ui0_local_len] = L'\0';
-            info0->ui0_local = req->ui0_local;
-        }
+					if (req->ui0_remote_len == -1)
+					{
+						info0
+							->ui0_remote                                   = NULL;
+							else if (req->ui0_remote_len > 256) parm_index = USE_REMOTE_PARMNUM;
+							else
+							{
+								req->ui0_remote[256]                 = L'\0';
+								req->ui0_remote[req->ui0_remote_len] = L'\0';
+								info0
+									->ui0_remote = req->ui0_remote;
+							}
+					}
+			}
+	}
 
-        if (req->ui0_remote_len == -1)
-            info0->ui0_remote = NULL;
-        else if (req->ui0_remote_len > 256)
-            parm_index = USE_REMOTE_PARMNUM;
-        else {
-            req->ui0_remote[256] = L'\0';
-            req->ui0_remote[req->ui0_remote_len] = L'\0';
-            info0->ui0_remote = req->ui0_remote;
-        }
-    }
+	if (req->level >= 1)
+	{
+		USE_INFO_1* info1 = (USE_INFO_1*)&info;
 
-    if (req->level >= 1) {
+		if (req->ui1_password_len == -1)
+		{
+			info1->ui1_password = NULL;
+		}
+		else if (req->ui1_password_len > 256)
+		{
+			parm_index = USE_PASSWORD_PARMNUM;
+		}
+		else
+		{
+			req->ui1_password[256]                   = L'\0';
+			req->ui1_password[req->ui1_password_len] = L'\0';
+			info1->ui1_password                      = req->ui1_password;
+		}
 
-        USE_INFO_1 *info1 = (USE_INFO_1 *)&info;
+		info1->ui1_status   = req->ui1_status;
+		info1->ui1_asg_type = req->ui1_asg_type;
+		info1->ui1_refcount = req->ui1_refcount;
+		info1->ui1_usecount = req->ui1_usecount;
+	}
 
-        if (req->ui1_password_len == -1)
-            info1->ui1_password = NULL;
-        else if (req->ui1_password_len > 256)
-            parm_index = USE_PASSWORD_PARMNUM;
-        else {
-            req->ui1_password[256] = L'\0';
-            req->ui1_password[req->ui1_password_len] = L'\0';
-            info1->ui1_password = req->ui1_password;
-        }
+	if (req->level >= 2)
+	{
+		USE_INFO_2* info2 = (USE_INFO_2*)&info;
 
-        info1->ui1_status   = req->ui1_status;
-        info1->ui1_asg_type = req->ui1_asg_type;
-        info1->ui1_refcount = req->ui1_refcount;
-        info1->ui1_usecount = req->ui1_usecount;
-    }
+		if (req->ui2_username_len == -1)
+		{
+			info2->ui2_username = NULL;
+		}
+		else if (req->ui2_username_len > 256)
+		{
+			parm_index = USE_USERNAME_PARMNUM;
+		}
+		else
+		{
+			req->ui2_username[256]                   = L'\0';
+			req->ui2_username[req->ui2_username_len] = L'\0';
+			info2->ui2_username                      = req->ui2_username;
+		}
 
-    if (req->level >= 2) {
+		if (req->ui2_domainname_len == -1)
+		{
+			info2->ui2_domainname = NULL;
+		}
+		else if (req->ui2_domainname_len > 256)
+		{
+			parm_index = USE_DOMAINNAME_PARMNUM;
+		}
+		else
+		{
+			req->ui2_domainname[256]                     = L'\0';
+			req->ui2_domainname[req->ui2_domainname_len] = L'\0';
+			info2->ui2_domainname                        = req->ui2_domainname;
+		}
+	}
 
-        USE_INFO_2 *info2 = (USE_INFO_2 *)&info;
+	if (req->level >= 3)
+	{
+		USE_INFO_3* info3 = (USE_INFO_3*)&info;
 
-        if (req->ui2_username_len == -1)
-            info2->ui2_username = NULL;
-        else if (req->ui2_username_len > 256)
-            parm_index = USE_USERNAME_PARMNUM;
-        else {
-            req->ui2_username[256] = L'\0';
-            req->ui2_username[req->ui2_username_len] = L'\0';
-            info2->ui2_username = req->ui2_username;
-        }
+		info3->ui3_flags = req->ui3_flags;
+	}
 
-        if (req->ui2_domainname_len == -1)
-            info2->ui2_domainname = NULL;
-        else if (req->ui2_domainname_len > 256)
-            parm_index = USE_DOMAINNAME_PARMNUM;
-        else {
-            req->ui2_domainname[256] = L'\0';
-            req->ui2_domainname[req->ui2_domainname_len] = L'\0';
-            info2->ui2_domainname = req->ui2_domainname;
-        }
-    }
+	if (req->level >= 4)
+	{
+		USE_INFO_4* info4 = (USE_INFO_4*)&info;
 
-    if (req->level >= 3) {
+		if (req->ui4_auth_identity_length == -1)
+		{
+			info4->ui4_auth_identity_length = 0;
+			info4->ui4_auth_identity        = NULL;
+		}
+		else if (req->ui4_auth_identity_length > 2048)
+		{
+			error_code = ERROR_INVALID_PARAMETER;
+		}
+		else
+		{
+			req->ui4_auth_identity[req->ui4_auth_identity_length + 0] = 0;
+			req->ui4_auth_identity[req->ui4_auth_identity_length + 1] = 0;
+			info4->ui4_auth_identity                                  = req->ui4_auth_identity;
+			info4->ui4_auth_identity_length                           = req->ui4_auth_identity_length;
+		}
+	}
 
-        USE_INFO_3 *info3 = (USE_INFO_3 *)&info;
+	if (parm_index)
+	{
+		error_code = ERROR_INVALID_PARAMETER;
+		goto finish;
+	}
 
-        info3->ui3_flags = req->ui3_flags;
-    }
+	//
+	// invoke command on behalf of caller
+	//
 
-    if (req->level >= 4) {
+	error_code = PipeServer::ImpersonateCaller();
+	if (error_code != 0)
+	{
+		error_code = RtlNtStatusToDosError(error_code);
+		goto finish;
+	}
 
-        USE_INFO_4 *info4 = (USE_INFO_4 *)&info;
-
-        if (req->ui4_auth_identity_length == -1) {
-            info4->ui4_auth_identity_length = 0;
-            info4->ui4_auth_identity = NULL;
-        } else if (req->ui4_auth_identity_length > 2048)
-            error_code = ERROR_INVALID_PARAMETER;
-        else {
-            req->ui4_auth_identity[req->ui4_auth_identity_length + 0] = 0;
-            req->ui4_auth_identity[req->ui4_auth_identity_length + 1] = 0;
-            info4->ui4_auth_identity = req->ui4_auth_identity;
-            info4->ui4_auth_identity_length = req->ui4_auth_identity_length;
-        }
-    }
-
-    if (parm_index) {
-        error_code = ERROR_INVALID_PARAMETER;
-        goto finish;
-    }
-
-    //
-    // invoke command on behalf of caller
-    //
-
-    error_code = PipeServer::ImpersonateCaller();
-    if (error_code != 0) {
-        error_code = RtlNtStatusToDosError(error_code);
-        goto finish;
-    }
-
-    error_code = NetUseAdd(NULL, req->level, (UCHAR *)&info, &parm_index);
+	error_code = NetUseAdd(NULL, req->level, (UCHAR*)&info, &parm_index);
 
 finish:
 
-    NETAPI_USE_ADD_RPL *rpl =
-        (NETAPI_USE_ADD_RPL *)LONG_REPLY(sizeof(NETAPI_USE_ADD_RPL));
+	NETAPI_USE_ADD_RPL* rpl = (NETAPI_USE_ADD_RPL*)LONG_REPLY(sizeof(NETAPI_USE_ADD_RPL));
 
-    rpl->h.status = error_code;
-    rpl->parm_index = parm_index;
+	rpl->h.status   = error_code;
+	rpl->parm_index = parm_index;
 
-    if (error_code == 0)
-        LaunchSlave(req->ui0_local_len, req->ui0_local);
+	if (error_code == 0)
+	{
+		LaunchSlave(req->ui0_local_len, req->ui0_local);
+	}
 
-    return (MSG_HEADER *)rpl;
+	return (MSG_HEADER*)rpl;
 }
 
 
@@ -229,59 +267,59 @@ finish:
 //---------------------------------------------------------------------------
 
 
-void NetApiServer::LaunchSlave(ULONG len, const WCHAR *drive)
+void NetApiServer::LaunchSlave(ULONG len, const WCHAR* drive)
 {
-    //
-    // outside the sandbox, Windows Explorer invokes DefineDosDevice after a
-    // call to NetUseAdd, to broadcast the WM_DEVICECHANGE message to all
-    // windows on the same desktop.  but since DefineDosDevice is blocked in
-    // the sandbox, we run the NetApiServer SbieSvc slave to call it outside
-    // the sandbox on the same desktop as our calling process
-    //
+	//
+	// outside the sandbox, Windows Explorer invokes DefineDosDevice after a
+	// call to NetUseAdd, to broadcast the WM_DEVICECHANGE message to all
+	// windows on the same desktop.  but since DefineDosDevice is blocked in
+	// the sandbox, we run the NetApiServer SbieSvc slave to call it outside
+	// the sandbox on the same desktop as our calling process
+	//
 
-    if (len != 2 || drive[1] != L':')
-        return;
+	if (len != 2 || drive[1] != L':')
+	{
+		return;
+	}
 
-    STARTUPINFO si;
-    WCHAR cmdline[128];
-    wsprintf(cmdline, L"%s_NetProxy:Use=%c", SANDBOXIE, drive[0]);
-    if (! SbieDll_RunFromHome(SBIESVC_EXE, cmdline, &si, NULL))
-        return;
-    WCHAR *ExePath = (WCHAR *)si.lpReserved;
+	STARTUPINFO si;
+	WCHAR cmdline[128];
+	wsprintf(cmdline, L"%s_NetProxy:Use=%c", SANDBOXIE, drive[0]);
+	if (!SbieDll_RunFromHome(SBIESVC_EXE, cmdline, &si, NULL))
+	{
+		return;
+	}
+	WCHAR* ExePath = (WCHAR*)si.lpReserved;
 
-    const ULONG TOKEN_RIGHTS =
-        TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY;
-    HANDLE hOldToken;
-    if (OpenThreadToken(
-            GetCurrentThread(), TOKEN_RIGHTS, FALSE, &hOldToken)) {
+	const ULONG TOKEN_RIGHTS = TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_ASSIGN_PRIMARY;
+	HANDLE hOldToken;
+	if (OpenThreadToken(GetCurrentThread(), TOKEN_RIGHTS, FALSE, &hOldToken))
+	{
+		HANDLE hNewToken;
+		if (DuplicateTokenEx(hOldToken, TOKEN_RIGHTS, NULL, SecurityAnonymous, TokenPrimary, &hNewToken))
+		{
+			PROCESS_INFORMATION pi;
 
-        HANDLE hNewToken;
-        if (DuplicateTokenEx(
-                hOldToken, TOKEN_RIGHTS, NULL, SecurityAnonymous,
-                TokenPrimary, &hNewToken)) {
+			memzero(&si, sizeof(STARTUPINFO));
+			si.cb      = sizeof(STARTUPINFO);
+			si.dwFlags = STARTF_FORCEOFFFEEDBACK;
 
-            PROCESS_INFORMATION pi;
+			if (CreateProcessAsUser(hNewToken, NULL, ExePath, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+			{
+				WaitForSingleObject(pi.hProcess, 5000);
+				CloseHandle(pi.hProcess);
+				CloseHandle(pi.hThread);
+			}
 
-            memzero(&si, sizeof(STARTUPINFO));
-            si.cb = sizeof(STARTUPINFO);
-            si.dwFlags = STARTF_FORCEOFFFEEDBACK;
+			CloseHandle(hNewToken);
+		}
 
-            if (CreateProcessAsUser(
-                    hNewToken, NULL, ExePath, NULL, NULL,
-                    FALSE, 0, NULL, NULL, &si, &pi)) {
-
-                WaitForSingleObject(pi.hProcess, 5000);
-                CloseHandle(pi.hProcess);
-                CloseHandle(pi.hThread);
-            }
-
-            CloseHandle(hNewToken);
-        }
-
-        CloseHandle(hOldToken);
-    }
-    if (ExePath)
-        HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, ExePath);
+		CloseHandle(hOldToken);
+	}
+	if (ExePath)
+	{
+		HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, ExePath);
+	}
 }
 
 
@@ -290,29 +328,20 @@ void NetApiServer::LaunchSlave(ULONG len, const WCHAR *drive)
 //---------------------------------------------------------------------------
 
 
-void NetApiServer::RunSlave(const WCHAR *cmdline)
+void NetApiServer::RunSlave(const WCHAR* cmdline)
 {
-    cmdline = wcschr(cmdline, L':');
-    if (cmdline && wmemcmp(cmdline, L":Use=", 5) == 0) {
+	cmdline = wcschr(cmdline, L':');
+	if (cmdline && wmemcmp(cmdline, L":Use=", 5) == 0)
+	{
+		WCHAR device[8];
+		device[0] = towupper(cmdline[5]);
+		device[1] = L':';
+		device[2] = L'\0';
+		DefineDosDevice(DDD_LUID_BROADCAST_DRIVE, device, NULL);
+	}
 
-        WCHAR device[8];
-        device[0] = towupper(cmdline[5]);
-        device[1] = L':';
-        device[2] = L'\0';
-        DefineDosDevice(DDD_LUID_BROADCAST_DRIVE, device, NULL);
-    }
-
-    ExitProcess(0);
+	ExitProcess(0);
 }
-
-
-
-
-
-
-
-
-
 
 
 #if 0

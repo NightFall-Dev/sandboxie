@@ -38,16 +38,17 @@ typedef struct POOL POOL;
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-POOL *Pool_Create(void);
-POOL *Pool_CreateTagged(ULONG tag);
-ULONG Pool_Delete(POOL *pool);
+	POOL* Pool_Create(void);
+	POOL* Pool_CreateTagged(ULONG tag);
+	ULONG Pool_Delete(POOL* pool);
 
-void *Pool_Alloc(POOL *pool, ULONG size);
-void Pool_Free(void *ptr, ULONG size);
+	void* Pool_Alloc(POOL* pool, ULONG size);
+	void Pool_Free(void* ptr, ULONG size);
 
 
 #ifdef __cplusplus

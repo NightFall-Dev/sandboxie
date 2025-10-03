@@ -45,16 +45,13 @@ BOOLEAN Dll_Init(void);
 
 void Dll_Unload(void);
 
-DLL_ENTRY *Dll_Load(const WCHAR *DllBaseName);
+DLL_ENTRY* Dll_Load(const WCHAR* DllBaseName);
 
-void *Dll_RvaToAddr(DLL_ENTRY *dll, ULONG rva);
+void* Dll_RvaToAddr(DLL_ENTRY* dll, ULONG rva);
 
-void *Dll_GetProc(
-    const WCHAR *DllName, const UCHAR *ProcName, BOOLEAN returnOffset);
+void* Dll_GetProc(const WCHAR* DllName, const UCHAR* ProcName, BOOLEAN returnOffset);
 
-ULONG Dll_GetNextProc(
-    DLL_ENTRY *dll, const UCHAR *SearchName,
-    UCHAR **FoundName, ULONG *FoundIndex);
+ULONG Dll_GetNextProc(DLL_ENTRY* dll, const UCHAR* SearchName, UCHAR** FoundName, ULONG* FoundIndex);
 
 
 //---------------------------------------------------------------------------
@@ -65,8 +62,8 @@ ULONG Dll_GetNextProc(
 //---------------------------------------------------------------------------
 
 
-extern const WCHAR *Dll_NTDLL;
-extern const WCHAR *Dll_USER;
+extern const WCHAR* Dll_NTDLL;
+extern const WCHAR* Dll_USER;
 
 
 //---------------------------------------------------------------------------

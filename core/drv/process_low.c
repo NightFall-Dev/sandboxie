@@ -20,8 +20,8 @@
 //---------------------------------------------------------------------------
 
 
-#include "process.h"
 #include "api.h"
+#include "process.h"
 #include "util.h"
 
 
@@ -30,15 +30,14 @@
 //---------------------------------------------------------------------------
 
 
-static NTSTATUS Process_Low_Api_InjectComplete(
-    PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Process_Low_Api_InjectComplete(PROCESS* proc, ULONG64* parms);
 
 
 //---------------------------------------------------------------------------
 
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (INIT, Process_Low_Init)
+	#pragma alloc_text(INIT, Process_Low_Init)
 #endif // ALLOC_PRAGMA
 
 
@@ -47,7 +46,7 @@ static NTSTATUS Process_Low_Api_InjectComplete(
 //---------------------------------------------------------------------------
 
 
-static KEVENT *Process_Low_Event = NULL;
+static KEVENT* Process_Low_Event = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -57,17 +56,18 @@ static KEVENT *Process_Low_Event = NULL;
 
 _FX BOOLEAN Process_Low_Init(void)
 {
-    Process_Low_Event =
-                ExAllocatePoolWithTag(NonPagedPool, sizeof(KEVENT), tzuk);
-    if (! Process_Low_Event) {
-        Log_Msg0(MSG_1104);
-        return FALSE;
-    }
-    KeInitializeEvent(Process_Low_Event, SynchronizationEvent, FALSE);
+	Process_Low_Event = ExAllocatePoolWithTag(NonPagedPool, sizeof(KEVENT), tzuk);
+	if (!Process_Low_Event)
+	{
+		Log_Msg0(MSG_1104)
+			;
+			return FALSE;
+	}
+	KeInitializeEvent(Process_Low_Event, SynchronizationEvent, FALSE);
 
-    Api_SetFunction(API_INJECT_COMPLETE, Process_Low_Api_InjectComplete);
+	Api_SetFunction(API_INJECT_COMPLETE, Process_Low_Api_InjectComplete);
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -78,10 +78,11 @@ _FX BOOLEAN Process_Low_Init(void)
 
 _FX void Process_Low_Unload(void)
 {
-    if (Process_Low_Event) {
-        ExFreePoolWithTag(Process_Low_Event, tzuk);
-        Process_Low_Event = NULL;
-    }
+	if (Process_Low_Event)
+	{
+		ExFreePoolWithTag(Process_Low_Event, tzuk);
+		Process_Low_Event = NULL;
+	}
 }
 
 
@@ -90,154 +91,156 @@ _FX void Process_Low_Unload(void)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Process_Low_Inject(
-    HANDLE process_id, ULONG session_id, ULONG64 create_time,
-    const WCHAR *image_name, BOOLEAN add_process_to_job, BOOLEAN bHostInject)
+_FX BOOLEAN Process_Low_Inject(HANDLE process_id, ULONG session_id, ULONG64 create_time, const WCHAR* image_name, BOOLEAN add_process_to_job, BOOLEAN bHostInject)
 {
-    PROCESS *proc;
-    SVC_PROCESS_MSG msg;
-    ULONG_PTR is_wow64 = 0;
-    NTSTATUS status = STATUS_SUCCESS;
-    BOOLEAN sbielow_loaded = FALSE;
-    KIRQL irql;
+	PROCESS* proc;
+	SVC_PROCESS_MSG msg;
+	ULONG_PTR is_wow64     = 0;
+	NTSTATUS status        = STATUS_SUCCESS;
+	BOOLEAN sbielow_loaded = FALSE;
+	KIRQL irql;
 
-    //
-    // query wow64 flag for new process
-    //
+	//
+	// query wow64 flag for new process
+	//
 
 #ifdef _WIN64
 
-    if (1) {
+	if (1)
+	{
+		OBJECT_ATTRIBUTES objattrs;
+		CLIENT_ID clientid;
+		HANDLE ProcessHandle;
+		ULONG x;
 
-        OBJECT_ATTRIBUTES objattrs;
-        CLIENT_ID clientid;
-        HANDLE ProcessHandle;
-        ULONG x;
+		InitializeObjectAttributes(&objattrs, NULL, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+		clientid.UniqueThread  = NULL;
+		clientid.UniqueProcess = process_id;
 
-        InitializeObjectAttributes(&objattrs,
-            NULL, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
-        clientid.UniqueThread = NULL;
-        clientid.UniqueProcess = process_id;
+		status = ZwOpenProcess(&ProcessHandle, PROCESS_QUERY_INFORMATION, &objattrs, &clientid);
 
-        status = ZwOpenProcess(&ProcessHandle, PROCESS_QUERY_INFORMATION,
-                               &objattrs, &clientid);
+		if (NT_SUCCESS(status))
+		{
+			status = ZwQueryInformationProcess(ProcessHandle, ProcessWow64Information, &is_wow64, sizeof(is_wow64), &x);
 
-        if (NT_SUCCESS(status)) {
-
-            status = ZwQueryInformationProcess(
-                                ProcessHandle, ProcessWow64Information,
-                                &is_wow64, sizeof(is_wow64), &x);
-
-            ZwClose(ProcessHandle);
-        }
-    }
+			ZwClose(ProcessHandle);
+		}
+	}
 
 #endif _WIN64
 
-    //
-    // send message to SbieSvc DriverAssist
-    //
+	//
+	// send message to SbieSvc DriverAssist
+	//
 
-    if (NT_SUCCESS(status)) {
+	if (NT_SUCCESS(status))
+	{
+		ULONG len           = wcslen(image_name);
+		const ULONG max_len = sizeof(msg.process_name) / sizeof(WCHAR) - 1;
+		if (len > max_len)
+		{
+			len = max_len;
+		}
+		wmemcpy(msg.process_name, image_name, len);
+		msg.process_name[len] = L'\0';
 
-        ULONG len = wcslen(image_name);
-        const ULONG max_len = sizeof(msg.process_name) / sizeof(WCHAR) - 1;
-        if (len > max_len)
-            len = max_len;
-        wmemcpy(msg.process_name, image_name, len);
-        msg.process_name[len] = L'\0';
+		msg.process_id  = (ULONG)(ULONG_PTR)process_id;
+		msg.session_id  = session_id;
+		msg.create_time = create_time;
+		msg.is_wow64    = (is_wow64 ? TRUE : FALSE);
+		msg.add_to_job  = add_process_to_job;
+		msg.bHostInject = bHostInject;
 
-        msg.process_id = (ULONG)(ULONG_PTR)process_id;
-        msg.session_id = session_id;
-        msg.create_time = create_time;
-        msg.is_wow64 = (is_wow64 ? TRUE : FALSE);
-        msg.add_to_job = add_process_to_job;
-        msg.bHostInject = bHostInject;
+		if (!Api_SendServiceMessage(SVC_INJECT_PROCESS, sizeof(msg), &msg))
+		{
+			status = STATUS_SERVER_DISABLED;
+		}
+	}
 
-        if (! Api_SendServiceMessage(SVC_INJECT_PROCESS, sizeof(msg), &msg))
-            status = STATUS_SERVER_DISABLED;
-    }
+	//
+	// wait for response from SbieSvc DriverAssist
+	//
+	// note that our original process structure may disappear at any
+	// moment (as discussed in Process_NotifyProcess_Create) so we
+	// check creation time to be sure it's still the same process
+	// that we're expecting
+	//
 
-    //
-    // wait for response from SbieSvc DriverAssist
-    //
-    // note that our original process structure may disappear at any
-    // moment (as discussed in Process_NotifyProcess_Create) so we
-    // check creation time to be sure it's still the same process
-    // that we're expecting
-    //
+	if (NT_SUCCESS(status))
+	{
+		LARGE_INTEGER time;
+		ULONG retries = 0;
 
-    if (NT_SUCCESS(status)) {
+		while ((retries < 40) && (!Driver_Unloading))
+		{
+			proc = Process_Find(process_id, &irql);
 
-        LARGE_INTEGER time;
-        ULONG retries = 0;
+			if (proc && proc->create_time == create_time)
+			{
+				sbielow_loaded = proc->sbielow_loaded;
 
-        while ((retries < 40) && (! Driver_Unloading)) {
+				if (!is_wow64)
+				{
+					proc->ntdll32_base = -1;
+				}
+			}
 
-            proc = Process_Find(process_id, &irql);
+			ExReleaseResourceLite(Process_ListLock);
+			KeLowerIrql(irql);
 
-            if (proc && proc->create_time == create_time) {
+			if (sbielow_loaded)
+			{
+				break;
+			}
 
-                sbielow_loaded = proc->sbielow_loaded;
+			time.QuadPart = -(SECONDS(1) / 4);
+			KeWaitForSingleObject(Process_Low_Event, Executive, KernelMode, FALSE, &time);
+			++retries;
+		}
 
-                if (! is_wow64)
-                    proc->ntdll32_base = -1;
-            }
+		if (!sbielow_loaded) // if no response from SbieSvc
+		{
+			status = STATUS_TIMEOUT;
+		}
+	}
 
-            ExReleaseResourceLite(Process_ListLock);
-            KeLowerIrql(irql);
+	//
+	// cancel process and report errors
+	//
 
-            if (sbielow_loaded)
-                break;
+	if (!NT_SUCCESS(status) && !bHostInject)
+	{
+		proc = Process_Find(process_id, &irql);
 
-            time.QuadPart = -(SECONDS(1) / 4);
-            KeWaitForSingleObject(Process_Low_Event,
-                                  Executive, KernelMode, FALSE, &time);
-            ++retries;
-        }
+		if (proc && proc->create_time == create_time)
+		{
+			Process_SetTerminated(proc, 3);
+		}
 
-        if (! sbielow_loaded)           // if no response from SbieSvc
-            status = STATUS_TIMEOUT;
-    }
+		ExReleaseResourceLite(Process_ListLock);
+		KeLowerIrql(irql);
 
-    //
-    // cancel process and report errors
-    //
+		if (1)
+		{
+			BOX dummy_box;
+			PROCESS dummy_proc;
+			memzero(&dummy_box, sizeof(dummy_box));
+			memzero(&dummy_proc, sizeof(dummy_proc));
+			dummy_box.session_id   = session_id;
+			dummy_proc.box         = &dummy_box;
+			dummy_proc.pid         = process_id;
+			dummy_proc.create_time = create_time;
+			dummy_proc.image_name  = (WCHAR*)image_name;
 
-    if (! NT_SUCCESS(status) && !bHostInject) {
+			Process_CancelProcess(&dummy_proc);
+		}
 
-        proc = Process_Find(process_id, &irql);
+		Log_Status_Ex_Session(MSG_1231, 0x22, status, image_name, session_id);
 
-        if (proc && proc->create_time == create_time) {
+		return FALSE;
+	}
 
-            Process_SetTerminated(proc, 3);
-        }
-
-        ExReleaseResourceLite(Process_ListLock);
-        KeLowerIrql(irql);
-
-        if (1) {
-
-            BOX dummy_box;
-            PROCESS dummy_proc;
-            memzero(&dummy_box, sizeof(dummy_box));
-            memzero(&dummy_proc, sizeof(dummy_proc));
-            dummy_box.session_id = session_id;
-            dummy_proc.box = &dummy_box;
-            dummy_proc.pid = process_id;
-            dummy_proc.create_time = create_time;
-            dummy_proc.image_name = (WCHAR *)image_name;
-
-            Process_CancelProcess(&dummy_proc);
-        }
-
-        Log_Status_Ex_Session(
-                        MSG_1231, 0x22, status, image_name, session_id);
-
-        return FALSE;
-    }
-
-    return sbielow_loaded;
+	return sbielow_loaded;
 }
 
 
@@ -246,45 +249,49 @@ _FX BOOLEAN Process_Low_Inject(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Process_Low_Api_InjectComplete(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Process_Low_Api_InjectComplete(PROCESS* proc, ULONG64* parms)
 {
-    NTSTATUS status;
+	NTSTATUS status;
 
-    //
-    // this API must be invoked by the Sandboxie service
-    //
+	//
+	// this API must be invoked by the Sandboxie service
+	//
 
-    if (proc || (PsGetCurrentProcessId() != Api_ServiceProcessId)) {
+	if (proc || (PsGetCurrentProcessId() != Api_ServiceProcessId))
+	{
+		status = STATUS_ACCESS_DENIED;
+	}
+	else
+	{
+		//
+		// turn on the SbieLow loaded flag for the process
+		//
 
-        status = STATUS_ACCESS_DENIED;
+		HANDLE ProcessId = (HANDLE)(ULONG_PTR)(ULONG)parms[1];
 
-    } else {
+		KIRQL irql;
+		PROCESS* proc = Process_Find(ProcessId, &irql);
 
-        //
-        // turn on the SbieLow loaded flag for the process
-        //
+		if (proc)
+		{
+			proc->sbielow_loaded = TRUE;
+		}
 
-        HANDLE ProcessId = (HANDLE)(ULONG_PTR)(ULONG)parms[1];
+		ExReleaseResourceLite(Process_ListLock);
+		KeLowerIrql(irql);
 
-        KIRQL irql;
-        PROCESS *proc = Process_Find(ProcessId, &irql);
+		if (proc)
+		{
+			KeSetEvent(Process_Low_Event, 0, FALSE);
+			status = STATUS_SUCCESS;
+		}
+		else
+		{
+			status = STATUS_INVALID_CID;
+		}
+	}
 
-        if (proc)
-            proc->sbielow_loaded = TRUE;
-
-        ExReleaseResourceLite(Process_ListLock);
-        KeLowerIrql(irql);
-
-        if (proc) {
-
-            KeSetEvent(Process_Low_Event, 0, FALSE);
-            status = STATUS_SUCCESS;
-
-        } else
-            status = STATUS_INVALID_CID;
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -293,127 +300,129 @@ _FX NTSTATUS Process_Low_Api_InjectComplete(PROCESS *proc, ULONG64 *parms)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Process_Low_InitConsole(PROCESS *proc)
+_FX BOOLEAN Process_Low_InitConsole(PROCESS* proc)
 {
-    NTSTATUS status;
+	NTSTATUS status;
 
-    //
-    // on Windows 7, a console process tries to launch conhost.exe through
-    // csrss.exe during initialization of kernel32.dll in the function
-    // kernel32!ConnectConsoleInternal.  this will fail because the process
-    // is using a highly restricted primary token.
-    //
-    // to work around this, we modify here the RTL_USER_PROCESS_PARAMETERS
-    // structure as if the process was started with the CreateProcess flag
-    // DETACHED_PROCESS so the process doesn't try to connect to a console.
-    //
-    // later on, SbieDll will ask SbieSvc to create conhost.exe on behalf
-    // of the process in the sandbox, and then connect to that console.
-    // see core/dll/guicon.c for more about this.
-    //
-    // this code should be invoked before the process token is replaced,
-    // so SbieSvc can create the console process based on the real token
-    //
-    // note that none of this is needed prior to Windows 7
-    //
+	//
+	// on Windows 7, a console process tries to launch conhost.exe through
+	// csrss.exe during initialization of kernel32.dll in the function
+	// kernel32!ConnectConsoleInternal.  this will fail because the process
+	// is using a highly restricted primary token.
+	//
+	// to work around this, we modify here the RTL_USER_PROCESS_PARAMETERS
+	// structure as if the process was started with the CreateProcess flag
+	// DETACHED_PROCESS so the process doesn't try to connect to a console.
+	//
+	// later on, SbieDll will ask SbieSvc to create conhost.exe on behalf
+	// of the process in the sandbox, and then connect to that console.
+	// see core/dll/guicon.c for more about this.
+	//
+	// this code should be invoked before the process token is replaced,
+	// so SbieSvc can create the console process based on the real token
+	//
+	// note that none of this is needed prior to Windows 7
+	//
 
-    if (Driver_OsVersion < DRIVER_WINDOWS_7) {
-        status = STATUS_SUCCESS;
-        goto finish;
-    }
+	if (Driver_OsVersion < DRIVER_WINDOWS_7)
+	{
+		status = STATUS_SUCCESS;
+		goto finish;
+	}
 
-    if (PsGetCurrentProcessId() != proc->pid) {
-        status = STATUS_DEVICE_ALREADY_ATTACHED;
-        goto finish;
-    }
+	if (PsGetCurrentProcessId() != proc->pid)
+	{
+		status = STATUS_DEVICE_ALREADY_ATTACHED;
+		goto finish;
+	}
 
-    __try {
-
-        //
-        // select PEB offsets according to system bitness
-        //
+	__try
+	{
+		//
+		// select PEB offsets according to system bitness
+		//
 
 #ifdef _WIN64
-        const ULONG UserProcessParms_offset =   0x20;   // 64-bit
-        const ULONG ImageSubsystem_offset   =   0x128;
-#else ! _WIN64
-        const ULONG UserProcessParms_offset =   0x10;   // 32-bit
-        const ULONG ImageSubsystem_offset   =   0xB4;
+		const ULONG UserProcessParms_offset = 0x20; // 64-bit
+		const ULONG ImageSubsystem_offset   = 0x128;
+#else !_WIN64
+		const ULONG UserProcessParms_offset = 0x10; // 32-bit
+		const ULONG ImageSubsystem_offset   = 0xB4;
 #endif _WIN64
-        const ULONG ConsoleHandle_offset    =   0x10;   // 32/64
-        const ULONG PebLength = ImageSubsystem_offset + sizeof(ULONG_PTR);
+		const ULONG ConsoleHandle_offset = 0x10; // 32/64
+		const ULONG PebLength            = ImageSubsystem_offset + sizeof(ULONG_PTR);
 
-        const UCHAR IMAGE_SUBSYSTEM_WINDOWS_CUI = 3;
+		const UCHAR IMAGE_SUBSYSTEM_WINDOWS_CUI = 3;
 
-        //
-        // make sure PEB block is accessible
-        //
+		//
+		// make sure PEB block is accessible
+		//
 
-        ULONG_PTR Peb = PsGetProcessPeb(PsGetCurrentProcess());
+		ULONG_PTR Peb = PsGetProcessPeb(PsGetCurrentProcess());
 
-        ProbeForRead((void *)Peb, PebLength, sizeof(ULONG_PTR));
+		ProbeForRead((void*)Peb, PebLength, sizeof(ULONG_PTR));
 
-        // DbgPrint("Process %d Image Subsystem %d\n", proc->pid, *(UCHAR *)(Peb + ImageSubsystem_offset));
+		// DbgPrint("Process %d Image Subsystem %d\n", proc->pid, *(UCHAR *)(Peb + ImageSubsystem_offset));
 
-        if (*(UCHAR *)(Peb + ImageSubsystem_offset)
-                                            == IMAGE_SUBSYSTEM_WINDOWS_CUI) {
+		if (*(UCHAR*)(Peb + ImageSubsystem_offset) == IMAGE_SUBSYSTEM_WINDOWS_CUI)
+		{
+			//
+			// this is a console process.  we will need to open a new
+			// console, unless the ConsoleHandle field in the
+			// RTL_USER_PROCESS_PARAMETERS structure already specifies
+			// an existing console pid
+			//
 
-            //
-            // this is a console process.  we will need to open a new
-            // console, unless the ConsoleHandle field in the
-            // RTL_USER_PROCESS_PARAMETERS structure already specifies
-            // an existing console pid
-            //
+			const HANDLE DETACHED_PROCESS   = (HANDLE)-1;
+			const HANDLE CREATE_NEW_CONSOLE = (HANDLE)-2;
+			const HANDLE CREATE_NO_WINDOW   = (HANDLE)-3;
 
-            const HANDLE DETACHED_PROCESS   = (HANDLE) -1;
-            const HANDLE CREATE_NEW_CONSOLE = (HANDLE) -2;
-            const HANDLE CREATE_NO_WINDOW   = (HANDLE) -3;
+			ULONG_PTR RtlUserProcessParms = *(ULONG_PTR*)(Peb + UserProcessParms_offset);
+			HANDLE* PtrConsoleHandle      = (HANDLE*)(RtlUserProcessParms + ConsoleHandle_offset);
+			ProbeForRead(PtrConsoleHandle, sizeof(HANDLE), sizeof(HANDLE));
 
-            ULONG_PTR RtlUserProcessParms =
-                            *(ULONG_PTR *)(Peb + UserProcessParms_offset);
-            HANDLE *PtrConsoleHandle =
-                    (HANDLE *)(RtlUserProcessParms + ConsoleHandle_offset);
-            ProbeForRead(PtrConsoleHandle, sizeof(HANDLE), sizeof(HANDLE));
+			// DbgPrint("Console Handle = %p\n", *PtrConsoleHandle);
 
-            // DbgPrint("Console Handle = %p\n", *PtrConsoleHandle);
+			if (*PtrConsoleHandle == 0 || *PtrConsoleHandle == CREATE_NEW_CONSOLE || *PtrConsoleHandle == CREATE_NO_WINDOW)
+			{
+				if (*PtrConsoleHandle == CREATE_NO_WINDOW)
+				{
+					proc->create_console_flag = 'H'; // hide
+				}
+				else
+				{
+					proc->create_console_flag = 'S'; // show
+				}
 
-            if (    *PtrConsoleHandle == 0
-                 || *PtrConsoleHandle == CREATE_NEW_CONSOLE
-                 || *PtrConsoleHandle == CREATE_NO_WINDOW) {
+				*PtrConsoleHandle = DETACHED_PROCESS;
 
-                if (*PtrConsoleHandle == CREATE_NO_WINDOW)
-                    proc->create_console_flag = 'H';    // hide
-                else
-                    proc->create_console_flag = 'S';    // show
+				//
+				// note that if this a Wow64 process, InitConsole
+				// in core/low/init.c will copy the DETACHED_PROCESS value
+				// from the 64-bit ConsoleHandle that we adjusted here,
+				// into the corresponding 32-bit ConsoleHandle field
+				//
+			}
+		}
 
-                *PtrConsoleHandle = DETACHED_PROCESS;
+		status = STATUS_SUCCESS;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-                //
-                // note that if this a Wow64 process, InitConsole
-                // in core/low/init.c will copy the DETACHED_PROCESS value
-                // from the 64-bit ConsoleHandle that we adjusted here,
-                // into the corresponding 32-bit ConsoleHandle field
-                //
-            }
-        }
-
-        status = STATUS_SUCCESS;
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    //
-    //
-    //
+	//
+	//
+	//
 
 finish:
 
-    if (! NT_SUCCESS(status)) {
-        Log_Status_Ex_Session(MSG_1231, 0x66, status,
-                              proc->image_name, proc->box->session_id);
-        return FALSE;
-    }
+	if (!NT_SUCCESS(status))
+	{
+		Log_Status_Ex_Session(MSG_1231, 0x66, status, proc->image_name, proc->box->session_id);
+		return FALSE;
+	}
 
-    return TRUE;
+	return TRUE;
 }

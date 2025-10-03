@@ -28,16 +28,13 @@
 
 class EpMapperServer
 {
-
 public:
-
-    EpMapperServer(PipeServer *pipeServer);
+	EpMapperServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    MSG_HEADER *EpmapperGetPortNameHandler(MSG_HEADER *msg);
+	MSG_HEADER* EpmapperGetPortNameHandler(MSG_HEADER* msg);
 };
 
 

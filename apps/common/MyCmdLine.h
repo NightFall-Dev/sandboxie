@@ -26,20 +26,19 @@
 
 class CMyCmdLine
 {
-    const WCHAR *m_Next;
+	const WCHAR* m_Next;
 
-    WCHAR *m_Prev;
+	WCHAR* m_Prev;
 
-    static const WCHAR *EatString(const WCHAR *str);
+	static const WCHAR* EatString(const WCHAR* str);
 
 public:
+	CMyCmdLine(const WCHAR* CommandLineString = NULL);
+	~CMyCmdLine();
 
-    CMyCmdLine(const WCHAR *CommandLineString = NULL);
-    ~CMyCmdLine();
+	int Count();
 
-    int Count();
-
-    const WCHAR *Next();
+	const WCHAR* Next();
 };
 
 

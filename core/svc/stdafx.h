@@ -27,21 +27,12 @@
 typedef long NTSTATUS;
 
 #ifndef VC_EXTRALEAN
-#define VC_EXTRALEAN            // Exclude rarely-used stuff from Windows headers
+	#define VC_EXTRALEAN // Exclude rarely-used stuff from Windows headers
 #endif
 
 //#include "targetver.h"
 
-#include <windows.h>
-
 #include "common/defines.h"
 #include "core/dll/sbiedll.h"
 
-
-
-
-
-
-
-
-
+#include <windows.h>

@@ -29,14 +29,10 @@
 
 class CFontStore : public CMapStringToPtr
 {
-
-    static CFontStore *m_instance;
+	static CFontStore* m_instance;
 
 public:
-
-    static CFont *Get(const CString &TypeFaceName, int PointSize,
-                      int Weight = FW_NORMAL);
-
+	static CFont* Get(const CString& TypeFaceName, int PointSize, int Weight = FW_NORMAL);
 };
 
 

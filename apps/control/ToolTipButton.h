@@ -29,25 +29,23 @@
 
 class CToolTipButton : public CButton
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CToolTipCtrl m_tip;
-    BOOL m_tip_active;
+	CToolTipCtrl m_tip;
+	BOOL m_tip_active;
 
 protected:
+	virtual BOOL PreTranslateMessage(MSG* msg);
 
-    virtual BOOL PreTranslateMessage(MSG *msg);
-
-    afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 
 public:
+	bool Init(CDialog* dlg, UINT id, const CString& text = CString());
+	bool Init(HWND hwndButton, const CString& text = CString());
+	void SetText(const CString& text);
 
-    bool Init(CDialog *dlg, UINT id, const CString &text = CString());
-    bool Init(HWND hwndButton, const CString &text = CString());
-    void SetText(const CString &text);
-
-    CToolTipButton();
-    ~CToolTipButton();
+	CToolTipButton();
+	~CToolTipButton();
 };
 
 

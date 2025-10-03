@@ -33,7 +33,7 @@
 //---------------------------------------------------------------------------
 
 
-#define QUEUE_NAME_MAXLEN   64
+#define QUEUE_NAME_MAXLEN 64
 
 
 //---------------------------------------------------------------------------
@@ -43,14 +43,14 @@
 
 struct tagQUEUE_CREATE_REQ
 {
-    MSG_HEADER h;
-    WCHAR queue_name[QUEUE_NAME_MAXLEN];
-    __declspec(align(8)) ULONG64 event_handle;
+	MSG_HEADER h;
+	WCHAR queue_name[QUEUE_NAME_MAXLEN];
+	__declspec(align(8)) ULONG64 event_handle;
 };
 
 struct tagQUEUE_CREATE_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
+	MSG_HEADER h; // status is NTSTATUS
 };
 
 typedef struct tagQUEUE_CREATE_REQ QUEUE_CREATE_REQ;
@@ -64,18 +64,18 @@ typedef struct tagQUEUE_CREATE_RPL QUEUE_CREATE_RPL;
 
 struct tagQUEUE_GETREQ_REQ
 {
-    MSG_HEADER h;
-    WCHAR queue_name[QUEUE_NAME_MAXLEN];
+	MSG_HEADER h;
+	WCHAR queue_name[QUEUE_NAME_MAXLEN];
 };
 
 struct tagQUEUE_GETREQ_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG client_pid;
-    ULONG client_tid;
-    ULONG req_id;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG client_pid;
+	ULONG client_tid;
+	ULONG req_id;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 typedef struct tagQUEUE_GETREQ_REQ QUEUE_GETREQ_REQ;
@@ -89,16 +89,16 @@ typedef struct tagQUEUE_GETREQ_RPL QUEUE_GETREQ_RPL;
 
 struct tagQUEUE_PUTRPL_REQ
 {
-    MSG_HEADER h;
-    WCHAR queue_name[QUEUE_NAME_MAXLEN];
-    ULONG req_id;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h;
+	WCHAR queue_name[QUEUE_NAME_MAXLEN];
+	ULONG req_id;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 struct tagQUEUE_PUTRPL_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
+	MSG_HEADER h; // status is NTSTATUS
 };
 
 typedef struct tagQUEUE_PUTRPL_REQ QUEUE_PUTRPL_REQ;
@@ -112,17 +112,17 @@ typedef struct tagQUEUE_PUTRPL_RPL QUEUE_PUTRPL_RPL;
 
 struct tagQUEUE_PUTREQ_REQ
 {
-    MSG_HEADER h;
-    WCHAR queue_name[QUEUE_NAME_MAXLEN];
-    __declspec(align(8)) ULONG64 event_handle;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h;
+	WCHAR queue_name[QUEUE_NAME_MAXLEN];
+	__declspec(align(8)) ULONG64 event_handle;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 struct tagQUEUE_PUTREQ_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG req_id;
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG req_id;
 };
 
 typedef struct tagQUEUE_PUTREQ_REQ QUEUE_PUTREQ_REQ;
@@ -136,16 +136,16 @@ typedef struct tagQUEUE_PUTREQ_RPL QUEUE_PUTREQ_RPL;
 
 struct tagQUEUE_GETRPL_REQ
 {
-    MSG_HEADER h;
-    WCHAR queue_name[QUEUE_NAME_MAXLEN];
-    ULONG req_id;
+	MSG_HEADER h;
+	WCHAR queue_name[QUEUE_NAME_MAXLEN];
+	ULONG req_id;
 };
 
 struct tagQUEUE_GETRPL_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 typedef struct tagQUEUE_GETRPL_REQ QUEUE_GETRPL_REQ;

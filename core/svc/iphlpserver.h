@@ -30,37 +30,32 @@
 
 class IpHlpServer
 {
-
 public:
-
-    IpHlpServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    static void CloseCallback(void *context, void *data);
-
-    MSG_HEADER *CreateHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *CloseHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *SendEchoHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    void NotifyHandler(HANDLE idProcess);
+	IpHlpServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    ProxyHandle *m_ProxyHandle;
+	static void CloseCallback(void* context, void* data);
 
-    void *m_IcmpCreateFile;
-    void *m_Icmp6CreateFile;
-    void *m_IcmpCloseHandle;
+	MSG_HEADER* CreateHandler(MSG_HEADER* msg, HANDLE idProcess);
 
-    void *m_IcmpSendEcho2;
-    void *m_IcmpSendEcho2Ex;
-    void *m_Icmp6SendEcho2;
+	MSG_HEADER* CloseHandler(MSG_HEADER* msg, HANDLE idProcess);
 
+	MSG_HEADER* SendEchoHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	void NotifyHandler(HANDLE idProcess);
+
+protected:
+	ProxyHandle* m_ProxyHandle;
+
+	void* m_IcmpCreateFile;
+	void* m_Icmp6CreateFile;
+	void* m_IcmpCloseHandle;
+
+	void* m_IcmpSendEcho2;
+	void* m_IcmpSendEcho2Ex;
+	void* m_Icmp6SendEcho2;
 };
 
 

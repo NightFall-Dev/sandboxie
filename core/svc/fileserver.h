@@ -29,63 +29,46 @@
 
 class FileServer
 {
-
 public:
-
-    FileServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    void *MyAlloc(ULONG len);
-    void MyFree(void *ptr);
-
-    MSG_HEADER *SetAttributes(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *SetShortName(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *LoadKey(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *SetReparsePoint(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *OpenWow64Key(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *CheckKeyExists(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *GetAllHandles(HANDLE idProcess);
-
-    bool CopySingleFile(
-        const WCHAR *src_path, const WCHAR *dst_path, HANDLE idProcess);
-
-    NTSTATUS MyFindFirstFile(
-        const WCHAR *path, HANDLE *handle,
-        FILE_DIRECTORY_INFORMATION **info,
-        FILE_DIRECTORY_INFORMATION **info_ptr);
-
-    NTSTATUS MyFindNextFile(
-        HANDLE handle,
-        FILE_DIRECTORY_INFORMATION *info,
-        FILE_DIRECTORY_INFORMATION **info_ptr);
-
-    NTSTATUS OpenBoxFile(
-        HANDLE idProcess, WCHAR *request_path,
-        ACCESS_MASK desired_access, ULONG create_options,
-        HANDLE *out_handle);
-
-    NTSTATUS CheckBoxFilePath(
-        HANDLE idProcess, WCHAR *request_path, const WCHAR *extra_path);
-
-    NTSTATUS CheckBoxKeyPath(
-        HANDLE idProcess, WCHAR *request_path, const WCHAR *extra_path);
+	FileServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    WCHAR *m_windows;
-    WCHAR *m_winsxs;
-    PSECURITY_DESCRIPTOR m_PublicSd;
-    HANDLE m_heap;
+	void* MyAlloc(ULONG len);
+	void MyFree(void* ptr);
 
+	MSG_HEADER* SetAttributes(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* SetShortName(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* LoadKey(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* SetReparsePoint(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* OpenWow64Key(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* CheckKeyExists(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* GetAllHandles(HANDLE idProcess);
+
+	bool CopySingleFile(const WCHAR* src_path, const WCHAR* dst_path, HANDLE idProcess);
+
+	NTSTATUS MyFindFirstFile(const WCHAR* path, HANDLE* handle, FILE_DIRECTORY_INFORMATION** info, FILE_DIRECTORY_INFORMATION** info_ptr);
+
+	NTSTATUS MyFindNextFile(HANDLE handle, FILE_DIRECTORY_INFORMATION* info, FILE_DIRECTORY_INFORMATION** info_ptr);
+
+	NTSTATUS OpenBoxFile(HANDLE idProcess, WCHAR* request_path, ACCESS_MASK desired_access, ULONG create_options, HANDLE* out_handle);
+
+	NTSTATUS CheckBoxFilePath(HANDLE idProcess, WCHAR* request_path, const WCHAR* extra_path);
+
+	NTSTATUS CheckBoxKeyPath(HANDLE idProcess, WCHAR* request_path, const WCHAR* extra_path);
+
+protected:
+	WCHAR* m_windows;
+	WCHAR* m_winsxs;
+	PSECURITY_DESCRIPTOR m_PublicSd;
+	HANDLE m_heap;
 };
 
 

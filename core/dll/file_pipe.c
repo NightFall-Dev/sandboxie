@@ -28,30 +28,25 @@
 //---------------------------------------------------------------------------
 
 
-#define TYPE_NAMED_PIPE     1
-#define TYPE_MAIL_SLOT      2
-#define TYPE_NET_DEVICE     3
+#define TYPE_NAMED_PIPE 1
+#define TYPE_MAIL_SLOT 2
+#define TYPE_NET_DEVICE 3
 
 
 //---------------------------------------------------------------------------
 
 
-#define METHOD_NEITHER                  3
-#define CTL_CODE( DeviceType, Function, Method, Access ) (                 \
-    ((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method) \
-)
+#define METHOD_NEITHER 3
+#define CTL_CODE(DeviceType, Function, Method, Access) \
+	(((DeviceType) << 16) | ((Access) << 14) | ((Function) << 2) | (Method))
 
-#define FILE_DEVICE_NAMED_PIPE          0x00000011
+#define FILE_DEVICE_NAMED_PIPE 0x00000011
 
-#define FSCTL_PIPE_TRANSCEIVE   \
-    CTL_CODE(FILE_DEVICE_NAMED_PIPE, 5, METHOD_NEITHER,  \
-             FILE_READ_DATA | FILE_WRITE_DATA)
+#define FSCTL_PIPE_TRANSCEIVE CTL_CODE(FILE_DEVICE_NAMED_PIPE, 5, METHOD_NEITHER, FILE_READ_DATA | FILE_WRITE_DATA)
 
-#define FSCTL_PIPE_WAIT         \
-    CTL_CODE(FILE_DEVICE_NAMED_PIPE, 6, METHOD_BUFFERED, 0)
+#define FSCTL_PIPE_WAIT CTL_CODE(FILE_DEVICE_NAMED_PIPE, 6, METHOD_BUFFERED, 0)
 
-#define FSCTL_PIPE_IMPERSONATE  \
-    CTL_CODE(FILE_DEVICE_NAMED_PIPE, 7, METHOD_BUFFERED, 0)
+#define FSCTL_PIPE_IMPERSONATE CTL_CODE(FILE_DEVICE_NAMED_PIPE, 7, METHOD_BUFFERED, 0)
 
 
 //---------------------------------------------------------------------------
@@ -59,12 +54,12 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
-
-    LARGE_INTEGER   Timeout;
-    ULONG           NameLength;
-    BOOLEAN         TimeoutSpecified;
-    WCHAR           Name[1];
+typedef struct _FILE_PIPE_WAIT_FOR_BUFFER
+{
+	LARGE_INTEGER Timeout;
+	ULONG NameLength;
+	BOOLEAN TimeoutSpecified;
+	WCHAR Name[1];
 
 } FILE_PIPE_WAIT_FOR_BUFFER;
 
@@ -74,96 +69,29 @@ typedef struct _FILE_PIPE_WAIT_FOR_BUFFER {
 //---------------------------------------------------------------------------
 
 
-static BOOLEAN File_IsPipeSuffix(const WCHAR *ptr);
+static BOOLEAN File_IsPipeSuffix(const WCHAR* ptr);
 
-static ULONG File_IsNamedPipe(const WCHAR *path, const WCHAR **server);
+static ULONG File_IsNamedPipe(const WCHAR* path, const WCHAR** server);
 
-static NTSTATUS File_NtCreateFilePipe(
-    HANDLE *FileHandle,
-    ACCESS_MASK DesiredAccess,
-    OBJECT_ATTRIBUTES *objattrs,
-    PSECURITY_DESCRIPTOR SecurityDescriptor,
-    PSECURITY_QUALITY_OF_SERVICE SecurityQualityOfService,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions,
-    WCHAR *TruePath,
-    ULONG PipeType,
-    const WCHAR *PipeServer);
+static NTSTATUS File_NtCreateFilePipe(HANDLE* FileHandle, ACCESS_MASK DesiredAccess, OBJECT_ATTRIBUTES* objattrs, PSECURITY_DESCRIPTOR SecurityDescriptor, PSECURITY_QUALITY_OF_SERVICE SecurityQualityOfService, IO_STATUS_BLOCK* IoStatusBlock, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, WCHAR* TruePath, ULONG PipeType, const WCHAR* PipeServer);
 
-static void *File_GetBoxedPipeName(
-    THREAD_DATA *TlsData, WCHAR *TruePath, ULONG PipeType);
+static void* File_GetBoxedPipeName(THREAD_DATA* TlsData, WCHAR* TruePath, ULONG PipeType);
 
-static NTSTATUS File_OpenProxyPipe(
-    HANDLE *FileHandle,
-    ACCESS_MASK DesiredAccess,
-    const WCHAR *ProxyPipeName,
-    const WCHAR *ProxyPipeServer,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions);
+static NTSTATUS File_OpenProxyPipe(HANDLE* FileHandle, ACCESS_MASK DesiredAccess, const WCHAR* ProxyPipeName, const WCHAR* ProxyPipeServer, IO_STATUS_BLOCK* IoStatusBlock, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions);
 
-static NTSTATUS File_CloseProxyPipe(
-    HANDLE FileHandle);
+static NTSTATUS File_CloseProxyPipe(HANDLE FileHandle);
 
-static NTSTATUS File_SetProxyPipe(
-    HANDLE FileHandle,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    void *FileInformation,
-    ULONG Length,
-    FILE_INFORMATION_CLASS FileInformationClass);
+static NTSTATUS File_SetProxyPipe(HANDLE FileHandle, IO_STATUS_BLOCK* IoStatusBlock, void* FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass);
 
-static NTSTATUS File_NtReadFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    OUT PVOID Buffer,
-    IN ULONG Length,
-    IN PLARGE_INTEGER ByteOffset OPTIONAL,
-    IN PULONG Key OPTIONAL);
+static NTSTATUS File_NtReadFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, OUT PVOID Buffer, IN ULONG Length, IN PLARGE_INTEGER ByteOffset OPTIONAL, IN PULONG Key OPTIONAL);
 
-static NTSTATUS File_NtWriteFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN PVOID Buffer,
-    IN ULONG Length,
-    IN PLARGE_INTEGER ByteOffset OPTIONAL,
-    IN PULONG Key OPTIONAL);
+static NTSTATUS File_NtWriteFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN PVOID Buffer, IN ULONG Length, IN PLARGE_INTEGER ByteOffset OPTIONAL, IN PULONG Key OPTIONAL);
 
-static NTSTATUS File_NtFsControlFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN ULONG IoControlCode,
-    IN PVOID InputBuffer OPTIONAL,
-    IN ULONG InputBufferLength,
-    OUT PVOID OutputBuffer OPTIONAL,
-    IN ULONG OutputBufferLength);
+static NTSTATUS File_NtFsControlFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG IoControlCode, IN PVOID InputBuffer OPTIONAL, IN ULONG InputBufferLength, OUT PVOID OutputBuffer OPTIONAL, IN ULONG OutputBufferLength);
 
-static NTSTATUS File_WaitNamedPipe(
-    HANDLE NamedPipesHandle, IO_STATUS_BLOCK *IoStatusBlock,
-    void *InputBuffer, ULONG InputBufferLength);
+static NTSTATUS File_WaitNamedPipe(HANDLE NamedPipesHandle, IO_STATUS_BLOCK* IoStatusBlock, void* InputBuffer, ULONG InputBufferLength);
 
-static NTSTATUS File_NtDeviceIoControlFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN ULONG IoControlCode,
-    IN PVOID InputBuffer OPTIONAL,
-    IN ULONG InputBufferLength,
-    OUT PVOID OutputBuffer OPTIONAL,
-    IN ULONG OutputBufferLength);
+static NTSTATUS File_NtDeviceIoControlFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG IoControlCode, IN PVOID InputBuffer OPTIONAL, IN ULONG InputBufferLength, OUT PVOID OutputBuffer OPTIONAL, IN ULONG OutputBufferLength);
 
 
 //---------------------------------------------------------------------------
@@ -171,10 +99,10 @@ static NTSTATUS File_NtDeviceIoControlFile(
 //---------------------------------------------------------------------------
 
 
-static ULONG *File_ProxyPipes = NULL;
+static ULONG* File_ProxyPipes = NULL;
 
-static const WCHAR *File_NamedPipe = L"\\device\\namedpipe\\";
-static const WCHAR *File_MailSlot  = L"\\device\\mailslot\\";
+static const WCHAR* File_NamedPipe = L"\\device\\namedpipe\\";
+static const WCHAR* File_MailSlot  = L"\\device\\mailslot\\";
 
 
 //---------------------------------------------------------------------------
@@ -182,16 +110,19 @@ static const WCHAR *File_MailSlot  = L"\\device\\mailslot\\";
 //---------------------------------------------------------------------------
 
 
-__declspec(inline) BOOLEAN File_IsPipeSuffix(const WCHAR *ptr)
+__declspec(inline) BOOLEAN File_IsPipeSuffix(const WCHAR* ptr)
 {
-    //static const WCHAR *File_Pipe      = L"\\PIPE\\";
-    //static const ULONG  File_Pipe_Len  = 6;
+	//static const WCHAR *File_Pipe      = L"\\PIPE\\";
+	//static const ULONG  File_Pipe_Len  = 6;
 
-    if (ptr && _wcsnicmp(ptr, L"\\PIPE", 5) == 0 &&
-            (ptr[5] == L'\\' || ptr[5] == L'\0'))
-        return TRUE;
-    else
-        return FALSE;
+	if (ptr && _wcsnicmp(ptr, L"\\PIPE", 5) == 0 && (ptr[5] == L'\\' || ptr[5] == L'\0'))
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
 }
 
 
@@ -200,69 +131,86 @@ __declspec(inline) BOOLEAN File_IsPipeSuffix(const WCHAR *ptr)
 //---------------------------------------------------------------------------
 
 
-_FX ULONG File_IsNamedPipe(const WCHAR *path, const WCHAR **server)
+_FX ULONG File_IsNamedPipe(const WCHAR* path, const WCHAR** server)
 {
-    ULONG len;
+	ULONG len;
 
-    //
-    // check if this is \Device\NamedPipe or \Device\MailSlot,
-    // or the various mup forms such as
-    // \Device\Mup\NamedPipe or \Device\LanManRedirector\MailSlot
-    //
+	//
+	// check if this is \Device\NamedPipe or \Device\MailSlot,
+	// or the various mup forms such as
+	// \Device\Mup\NamedPipe or \Device\LanManRedirector\MailSlot
+	//
 
-    len = wcslen(path);
+	len = wcslen(path);
 
-    if (len >= 18) {
+	if (len >= 18)
+	{
+		if (_wcsnicmp(path, File_NamedPipe, 18) == 0)
+		{
+			return TYPE_NAMED_PIPE;
+		}
+		if (_wcsnicmp(path, File_MailSlot, 17) == 0)
+		{
+			return TYPE_MAIL_SLOT;
+		}
 
-        if (_wcsnicmp(path, File_NamedPipe, 18) == 0)
-            return TYPE_NAMED_PIPE;
-        if (_wcsnicmp(path, File_MailSlot, 17) == 0)
-            return TYPE_MAIL_SLOT;
+		if (_wcsnicmp(path, File_Redirector, File_RedirectorLen) == 0)
+		{
+			WCHAR* ptr = wcschr(path + File_RedirectorLen, L'\\');
+			if (File_IsPipeSuffix(ptr))
+			{
+				if (server)
+				{
+					*server = path + File_RedirectorLen;
+				}
+				return TYPE_NAMED_PIPE;
+			}
+		}
 
-        if (_wcsnicmp(path, File_Redirector, File_RedirectorLen) == 0) {
-            WCHAR *ptr = wcschr(path + File_RedirectorLen, L'\\');
-            if (File_IsPipeSuffix(ptr)) {
-                if (server)
-                    *server = path + File_RedirectorLen;
-                return TYPE_NAMED_PIPE;
-            }
-        }
+		if (_wcsnicmp(path, File_MupRedir, File_MupRedirLen) == 0)
+		{
+			WCHAR* ptr = wcschr(path + File_MupRedirLen, L'\\');
+			if (File_IsPipeSuffix(ptr))
+			{
+				if (server)
+				{
+					*server = path + File_MupRedirLen;
+				}
+				return TYPE_NAMED_PIPE;
+			}
+		}
 
-        if (_wcsnicmp(path, File_MupRedir, File_MupRedirLen) == 0) {
-            WCHAR *ptr = wcschr(path + File_MupRedirLen, L'\\');
-            if (File_IsPipeSuffix(ptr)) {
-                if (server)
-                    *server = path + File_MupRedirLen;
-                return TYPE_NAMED_PIPE;
-            }
-        }
+		if (_wcsnicmp(path, File_Mup, File_MupLen) == 0)
+		{
+			WCHAR* ptr = wcschr(path + File_MupLen, L'\\');
+			if (File_IsPipeSuffix(ptr))
+			{
+				if (server)
+				{
+					*server = path + File_MupLen;
+				}
+				return TYPE_NAMED_PIPE;
+			}
+		}
+	}
 
-        if (_wcsnicmp(path, File_Mup, File_MupLen) == 0) {
-            WCHAR *ptr = wcschr(path + File_MupLen, L'\\');
-            if (File_IsPipeSuffix(ptr)) {
-                if (server)
-                    *server = path + File_MupLen;
-                return TYPE_NAMED_PIPE;
-            }
-        }
-    }
+	//
+	// check if this is an Internet device matching a ClosedFilePath
+	//
 
-    //
-    // check if this is an Internet device matching a ClosedFilePath
-    //
+	if (len >= 10 && _wcsnicmp(path, File_Mup, 8) == 0)
+	{
+		if (SbieApi_CheckInternetAccess(NULL, path + 8, TRUE) == STATUS_ACCESS_DENIED)
+		{
+			return TYPE_NET_DEVICE;
+		}
+	}
 
-    if (len >= 10 && _wcsnicmp(path, File_Mup, 8) == 0) {
+	//
+	// finish
+	//
 
-        if (SbieApi_CheckInternetAccess(NULL, path + 8, TRUE) ==
-                                                STATUS_ACCESS_DENIED)
-            return TYPE_NET_DEVICE;
-    }
-
-    //
-    // finish
-    //
-
-    return 0;
+	return 0;
 }
 
 
@@ -271,103 +219,91 @@ _FX ULONG File_IsNamedPipe(const WCHAR *path, const WCHAR **server)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtCreateMailslotFile(
-     HANDLE *FileHandle,
-     ULONG DesiredAccess,
-     OBJECT_ATTRIBUTES *ObjectAttributes,
-     IO_STATUS_BLOCK *IoStatusBlock,
-     ULONG CreateOptions,
-     ULONG MailslotQuota,
-     ULONG MaximumMessageSize,
-     LARGE_INTEGER *ReadTimeout)
+_FX NTSTATUS File_NtCreateMailslotFile(HANDLE* FileHandle, ULONG DesiredAccess, OBJECT_ATTRIBUTES* ObjectAttributes, IO_STATUS_BLOCK* IoStatusBlock, ULONG CreateOptions, ULONG MailslotQuota, ULONG MaximumMessageSize, LARGE_INTEGER* ReadTimeout)
 {
-    ULONG LastError;
-    THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+	ULONG LastError;
+	THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-    NTSTATUS status;
-    OBJECT_ATTRIBUTES objattrs;
-    UNICODE_STRING objname;
-    WCHAR *TruePath;
-    WCHAR *CopyPath;
-    ULONG PipeType;
-    ULONG mp_flags;
-    WCHAR *name;
+	NTSTATUS status;
+	OBJECT_ATTRIBUTES objattrs;
+	UNICODE_STRING objname;
+	WCHAR* TruePath;
+	WCHAR* CopyPath;
+	ULONG PipeType;
+	ULONG mp_flags;
+	WCHAR* name;
 
-    Dll_PushTlsNameBuffer(TlsData);
+	Dll_PushTlsNameBuffer(TlsData);
 
-    __try {
+	__try
+	{
+		//
+		// get the caller-provided name of the mailslot.  we must get
+		// STATUS_BAD_INITIAL_PC, or else it isn't a mailslot path.
+		//
 
-    //
-    // get the caller-provided name of the mailslot.  we must get
-    // STATUS_BAD_INITIAL_PC, or else it isn't a mailslot path.
-    //
+		status = File_GetName(ObjectAttributes->RootDirectory, ObjectAttributes->ObjectName, &TruePath, &CopyPath, NULL);
 
-    status = File_GetName(
-        ObjectAttributes->RootDirectory, ObjectAttributes->ObjectName,
-        &TruePath, &CopyPath, NULL);
+		if (status != STATUS_BAD_INITIAL_PC)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
 
-    if (status != STATUS_BAD_INITIAL_PC) {
+		InitializeObjectAttributes(&objattrs, &objname, OBJECT_ATTRIBUTES_ATTRIBUTES, NULL, NULL);
 
-        status = STATUS_INVALID_PARAMETER;
-        __leave;
-    }
+		//
+		// check if this is an open or closed path
+		//
 
-    InitializeObjectAttributes(&objattrs,
-        &objname, OBJECT_ATTRIBUTES_ATTRIBUTES, NULL, NULL);
+		mp_flags = File_MatchPath(TruePath, NULL);
 
-    //
-    // check if this is an open or closed path
-    //
+		if (PATH_IS_CLOSED(mp_flags))
+		{
+			status = STATUS_ACCESS_DENIED;
+			__leave;
+		}
 
-    mp_flags = File_MatchPath(TruePath, NULL);
+		if (PATH_IS_OPEN(mp_flags))
+		{
+			RtlInitUnicodeString(&objname, TruePath);
+			objattrs.SecurityDescriptor = ObjectAttributes->SecurityDescriptor;
 
-    if (PATH_IS_CLOSED(mp_flags)) {
-        status = STATUS_ACCESS_DENIED;
-        __leave;
-    }
+			status = __sys_NtCreateMailslotFile(FileHandle, DesiredAccess, &objattrs, IoStatusBlock, CreateOptions, MailslotQuota, MaximumMessageSize, ReadTimeout);
 
-    if (PATH_IS_OPEN(mp_flags)) {
+			__leave;
+		}
 
-        RtlInitUnicodeString(&objname, TruePath);
-        objattrs.SecurityDescriptor = ObjectAttributes->SecurityDescriptor;
+		//
+		// try to create the mail slot in the sandbox
+		//
 
-        status = __sys_NtCreateMailslotFile(
-            FileHandle, DesiredAccess, &objattrs, IoStatusBlock,
-            CreateOptions, MailslotQuota, MaximumMessageSize, ReadTimeout);
+		PipeType = File_IsNamedPipe(TruePath, NULL);
 
-        __leave;
-    }
+		name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
+		if (!name)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
 
-    //
-    // try to create the mail slot in the sandbox
-    //
+		RtlInitUnicodeString(&objname, name);
+		objattrs.SecurityDescriptor = Secure_EveryoneSD;
 
-    PipeType = File_IsNamedPipe(TruePath, NULL);
+		status = __sys_NtCreateMailslotFile(FileHandle, DesiredAccess, &objattrs, IoStatusBlock, CreateOptions, MailslotQuota, MaximumMessageSize, ReadTimeout);
 
-    name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
-    if (! name) {
-        status = STATUS_INVALID_PARAMETER;
-        __leave;
-    }
+		//
+		// finish
+		//
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-    RtlInitUnicodeString(&objname, name);
-    objattrs.SecurityDescriptor = Secure_EveryoneSD;
-
-    status = __sys_NtCreateMailslotFile(
-        FileHandle, DesiredAccess, &objattrs, IoStatusBlock,
-        CreateOptions, MailslotQuota, MaximumMessageSize, ReadTimeout);
-
-    //
-    // finish
-    //
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    Dll_PopTlsNameBuffer(TlsData);
-    SetLastError(LastError);
-    return status;
+	Dll_PopTlsNameBuffer(TlsData);
+	SetLastError(LastError);
+	return status;
 }
 
 
@@ -376,148 +312,115 @@ _FX NTSTATUS File_NtCreateMailslotFile(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtCreateNamedPipeFile(
-    HANDLE *FileHandle,
-    ULONG DesiredAccess,
-    OBJECT_ATTRIBUTES *ObjectAttributes,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions,
-    ULONG NamedPipeType,
-    ULONG ReadMode,
-    ULONG CompletionMode,
-    ULONG MaximumInstances,
-    ULONG InboundQuota,
-    ULONG OutboundQuota,
-    LARGE_INTEGER *DefaultTimeout)
+_FX NTSTATUS File_NtCreateNamedPipeFile(HANDLE* FileHandle, ULONG DesiredAccess, OBJECT_ATTRIBUTES* ObjectAttributes, IO_STATUS_BLOCK* IoStatusBlock, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, ULONG NamedPipeType, ULONG ReadMode, ULONG CompletionMode, ULONG MaximumInstances, ULONG InboundQuota, ULONG OutboundQuota, LARGE_INTEGER* DefaultTimeout)
 {
-    ULONG LastError;
-    THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+	ULONG LastError;
+	THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-    NTSTATUS status;
-    OBJECT_ATTRIBUTES objattrs;
-    UNICODE_STRING objname;
-    WCHAR *TruePath;
-    WCHAR *CopyPath;
-    ULONG PipeType;
-    ULONG mp_flags;
-    WCHAR *name;
+	NTSTATUS status;
+	OBJECT_ATTRIBUTES objattrs;
+	UNICODE_STRING objname;
+	WCHAR* TruePath;
+	WCHAR* CopyPath;
+	ULONG PipeType;
+	ULONG mp_flags;
+	WCHAR* name;
 
-    Dll_PushTlsNameBuffer(TlsData);
+	Dll_PushTlsNameBuffer(TlsData);
 
-    __try {
+	__try
+	{
+		//
+		// get the caller-provided name of the pipe.  we must get
+		// STATUS_BAD_INITIAL_PC, or else it isn't a pipe path.
+		//
 
-    //
-    // get the caller-provided name of the pipe.  we must get
-    // STATUS_BAD_INITIAL_PC, or else it isn't a pipe path.
-    //
+		status = File_GetName(ObjectAttributes->RootDirectory, ObjectAttributes->ObjectName, &TruePath, &CopyPath, NULL);
 
-    status = File_GetName(
-        ObjectAttributes->RootDirectory, ObjectAttributes->ObjectName,
-        &TruePath, &CopyPath, NULL);
+		if (status != STATUS_BAD_INITIAL_PC)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
 
-    if (status != STATUS_BAD_INITIAL_PC) {
+		//
+		// special case:  null object name and root directory \Device\NamedPipe
+		// (note, usually with no final backslash, i.e. 17 characters,
+		// but we also accept the case with 18 characters case)
+		//
 
-        status = STATUS_INVALID_PARAMETER;
-        __leave;
-    }
+		if (ObjectAttributes->RootDirectory && ((!ObjectAttributes->ObjectName) || ObjectAttributes->ObjectName->Length == 0))
+		{
+			ULONG len = wcslen(TruePath);
+			if ((len == 17 || len == 18) && _wcsnicmp(TruePath, File_NamedPipe, 17) == 0)
+			{
+				status = __sys_NtCreateNamedPipeFile(FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions, NamedPipeType, ReadMode, CompletionMode, MaximumInstances, InboundQuota, OutboundQuota, DefaultTimeout);
 
-    //
-    // special case:  null object name and root directory \Device\NamedPipe
-    // (note, usually with no final backslash, i.e. 17 characters,
-    // but we also accept the case with 18 characters case)
-    //
+				__leave;
+			}
+		}
 
-    if (ObjectAttributes->RootDirectory && (
-            (! ObjectAttributes->ObjectName) ||
-                ObjectAttributes->ObjectName->Length == 0)) {
+		//
+		// check if this is an open or closed path
+		//
 
-        ULONG len = wcslen(TruePath);
-        if ((len == 17 || len == 18) &&
-                _wcsnicmp(TruePath, File_NamedPipe, 17) == 0) {
+		InitializeObjectAttributes(&objattrs, &objname, OBJECT_ATTRIBUTES_ATTRIBUTES, NULL, NULL);
 
-            status = __sys_NtCreateNamedPipeFile(
-                FileHandle, DesiredAccess, ObjectAttributes, IoStatusBlock,
-                ShareAccess, CreateDisposition, CreateOptions,
-                NamedPipeType, ReadMode, CompletionMode, MaximumInstances,
-                InboundQuota, OutboundQuota, DefaultTimeout);
+		mp_flags = File_MatchPath(TruePath, NULL);
 
-            __leave;
-        }
-    }
+		if (PATH_IS_CLOSED(mp_flags))
+		{
+			status = STATUS_ACCESS_DENIED;
+			__leave;
+		}
 
-    //
-    // check if this is an open or closed path
-    //
+		if (PATH_IS_OPEN(mp_flags))
+		{
+			RtlInitUnicodeString(&objname, TruePath);
+			objattrs.SecurityDescriptor = ObjectAttributes->SecurityDescriptor;
 
-    InitializeObjectAttributes(&objattrs,
-        &objname, OBJECT_ATTRIBUTES_ATTRIBUTES, NULL, NULL);
+			status = __sys_NtCreateNamedPipeFile(FileHandle, DesiredAccess, &objattrs, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions, NamedPipeType, ReadMode, CompletionMode, MaximumInstances, InboundQuota, OutboundQuota, DefaultTimeout);
 
-    mp_flags = File_MatchPath(TruePath, NULL);
+			__leave;
+		}
 
-    if (PATH_IS_CLOSED(mp_flags)) {
-        status = STATUS_ACCESS_DENIED;
-        __leave;
-    }
+		//
+		// try to create the named pipe in the sandbox
+		//
 
-    if (PATH_IS_OPEN(mp_flags)) {
+		PipeType = File_IsNamedPipe(TruePath, NULL);
 
-        RtlInitUnicodeString(&objname, TruePath);
-        objattrs.SecurityDescriptor = ObjectAttributes->SecurityDescriptor;
+		name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
+		if (!name)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
 
-        status = __sys_NtCreateNamedPipeFile(
-            FileHandle, DesiredAccess, &objattrs, IoStatusBlock,
-            ShareAccess, CreateDisposition, CreateOptions,
-            NamedPipeType, ReadMode, CompletionMode, MaximumInstances,
-            InboundQuota, OutboundQuota, DefaultTimeout);
+		RtlInitUnicodeString(&objname, name);
+		objattrs.SecurityDescriptor = Secure_EveryoneSD;
 
-        __leave;
-    }
+		status = __sys_NtCreateNamedPipeFile(FileHandle, DesiredAccess, &objattrs, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions, NamedPipeType, ReadMode, CompletionMode, MaximumInstances, InboundQuota, OutboundQuota, DefaultTimeout);
 
-    //
-    // try to create the named pipe in the sandbox
-    //
+		if (status == STATUS_PRIVILEGE_NOT_HELD)
+		{
+			objattrs.SecurityDescriptor = NULL;
 
-    PipeType = File_IsNamedPipe(TruePath, NULL);
+			status = __sys_NtCreateNamedPipeFile(FileHandle, DesiredAccess, &objattrs, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions, NamedPipeType, ReadMode, CompletionMode, MaximumInstances, InboundQuota, OutboundQuota, DefaultTimeout);
+		}
 
-    name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
-    if (! name) {
-        status = STATUS_INVALID_PARAMETER;
-        __leave;
-    }
+		//
+		// finish
+		//
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-    RtlInitUnicodeString(&objname, name);
-    objattrs.SecurityDescriptor = Secure_EveryoneSD;
-
-    status = __sys_NtCreateNamedPipeFile(
-        FileHandle, DesiredAccess, &objattrs, IoStatusBlock,
-        ShareAccess, CreateDisposition, CreateOptions,
-        NamedPipeType, ReadMode, CompletionMode, MaximumInstances,
-        InboundQuota, OutboundQuota, DefaultTimeout);
-
-    if (status == STATUS_PRIVILEGE_NOT_HELD) {
-
-        objattrs.SecurityDescriptor = NULL;
-
-        status = __sys_NtCreateNamedPipeFile(
-            FileHandle, DesiredAccess, &objattrs, IoStatusBlock,
-            ShareAccess, CreateDisposition, CreateOptions,
-            NamedPipeType, ReadMode, CompletionMode, MaximumInstances,
-            InboundQuota, OutboundQuota, DefaultTimeout);
-    }
-
-    //
-    // finish
-    //
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    Dll_PopTlsNameBuffer(TlsData);
-    SetLastError(LastError);
-    return status;
+	Dll_PopTlsNameBuffer(TlsData);
+	SetLastError(LastError);
+	return status;
 }
 
 
@@ -526,125 +429,104 @@ _FX NTSTATUS File_NtCreateNamedPipeFile(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtCreateFilePipe(
-    HANDLE *FileHandle,
-    ACCESS_MASK DesiredAccess,
-    OBJECT_ATTRIBUTES *objattrs,
-    PSECURITY_DESCRIPTOR SecurityDescriptor,
-    PSECURITY_QUALITY_OF_SERVICE SecurityQualityOfService,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions,
-    WCHAR *TruePath,
-    ULONG PipeType,
-    const WCHAR *PipeServer)
+_FX NTSTATUS File_NtCreateFilePipe(HANDLE* FileHandle, ACCESS_MASK DesiredAccess, OBJECT_ATTRIBUTES* objattrs, PSECURITY_DESCRIPTOR SecurityDescriptor, PSECURITY_QUALITY_OF_SERVICE SecurityQualityOfService, IO_STATUS_BLOCK* IoStatusBlock, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, WCHAR* TruePath, ULONG PipeType, const WCHAR* PipeServer)
 {
-    ULONG LastError = GetLastError();
-    THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+	ULONG LastError      = GetLastError();
+	THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-    NTSTATUS status;
-    WCHAR *name;
+	NTSTATUS status;
+	WCHAR* name;
 
-    __try {
+	__try
+	{
+		//
+		// check if this is an open or closed path
+		//
 
-    //
-    // check if this is an open or closed path
-    //
+		ULONG mp_flags = File_MatchPath2(TruePath, NULL, FALSE, FALSE);
 
-    ULONG mp_flags = File_MatchPath2(TruePath, NULL, FALSE, FALSE);
+		if (PATH_IS_CLOSED(mp_flags))
+		{
+			status = STATUS_ACCESS_DENIED;
+			__leave;
+		}
 
-    if (PATH_IS_CLOSED(mp_flags)) {
-        status = STATUS_ACCESS_DENIED;
-        __leave;
-    }
+		if (PATH_IS_OPEN(mp_flags))
+		{
+			RtlInitUnicodeString(objattrs->ObjectName, TruePath);
+			objattrs->SecurityDescriptor = SecurityDescriptor;
 
-    if (PATH_IS_OPEN(mp_flags)) {
+			status = __sys_NtCreateFile(FileHandle, DesiredAccess, objattrs, IoStatusBlock, NULL, 0, ShareAccess, CreateDisposition, CreateOptions, NULL, 0);
 
-        RtlInitUnicodeString(objattrs->ObjectName, TruePath);
-        objattrs->SecurityDescriptor = SecurityDescriptor;
+			__leave;
+		}
 
-        status = __sys_NtCreateFile(
-            FileHandle, DesiredAccess, objattrs, IoStatusBlock,
-            NULL, 0, ShareAccess, CreateDisposition, CreateOptions,
-            NULL, 0);
+		//
+		// if the access is to a special pipe, which wasn't specified
+		// as an OpenFilePath, de-administrator-ize and open the true path
+		//
+		// keep list of permitted pipes in sync with
+		// SbieSvc::NamedPipeServer::OpenHandler
+		//
 
-        __leave;
-    }
+		if (PipeType == TYPE_NAMED_PIPE)
+		{
+			name = wcsrchr(TruePath, L'\\');
+			if (name)
+			{
+				++name;
+				if (_wcsicmp(name, L"lsarpc") == 0 || _wcsicmp(name, L"srvsvc") == 0 || _wcsicmp(name, L"wkssvc") == 0 || _wcsicmp(name, L"samr") == 0 || _wcsicmp(name, L"netlogon") == 0)
+				{
+					status = File_OpenProxyPipe(FileHandle, DesiredAccess, name, PipeServer, IoStatusBlock, ShareAccess, CreateDisposition, CreateOptions);
 
-    //
-    // if the access is to a special pipe, which wasn't specified
-    // as an OpenFilePath, de-administrator-ize and open the true path
-    //
-    // keep list of permitted pipes in sync with
-    // SbieSvc::NamedPipeServer::OpenHandler
-    //
+					__leave;
+				}
+			}
+		}
 
-    if (PipeType == TYPE_NAMED_PIPE) {
+		//
+		// try to open the named pipe or mail slot with the
+		// CopyPath version of the name provided by the caller
+		//
 
-        name = wcsrchr(TruePath, L'\\');
-        if (name) {
-            ++name;
-            if (_wcsicmp(name, L"lsarpc")       == 0 ||
-                _wcsicmp(name, L"srvsvc")       == 0 ||
-                _wcsicmp(name, L"wkssvc")       == 0 ||
-                _wcsicmp(name, L"samr")         == 0 ||
-                _wcsicmp(name, L"netlogon")     == 0) {
+		name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
+		if (!name)
+		{
+			status = STATUS_INVALID_PARAMETER;
+			__leave;
+		}
 
-                status = File_OpenProxyPipe(
-                            FileHandle, DesiredAccess, name, PipeServer,
-                            IoStatusBlock, ShareAccess,
-                            CreateDisposition, CreateOptions);
+		RtlInitUnicodeString(objattrs->ObjectName, name);
 
-                __leave;
-            }
-        }
-    }
+		objattrs->SecurityQualityOfService = SecurityQualityOfService;
 
-    //
-    // try to open the named pipe or mail slot with the
-    // CopyPath version of the name provided by the caller
-    //
+		status = __sys_NtCreateFile(FileHandle, DesiredAccess, objattrs, IoStatusBlock, NULL, 0, ShareAccess, CreateDisposition, CreateOptions, NULL, 0);
 
-    name = File_GetBoxedPipeName(TlsData, TruePath, PipeType);
-    if (! name) {
-        status = STATUS_INVALID_PARAMETER;
-        __leave;
-    }
+		//
+		// finish
+		//
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-    RtlInitUnicodeString(objattrs->ObjectName, name);
+	if (status == STATUS_ACCESS_DENIED || status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND)
+	{
+		USHORT monflag = MONITOR_PIPE;
+		if (status == STATUS_ACCESS_DENIED)
+		{
+			monflag |= MONITOR_DENY;
+		}
+		SbieApi_MonitorPut(monflag, TruePath);
+	}
+	else if (NT_SUCCESS(status))
+	{
+		File_MatchPath2(TruePath, NULL, FALSE, TRUE);
+	}
 
-    objattrs->SecurityQualityOfService = SecurityQualityOfService;
-
-    status = __sys_NtCreateFile(
-        FileHandle, DesiredAccess, objattrs, IoStatusBlock,
-        NULL, 0, ShareAccess, CreateDisposition, CreateOptions,
-        NULL, 0);
-
-    //
-    // finish
-    //
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    if (status == STATUS_ACCESS_DENIED ||
-        status == STATUS_OBJECT_NAME_NOT_FOUND ||
-        status == STATUS_OBJECT_PATH_NOT_FOUND) {
-
-        USHORT monflag = MONITOR_PIPE;
-        if (status == STATUS_ACCESS_DENIED)
-            monflag |= MONITOR_DENY;
-        SbieApi_MonitorPut(monflag, TruePath);
-    }
-    else if (NT_SUCCESS(status))
-    {
-        File_MatchPath2(TruePath, NULL, FALSE, TRUE);
-    }
-
-    SetLastError(LastError);
-    return status;
+	SetLastError(LastError);
+	return status;
 }
 
 
@@ -653,75 +535,91 @@ _FX NTSTATUS File_NtCreateFilePipe(
 //---------------------------------------------------------------------------
 
 
-_FX void *File_GetBoxedPipeName(
-    THREAD_DATA *TlsData, WCHAR *TruePath, ULONG PipeType)
+_FX void* File_GetBoxedPipeName(THREAD_DATA* TlsData, WCHAR* TruePath, ULONG PipeType)
 {
-    WCHAR *suffix, *name, *BoxPipePath, *ptr;
-    ULONG len;
+	WCHAR *suffix, *name, *BoxPipePath, *ptr;
+	ULONG len;
 
-    if (PipeType == TYPE_NAMED_PIPE)
-        suffix = TruePath + 18;
-    else if (PipeType == TYPE_MAIL_SLOT)
-        suffix = TruePath + 17;
-    else
-        return NULL;
+	if (PipeType == TYPE_NAMED_PIPE)
+	{
+		suffix = TruePath + 18;
+	}
+	else if (PipeType == TYPE_MAIL_SLOT)
+	{
+		suffix = TruePath + 17;
+	}
+	else
+	{
+		return NULL;
+	}
 
-    len = (Dll_BoxIpcPathLen + 1 + wcslen(suffix) + 1) * sizeof(WCHAR);
-    name = Dll_GetTlsNameBuffer(TlsData, COPY_NAME_BUFFER, len);
+	len  = (Dll_BoxIpcPathLen + 1 + wcslen(suffix) + 1) * sizeof(WCHAR);
+	name = Dll_GetTlsNameBuffer(TlsData, COPY_NAME_BUFFER, len);
 
-    //
-    // place a prefix, \Device\NamedPipe\ or \Device\MailSlot\ .
-    //
+	//
+	// place a prefix, \Device\NamedPipe\ or \Device\MailSlot\ .
+	//
 
-    wcscpy(name, L"\\device\\");
-    if (PipeType == TYPE_NAMED_PIPE)
-        wcscat(name, L"namedpipe");
-    else
-        wcscat(name, L"mailslot");
+	wcscpy(name, L"\\device\\");
+	if (PipeType == TYPE_NAMED_PIPE)
+	{
+		wcscat(name, L"namedpipe");
+	}
+	else
+	{
+		wcscat(name, L"mailslot");
+	}
 
-    ptr = name + wcslen(name);
-    *ptr = L'\\';
-    ++ptr;
+	ptr  = name + wcslen(name);
+	*ptr = L'\\';
+	++ptr;
 
-    //
-    // translate Dll_BoxIpcPath to BoxPipePath by replacing
-    // backslashes characters with underline characters
-    //
+	//
+	// translate Dll_BoxIpcPath to BoxPipePath by replacing
+	// backslashes characters with underline characters
+	//
 
-    BoxPipePath = ptr;
+	BoxPipePath = ptr;
 
-    wcscpy(ptr, Dll_BoxIpcPath);
-    while (*ptr) {
-        WCHAR *ptr2 = wcschr(ptr, L'\\');
-        if (ptr2) {
-            ptr = ptr2;
-            *ptr = L'_';
-        } else
-            ptr += wcslen(ptr);
-    }
+	wcscpy(ptr, Dll_BoxIpcPath);
+	while (*ptr)
+	{
+		WCHAR* ptr2 = wcschr(ptr, L'\\');
+		if (ptr2)
+		{
+			ptr  = ptr2;
+			*ptr = L'_';
+		}
+		else
+		{
+			ptr += wcslen(ptr);
+		}
+	}
 
-    *ptr = L'\\';
-    ++ptr;
+	*ptr = L'\\';
+	++ptr;
 
-    //
-    // TruePath begins with \Device\NamedPipe\ or \Device\MailSlot\ .
-    // if the rest of TruePath begins the same as BoxPipePath, then
-    // this is already a sandboxed pipe name
-    //
+	//
+	// TruePath begins with \Device\NamedPipe\ or \Device\MailSlot\ .
+	// if the rest of TruePath begins the same as BoxPipePath, then
+	// this is already a sandboxed pipe name
+	//
 
-    *ptr = L'\0';
+	*ptr = L'\0';
 
-    len = wcslen(BoxPipePath);
-    if (_wcsnicmp(suffix, BoxPipePath, len) == 0)
-        suffix += len;
+	len = wcslen(BoxPipePath);
+	if (_wcsnicmp(suffix, BoxPipePath, len) == 0)
+	{
+		suffix += len;
+	}
 
-    //
-    // now append the (unsandboxed) pipe name past the BoxPipePath prefix
-    //
+	//
+	// now append the (unsandboxed) pipe name past the BoxPipePath prefix
+	//
 
-    wcscpy(ptr, suffix);
+	wcscpy(ptr, suffix);
 
-    return name;
+	return name;
 }
 
 
@@ -750,23 +648,23 @@ _FX void *File_GetBoxedPipeName(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_AddProxyPipe(HANDLE *OutHandle, ULONG InHandle)
+_FX NTSTATUS File_AddProxyPipe(HANDLE* OutHandle, ULONG InHandle)
 {
-    ULONG i;
+	ULONG i;
 
-    for (i = 1; i < 256; ++i) {
-        if (! File_ProxyPipes[i]) {
+	for (i = 1; i < 256; ++i)
+	{
+		if (!File_ProxyPipes[i])
+		{
+			if (InterlockedCompareExchange(&File_ProxyPipes[i], InHandle, 0) == 0)
+			{
+				*OutHandle = (HANDLE)(PROXY_PIPE_MASK | i);
+				return STATUS_SUCCESS;
+			}
+		}
+	}
 
-            if (InterlockedCompareExchange(
-                        &File_ProxyPipes[i], InHandle, 0) == 0) {
-
-                *OutHandle = (HANDLE)(PROXY_PIPE_MASK | i);
-                return STATUS_SUCCESS;
-            }
-        }
-    }
-
-    return STATUS_INSUFFICIENT_RESOURCES;
+	return STATUS_INSUFFICIENT_RESOURCES;
 }
 
 
@@ -775,15 +673,18 @@ _FX NTSTATUS File_AddProxyPipe(HANDLE *OutHandle, ULONG InHandle)
 //---------------------------------------------------------------------------
 
 
-_FX ULONG File_GetProxyPipe(HANDLE FakeHandle, UCHAR *FileIndex)
+_FX ULONG File_GetProxyPipe(HANDLE FakeHandle, UCHAR* FileIndex)
 {
-    if (((ULONG_PTR)FakeHandle & PROXY_PIPE_MASK) == PROXY_PIPE_MASK) {
-        UCHAR idx = (UCHAR)((ULONG_PTR)FakeHandle & ~PROXY_PIPE_MASK);
-        if (FileIndex)
-            *FileIndex = idx;
-        return File_ProxyPipes[idx];
-    }
-    return 0;
+	if (((ULONG_PTR)FakeHandle & PROXY_PIPE_MASK) == PROXY_PIPE_MASK)
+	{
+		UCHAR idx = (UCHAR)((ULONG_PTR)FakeHandle & ~PROXY_PIPE_MASK);
+		if (FileIndex)
+		{
+			*FileIndex = idx;
+		}
+		return File_ProxyPipes[idx];
+	}
+	return 0;
 }
 
 
@@ -792,56 +693,54 @@ _FX ULONG File_GetProxyPipe(HANDLE FakeHandle, UCHAR *FileIndex)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_OpenProxyPipe(
-    HANDLE *FileHandle,
-    ACCESS_MASK DesiredAccess,
-    const WCHAR *ProxyPipeName,
-    const WCHAR *ProxyPipeServer,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions)
+_FX NTSTATUS File_OpenProxyPipe(HANDLE* FileHandle, ACCESS_MASK DesiredAccess, const WCHAR* ProxyPipeName, const WCHAR* ProxyPipeServer, IO_STATUS_BLOCK* IoStatusBlock, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions)
 {
-    NAMED_PIPE_OPEN_REQ req;
-    NAMED_PIPE_OPEN_RPL *rpl;
-    NTSTATUS status;
+	NAMED_PIPE_OPEN_REQ req;
+	NAMED_PIPE_OPEN_RPL* rpl;
+	NTSTATUS status;
 
-    req.h.length = sizeof(NAMED_PIPE_OPEN_REQ);
-    req.h.msgid = MSGID_NAMED_PIPE_OPEN;
-    wcscpy(req.name, ProxyPipeName);
-    memzero(req.server, sizeof(req.server));
-    if (ProxyPipeServer) {
-        WCHAR *ptr = wcschr(ProxyPipeServer, L'\\');
-        if (ptr) {
-            ULONG len = (ULONG)(ULONG_PTR)(ptr - ProxyPipeServer);
-            if (len > 46)
-                len = 46;
-            wcsncpy(req.server, ProxyPipeServer, len);
-        }
-    }
-    req.create_options = CreateOptions;
+	req.h.length = sizeof(NAMED_PIPE_OPEN_REQ);
+	req.h.msgid  = MSGID_NAMED_PIPE_OPEN;
+	wcscpy(req.name, ProxyPipeName);
+	memzero(req.server, sizeof(req.server));
+	if (ProxyPipeServer)
+	{
+		WCHAR* ptr = wcschr(ProxyPipeServer, L'\\');
+		if (ptr)
+		{
+			ULONG len = (ULONG)(ULONG_PTR)(ptr - ProxyPipeServer);
+			if (len > 46)
+			{
+				len = 46;
+			}
+			wcsncpy(req.server, ProxyPipeServer, len);
+		}
+	}
+	req.create_options = CreateOptions;
 
-    rpl = (NAMED_PIPE_OPEN_RPL *)SbieDll_CallServer(&req.h);
-    if (! rpl)
-        status = STATUS_OBJECT_NAME_NOT_FOUND;
-    else {
+	rpl = (NAMED_PIPE_OPEN_RPL*)SbieDll_CallServer(&req.h);
+	if (!rpl)
+	{
+		status = STATUS_OBJECT_NAME_NOT_FOUND;
+	}
+	else
+	{
+		status = rpl->h.status;
+		if (rpl->h.length > sizeof(MSG_HEADER))
+		{
+			IoStatusBlock->Status      = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
+			IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
 
-        status = rpl->h.status;
-        if (rpl->h.length > sizeof(MSG_HEADER)) {
+			if (NT_SUCCESS(status))
+			{
+				status = File_AddProxyPipe(FileHandle, rpl->handle);
+			}
+		}
 
-            IoStatusBlock->Status = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
-            IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
+		Dll_Free(rpl);
+	}
 
-            if (NT_SUCCESS(status)) {
-
-                status = File_AddProxyPipe(FileHandle, rpl->handle);
-            }
-        }
-
-        Dll_Free(rpl);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -852,32 +751,38 @@ _FX NTSTATUS File_OpenProxyPipe(
 
 _FX NTSTATUS File_CloseProxyPipe(HANDLE FileHandle)
 {
-    UCHAR FileIndex;
-    NAMED_PIPE_CLOSE_REQ req;
-    NAMED_PIPE_CLOSE_RPL *rpl;
-    NTSTATUS status;
+	UCHAR FileIndex;
+	NAMED_PIPE_CLOSE_REQ req;
+	NAMED_PIPE_CLOSE_RPL* rpl;
+	NTSTATUS status;
 
-    req.h.length = sizeof(NAMED_PIPE_CLOSE_REQ);
-    req.h.msgid = MSGID_NAMED_PIPE_CLOSE;
+	req.h.length = sizeof(NAMED_PIPE_CLOSE_REQ);
+	req.h.msgid  = MSGID_NAMED_PIPE_CLOSE;
 
-    req.handle = File_GetProxyPipe(FileHandle, &FileIndex);
-    if (! req.handle)
-        return STATUS_INVALID_HANDLE;
+	req.handle = File_GetProxyPipe(FileHandle, &FileIndex);
+	if (!req.handle)
+	{
+		return STATUS_INVALID_HANDLE;
+	}
 
-    rpl = (NAMED_PIPE_CLOSE_RPL *)SbieDll_CallServer(&req.h);
-    if (! rpl)
-        status = STATUS_INVALID_HANDLE;
-    else {
+	rpl = (NAMED_PIPE_CLOSE_RPL*)SbieDll_CallServer(&req.h);
+	if (!rpl)
+	{
+		status = STATUS_INVALID_HANDLE;
+	}
+	else
+	{
+		status = rpl->h.status;
 
-        status = rpl->h.status;
+		if (NT_SUCCESS(status))
+		{
+			InterlockedExchange(&File_ProxyPipes[FileIndex], 0);
+		}
 
-        if (NT_SUCCESS(status))
-            InterlockedExchange(&File_ProxyPipes[FileIndex], 0);
+		Dll_Free(rpl);
+	}
 
-        Dll_Free(rpl);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -886,75 +791,75 @@ _FX NTSTATUS File_CloseProxyPipe(HANDLE FileHandle)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_SetProxyPipe(
-    HANDLE FileHandle,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    void *FileInformation,
-    ULONG Length,
-    FILE_INFORMATION_CLASS FileInformationClass)
+_FX NTSTATUS File_SetProxyPipe(HANDLE FileHandle, IO_STATUS_BLOCK* IoStatusBlock, void* FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass)
 {
-    ULONG req_len;
-    ULONG handle;
-    NAMED_PIPE_SET_REQ *req;
-    NAMED_PIPE_SET_RPL *rpl;
-    NTSTATUS status;
+	ULONG req_len;
+	ULONG handle;
+	NAMED_PIPE_SET_REQ* req;
+	NAMED_PIPE_SET_RPL* rpl;
+	NTSTATUS status;
 
-    handle = File_GetProxyPipe(FileHandle, NULL);
-    if (! handle)
-        return STATUS_INVALID_HANDLE;
+	handle = File_GetProxyPipe(FileHandle, NULL);
+	if (!handle)
+	{
+		return STATUS_INVALID_HANDLE;
+	}
 
-    //
-    // FileCompletionInformation
-    // FileIoCompletionNotificationInformation (Windows Vista and later)
-    //
-    // internal information classes related to asynchronous i/o
-    // and completion ports, we just ignore and return success
-    //
+	//
+	// FileCompletionInformation
+	// FileIoCompletionNotificationInformation (Windows Vista and later)
+	//
+	// internal information classes related to asynchronous i/o
+	// and completion ports, we just ignore and return success
+	//
 
-    if (FileInformationClass == FileCompletionInformation ||
-        FileInformationClass == FileIoCompletionNotificationInformation)
-    {
-        memzero(&IoStatusBlock, sizeof(IO_STATUS_BLOCK));
-        return STATUS_SUCCESS;
-    }
+	if (FileInformationClass == FileCompletionInformation || FileInformationClass == FileIoCompletionNotificationInformation)
+	{
+		memzero(&IoStatusBlock, sizeof(IO_STATUS_BLOCK));
+		return STATUS_SUCCESS;
+	}
 
-    //
-    // FilePipeInformation
-    //
-    // forward the request to the SbieSvc named pipe server
-    //
+	//
+	// FilePipeInformation
+	//
+	// forward the request to the SbieSvc named pipe server
+	//
 
-    req_len = sizeof(NAMED_PIPE_SET_REQ) + Length;
-    req = (NAMED_PIPE_SET_REQ *)Dll_AllocTemp(req_len);
-    if (! req)
-        return STATUS_INSUFFICIENT_RESOURCES;
+	req_len = sizeof(NAMED_PIPE_SET_REQ) + Length;
+	req     = (NAMED_PIPE_SET_REQ*)Dll_AllocTemp(req_len);
+	if (!req)
+	{
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
 
-    req->h.length = req_len;
-    req->h.msgid = MSGID_NAMED_PIPE_SET;
+	req->h.length = req_len;
+	req->h.msgid  = MSGID_NAMED_PIPE_SET;
 
-    req->handle = handle;
+	req->handle = handle;
 
-    req->data_len = Length;
-    memcpy(req->data, FileInformation, Length);
+	req->data_len = Length;
+	memcpy(req->data, FileInformation, Length);
 
-    rpl = (NAMED_PIPE_SET_RPL *)SbieDll_CallServer(&req->h);
-    Dll_Free(req);
-    if (! rpl)
-        status = STATUS_INSUFFICIENT_RESOURCES;
+	rpl = (NAMED_PIPE_SET_RPL*)SbieDll_CallServer(&req->h);
+	Dll_Free(req);
+	if (!rpl)
+	{
+		status = STATUS_INSUFFICIENT_RESOURCES;
+	}
 
-    else {
+	else
+	{
+		status = rpl->h.status;
+		if (rpl->h.length > sizeof(MSG_HEADER))
+		{
+			IoStatusBlock->Status      = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
+			IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
+		}
 
-        status = rpl->h.status;
-        if (rpl->h.length > sizeof(MSG_HEADER)) {
+		Dll_Free(rpl);
+	}
 
-            IoStatusBlock->Status = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
-            IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
-        }
-
-        Dll_Free(rpl);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -963,58 +868,51 @@ _FX NTSTATUS File_SetProxyPipe(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtReadFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    OUT PVOID Buffer,
-    IN ULONG Length,
-    IN PLARGE_INTEGER ByteOffset OPTIONAL,
-    IN PULONG Key OPTIONAL)
+_FX NTSTATUS File_NtReadFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, OUT PVOID Buffer, IN ULONG Length, IN PLARGE_INTEGER ByteOffset OPTIONAL, IN PULONG Key OPTIONAL)
 {
-    NAMED_PIPE_READ_REQ req;
-    NAMED_PIPE_READ_RPL *rpl;
-    NTSTATUS status;
-    ULONG handle;
+	NAMED_PIPE_READ_REQ req;
+	NAMED_PIPE_READ_RPL* rpl;
+	NTSTATUS status;
+	ULONG handle;
 
-    handle = File_GetProxyPipe(FileHandle, NULL);
-    if (! handle) {
+	handle = File_GetProxyPipe(FileHandle, NULL);
+	if (!handle)
+	{
+		return __sys_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+	}
 
-        return __sys_NtReadFile(
-                    FileHandle, Event, ApcRoutine, ApcContext,
-                    IoStatusBlock, Buffer, Length, ByteOffset, Key);
-    }
+	req.h.length = sizeof(NAMED_PIPE_READ_REQ);
+	req.h.msgid  = MSGID_NAMED_PIPE_READ;
 
-    req.h.length = sizeof(NAMED_PIPE_READ_REQ);
-    req.h.msgid = MSGID_NAMED_PIPE_READ;
+	req.handle = handle;
 
-    req.handle = handle;
+	req.read_len = Length;
 
-    req.read_len = Length;
+	rpl = (NAMED_PIPE_READ_RPL*)SbieDll_CallServer(&req.h);
+	if (!rpl)
+	{
+		status = STATUS_INSUFFICIENT_RESOURCES;
+	}
 
-    rpl = (NAMED_PIPE_READ_RPL *)SbieDll_CallServer(&req.h);
-    if (! rpl)
-        status = STATUS_INSUFFICIENT_RESOURCES;
+	else
+	{
+		status = rpl->h.status;
+		if (rpl->h.length > sizeof(MSG_HEADER))
+		{
+			IoStatusBlock->Status      = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
+			IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
+			memcpy(Buffer, rpl->data, rpl->data_len);
+		}
 
-    else {
+		Dll_Free(rpl);
 
-        status = rpl->h.status;
-        if (rpl->h.length > sizeof(MSG_HEADER)) {
+		if (Event)
+		{
+			SetEvent(Event);
+		}
+	}
 
-            IoStatusBlock->Status = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
-            IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
-            memcpy(Buffer, rpl->data, rpl->data_len);
-        }
-
-        Dll_Free(rpl);
-
-        if (Event)
-            SetEvent(Event);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -1023,64 +921,59 @@ _FX NTSTATUS File_NtReadFile(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtWriteFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN PVOID Buffer,
-    IN ULONG Length,
-    IN PLARGE_INTEGER ByteOffset OPTIONAL,
-    IN PULONG Key OPTIONAL)
+_FX NTSTATUS File_NtWriteFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN PVOID Buffer, IN ULONG Length, IN PLARGE_INTEGER ByteOffset OPTIONAL, IN PULONG Key OPTIONAL)
 {
-    ULONG req_len;
-    NAMED_PIPE_WRITE_REQ *req;
-    NAMED_PIPE_WRITE_RPL *rpl;
-    NTSTATUS status;
-    ULONG handle;
+	ULONG req_len;
+	NAMED_PIPE_WRITE_REQ* req;
+	NAMED_PIPE_WRITE_RPL* rpl;
+	NTSTATUS status;
+	ULONG handle;
 
-    handle = File_GetProxyPipe(FileHandle, NULL);
-    if (! handle) {
+	handle = File_GetProxyPipe(FileHandle, NULL);
+	if (!handle)
+	{
+		return __sys_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, Buffer, Length, ByteOffset, Key);
+	}
 
-        return __sys_NtWriteFile(
-                    FileHandle, Event, ApcRoutine, ApcContext,
-                    IoStatusBlock, Buffer, Length, ByteOffset, Key);
-    }
+	req_len = sizeof(NAMED_PIPE_WRITE_REQ) + Length;
+	req     = (NAMED_PIPE_WRITE_REQ*)Dll_AllocTemp(req_len);
+	if (!req)
+	{
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
 
-    req_len = sizeof(NAMED_PIPE_WRITE_REQ) + Length;
-    req = (NAMED_PIPE_WRITE_REQ *)Dll_AllocTemp(req_len);
-    if (! req)
-        return STATUS_INSUFFICIENT_RESOURCES;
+	req->h.length = req_len;
+	req->h.msgid  = MSGID_NAMED_PIPE_WRITE;
 
-    req->h.length = req_len;
-    req->h.msgid = MSGID_NAMED_PIPE_WRITE;
+	req->handle = handle;
 
-    req->handle = handle;
+	req->data_len = Length;
+	memcpy(req->data, Buffer, Length);
 
-    req->data_len = Length;
-    memcpy(req->data, Buffer, Length);
+	rpl = (NAMED_PIPE_WRITE_RPL*)SbieDll_CallServer(&req->h);
+	Dll_Free(req);
+	if (!rpl)
+	{
+		status = STATUS_INSUFFICIENT_RESOURCES;
+	}
+	else
+	{
+		status = rpl->h.status;
+		if (rpl->h.length > sizeof(MSG_HEADER))
+		{
+			IoStatusBlock->Status      = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
+			IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
+		}
 
-    rpl = (NAMED_PIPE_WRITE_RPL *)SbieDll_CallServer(&req->h);
-    Dll_Free(req);
-    if (! rpl)
-        status = STATUS_INSUFFICIENT_RESOURCES;
-    else {
+		Dll_Free(rpl);
 
-        status = rpl->h.status;
-        if (rpl->h.length > sizeof(MSG_HEADER)) {
+		if (Event)
+		{
+			SetEvent(Event);
+		}
+	}
 
-            IoStatusBlock->Status = (NTSTATUS)(ULONG_PTR)rpl->iosb.status;
-            IoStatusBlock->Information = (ULONG_PTR)rpl->iosb.information;
-        }
-
-        Dll_Free(rpl);
-
-        if (Event)
-            SetEvent(Event);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -1089,90 +982,82 @@ _FX NTSTATUS File_NtWriteFile(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtFsControlFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN ULONG IoControlCode,
-    IN PVOID InputBuffer OPTIONAL,
-    IN ULONG InputBufferLength,
-    OUT PVOID OutputBuffer OPTIONAL,
-    IN ULONG OutputBufferLength)
+_FX NTSTATUS File_NtFsControlFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG IoControlCode, IN PVOID InputBuffer OPTIONAL, IN ULONG InputBufferLength, OUT PVOID OutputBuffer OPTIONAL, IN ULONG OutputBufferLength)
 {
-    ULONG LastError = GetLastError();
-    NTSTATUS status;
-    ULONG handle;
+	ULONG LastError = GetLastError();
+	NTSTATUS status;
+	ULONG handle;
 
-    handle = File_GetProxyPipe(FileHandle, NULL);
-    if (! handle) {
+	handle = File_GetProxyPipe(FileHandle, NULL);
+	if (!handle)
+	{
+		if (IoControlCode == FSCTL_SET_REPARSE_POINT)
+		{
+			status = File_SetReparsePoint(FileHandle, InputBuffer, InputBufferLength);
+			SetLastError(LastError);
+		}
+		else if (IoControlCode == FSCTL_PIPE_WAIT)
+		{
+			status = File_WaitNamedPipe(FileHandle, IoStatusBlock, InputBuffer, InputBufferLength);
+			SetLastError(LastError);
+		}
+		else if (IoControlCode == FSCTL_PIPE_IMPERSONATE)
+		{
+			SbieApi_Log(2205, L"ImpersonateNamedPipe");
+			if (Proc_ImpersonateSelf(TRUE))
+			{
+				status = STATUS_SUCCESS;
+			}
+			else
+			{
+				status = STATUS_ACCESS_DENIED;
+			}
+		}
+		else
+		{
+			status = STATUS_BAD_INITIAL_PC;
+		}
 
-        if (IoControlCode == FSCTL_SET_REPARSE_POINT) {
+		if (status == STATUS_BAD_INITIAL_PC)
+		{
+			status = __sys_NtFsControlFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, IoControlCode, InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
+		}
 
-            status = File_SetReparsePoint(
-                                FileHandle, InputBuffer, InputBufferLength);
-            SetLastError(LastError);
+		return status;
+	}
 
-        } else if (IoControlCode == FSCTL_PIPE_WAIT) {
+	if (IoControlCode != FSCTL_PIPE_TRANSCEIVE)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
 
-            status = File_WaitNamedPipe(FileHandle, IoStatusBlock,
-                                        InputBuffer, InputBufferLength);
-            SetLastError(LastError);
+	if (InputBuffer && InputBufferLength)
+	{
+		status = File_NtWriteFile(FileHandle, NULL, NULL, NULL, IoStatusBlock, InputBuffer, InputBufferLength, NULL, NULL);
+		if (!NT_SUCCESS(status))
+		{
+			SetLastError(LastError);
+			return status;
+		}
+	}
 
-        } else if (IoControlCode == FSCTL_PIPE_IMPERSONATE) {
+	if (OutputBuffer && OutputBufferLength)
+	{
+		status = File_NtReadFile(FileHandle, NULL, NULL, NULL, IoStatusBlock, OutputBuffer, OutputBufferLength, NULL, NULL);
+		if (!NT_SUCCESS(status))
+		{
+			SetLastError(LastError);
+			return status;
+		}
+	}
 
-            SbieApi_Log(2205, L"ImpersonateNamedPipe");
-            if (Proc_ImpersonateSelf(TRUE))
-                status = STATUS_SUCCESS;
-            else
-                status = STATUS_ACCESS_DENIED;
+	if (Event)
+	{
+		SetEvent(Event);
+	}
 
-        } else
-            status = STATUS_BAD_INITIAL_PC;
-
-        if (status == STATUS_BAD_INITIAL_PC) {
-
-            status = __sys_NtFsControlFile(
-                            FileHandle, Event, ApcRoutine, ApcContext,
-                            IoStatusBlock, IoControlCode,
-                            InputBuffer, InputBufferLength,
-                            OutputBuffer, OutputBufferLength);
-        }
-
-        return status;
-    }
-
-    if (IoControlCode != FSCTL_PIPE_TRANSCEIVE)
-        return STATUS_INVALID_PARAMETER;
-
-    if (InputBuffer && InputBufferLength) {
-
-        status = File_NtWriteFile(
-                    FileHandle, NULL, NULL, NULL, IoStatusBlock,
-                    InputBuffer, InputBufferLength, NULL, NULL);
-        if (! NT_SUCCESS(status)) {
-            SetLastError(LastError);
-            return status;
-        }
-    }
-
-    if (OutputBuffer && OutputBufferLength) {
-
-        status = File_NtReadFile(
-                    FileHandle, NULL, NULL, NULL, IoStatusBlock,
-                    OutputBuffer, OutputBufferLength, NULL, NULL);
-        if (! NT_SUCCESS(status)) {
-            SetLastError(LastError);
-            return status;
-        }
-    }
-
-    if (Event)
-        SetEvent(Event);
-
-    SetLastError(LastError);
-    return status;
+	SetLastError(LastError);
+	return status;
 }
 
 
@@ -1181,117 +1066,127 @@ _FX NTSTATUS File_NtFsControlFile(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_WaitNamedPipe(
-    HANDLE NamedPipesHandle, IO_STATUS_BLOCK *IoStatusBlock,
-    void *InputBuffer, ULONG InputBufferLength)
+_FX NTSTATUS File_WaitNamedPipe(HANDLE NamedPipesHandle, IO_STATUS_BLOCK* IoStatusBlock, void* InputBuffer, ULONG InputBufferLength)
 {
-    FILE_PIPE_WAIT_FOR_BUFFER *ib = (FILE_PIPE_WAIT_FOR_BUFFER *)InputBuffer;
-    FILE_PIPE_WAIT_FOR_BUFFER *ob = NULL;
-    NTSTATUS status;
+	FILE_PIPE_WAIT_FOR_BUFFER* ib = (FILE_PIPE_WAIT_FOR_BUFFER*)InputBuffer;
+	FILE_PIPE_WAIT_FOR_BUFFER* ob = NULL;
+	NTSTATUS status;
 
-    //
-    // the real WaitNamedPipeW typically passes the caller-provided PipeName
-    // to NtFsControlFile to wait on it.  but unless the pipe name matches
-    // OpenPipePath, we opened the pipe with a name different than what the
-    // caller says.  so we need to adjust the name.
-    //
+	//
+	// the real WaitNamedPipeW typically passes the caller-provided PipeName
+	// to NtFsControlFile to wait on it.  but unless the pipe name matches
+	// OpenPipePath, we opened the pipe with a name different than what the
+	// caller says.  so we need to adjust the name.
+	//
 
-    if (ib->NameLength) {
+	if (ib->NameLength)
+	{
+		WCHAR* ptr1;
+		const WCHAR* ptr2;
 
-        WCHAR *ptr1;
-        const WCHAR *ptr2;
+		ULONG name_len = ib->NameLength / sizeof(WCHAR);
+		ULONG buf_len  = sizeof(FILE_PIPE_WAIT_FOR_BUFFER) + (name_len + Dll_BoxIpcPathLen + 64) * sizeof(WCHAR);
+		ob             = Dll_AllocTemp(buf_len);
 
-        ULONG name_len = ib->NameLength / sizeof(WCHAR);
-        ULONG buf_len  = sizeof(FILE_PIPE_WAIT_FOR_BUFFER)
-                       + (name_len + Dll_BoxIpcPathLen + 64) * sizeof(WCHAR);
-        ob = Dll_AllocTemp(buf_len);
+		//
+		// check that the rest of the caller-provided pipe name
+		// does not already specify a sandboxed pipe name
+		//
 
-        //
-        // check that the rest of the caller-provided pipe name
-        // does not already specify a sandboxed pipe name
-        //
+		ptr1 = (WCHAR*)ob;
+		wmemcpy(ptr1, File_NamedPipe, 18);
+		ptr1 += 18;
+		wmemcpy(ptr1, ib->Name, name_len);
+		ptr1[name_len] = L'\0';
 
-        ptr1 = (WCHAR *)ob;
-        wmemcpy(ptr1, File_NamedPipe, 18);
-        ptr1 += 18;
-        wmemcpy(ptr1, ib->Name, name_len);
-        ptr1[name_len] = L'\0';
+		ptr2 = Dll_BoxIpcPath;
 
-        ptr2 = Dll_BoxIpcPath;
+		for (; *ptr2; ++ptr1, ++ptr2)
+		{
+			if (*ptr1 == *ptr2)
+			{
+				continue;
+			}
+			if (*ptr1 == L'_' && *ptr2 == L'\\')
+			{
+				continue;
+			}
+			break;
+		}
 
-        for (; *ptr2; ++ptr1, ++ptr2) {
-            if (*ptr1 == *ptr2)
-                continue;
-            if (*ptr1 == L'_' && *ptr2 == L'\\')
-                continue;
-            break;
-        }
+		if (*ptr2)
+		{
+			//
+			// make sure the pipe name isn't an excluded path
+			//
 
-        if (*ptr2) {
+			ULONG mp_flags = File_MatchPath2((WCHAR*)ob, NULL, FALSE, TRUE);
 
-            //
-            // make sure the pipe name isn't an excluded path
-            //
+			if (mp_flags)
+			{
+				USHORT monflag = MONITOR_PIPE;
+				if (PATH_IS_CLOSED(mp_flags))
+				{
+					monflag |= MONITOR_DENY;
+				}
+				else
+				{
+					monflag |= MONITOR_OPEN;
+				}
+				SbieApi_MonitorPut2(monflag, (WCHAR*)ob, FALSE);
+			}
+			else
+			{
+				SbieApi_MonitorPut2(MONITOR_PIPE, (WCHAR*)ob, FALSE);
 
-            ULONG mp_flags = File_MatchPath2((WCHAR *)ob, NULL, FALSE, TRUE);
+				//
+				// create the sandboxed pipe name
+				// _sandbox_ipc_path\CallerPipeName
+				//
 
-            if (mp_flags) {
+				ptr1 = ob->Name;
+				ptr2 = Dll_BoxIpcPath;
+				for (; *ptr2; ++ptr1, ++ptr2)
+				{
+					if (*ptr2 == L'\\')
+					{
+						*ptr1 = L'_';
+					}
+					else
+					{
+						*ptr1 = *ptr2;
+					}
+				}
 
-                USHORT monflag = MONITOR_PIPE;
-                if (PATH_IS_CLOSED(mp_flags))
-                    monflag |= MONITOR_DENY;
-                else
-                    monflag |= MONITOR_OPEN;
-                SbieApi_MonitorPut2(monflag, (WCHAR *)ob, FALSE);
+				*ptr1 = L'\\';
+				++ptr1;
 
-            } else {
+				wmemcpy(ptr1, ib->Name, name_len);
+				ptr1[name_len] = L'\0';
 
-                SbieApi_MonitorPut2(MONITOR_PIPE, (WCHAR *)ob, FALSE);
+				//
+				// initialize the rest of the new input buffer
+				//
 
-                //
-                // create the sandboxed pipe name
-                // _sandbox_ipc_path\CallerPipeName
-                //
+				ob->NameLength = wcslen(ob->Name) * sizeof(WCHAR);
 
-                ptr1 = ob->Name;
-                ptr2 = Dll_BoxIpcPath;
-                for (; *ptr2; ++ptr1, ++ptr2) {
-                    if (*ptr2 == L'\\')
-                        *ptr1 = L'_';
-                    else
-                        *ptr1 = *ptr2;
-                }
+				ob->Timeout.QuadPart = ib->Timeout.QuadPart;
+				ob->TimeoutSpecified = ib->TimeoutSpecified;
 
-                *ptr1 = L'\\';
-                ++ptr1;
+				InputBuffer       = ob;
+				InputBufferLength = sizeof(FILE_PIPE_WAIT_FOR_BUFFER) + ob->NameLength;
+			}
+		}
+	}
 
-                wmemcpy(ptr1, ib->Name, name_len);
-                ptr1[name_len] = L'\0';
+	status = __sys_NtFsControlFile(NamedPipesHandle, NULL, NULL, NULL, IoStatusBlock, FSCTL_PIPE_WAIT, InputBuffer, InputBufferLength, NULL, 0);
 
-                //
-                // initialize the rest of the new input buffer
-                //
+	if (ob)
+	{
+		Dll_Free(ob);
+	}
 
-                ob->NameLength = wcslen(ob->Name) * sizeof(WCHAR);
-
-                ob->Timeout.QuadPart = ib->Timeout.QuadPart;
-                ob->TimeoutSpecified = ib->TimeoutSpecified;
-
-                InputBuffer = ob;
-                InputBufferLength = sizeof(FILE_PIPE_WAIT_FOR_BUFFER)
-                                  + ob->NameLength;
-            }
-        }
-    }
-
-    status = __sys_NtFsControlFile(
-        NamedPipesHandle, NULL, NULL, NULL, IoStatusBlock, FSCTL_PIPE_WAIT,
-        InputBuffer, InputBufferLength, NULL, 0);
-
-    if (ob)
-        Dll_Free(ob);
-
-    return status;
+	return status;
 }
 
 
@@ -1300,75 +1195,62 @@ _FX NTSTATUS File_WaitNamedPipe(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS File_NtDeviceIoControlFile(
-    IN HANDLE FileHandle,
-    IN HANDLE Event OPTIONAL,
-    IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
-    IN PVOID ApcContext OPTIONAL,
-    OUT PIO_STATUS_BLOCK IoStatusBlock,
-    IN ULONG IoControlCode,
-    IN PVOID InputBuffer OPTIONAL,
-    IN ULONG InputBufferLength,
-    OUT PVOID OutputBuffer OPTIONAL,
-    IN ULONG OutputBufferLength)
+_FX NTSTATUS File_NtDeviceIoControlFile(IN HANDLE FileHandle, IN HANDLE Event OPTIONAL, IN PIO_APC_ROUTINE ApcRoutine OPTIONAL, IN PVOID ApcContext OPTIONAL, OUT PIO_STATUS_BLOCK IoStatusBlock, IN ULONG IoControlCode, IN PVOID InputBuffer OPTIONAL, IN ULONG InputBufferLength, OUT PVOID OutputBuffer OPTIONAL, IN ULONG OutputBufferLength)
 {
-    //
-    // check if this is an IOCTL that we want to deny
-    //
+	//
+	// check if this is an IOCTL that we want to deny
+	//
 
-    if (IoControlCode == 0x00128004 ||      /* via \Device\TCP on XP */
-        IoControlCode == 0x00120013)   {    /* via \Device\NSI on VISTA/7 */
+	if (IoControlCode == 0x00128004 || /* via \Device\TCP on XP */
+	    IoControlCode == 0x00120013)
+	{ /* via \Device\NSI on VISTA/7 */
 
-        ULONG LastError;
-        THREAD_DATA *TlsData = Dll_GetTlsData(&LastError);
+		ULONG LastError;
+		THREAD_DATA* TlsData = Dll_GetTlsData(&LastError);
 
-        NTSTATUS status;
-        WCHAR *TruePath;
-        WCHAR *CopyPath;
+		NTSTATUS status;
+		WCHAR* TruePath;
+		WCHAR* CopyPath;
 
-        BOOLEAN DenyAccess = FALSE;
+		BOOLEAN DenyAccess = FALSE;
 
-        Dll_PushTlsNameBuffer(TlsData);
+		Dll_PushTlsNameBuffer(TlsData);
 
-        __try {
+		__try
+		{
+			status = File_GetName(FileHandle, NULL, &TruePath, &CopyPath, NULL);
 
-            status = File_GetName(
-                FileHandle, NULL, &TruePath, &CopyPath, NULL);
+			if (_wcsnicmp(TruePath, File_NamedPipe, 8) == 0)
+			{
+				if (IoControlCode == 0x00128004 && _wcsicmp(TruePath + 8, L"TCP") == 0)
+				{
+					DenyAccess = TRUE;
+				}
+				else if (IoControlCode == 0x00120013 && _wcsicmp(TruePath + 8, L"NSI") == 0)
+				{
+					DenyAccess = TRUE;
+				}
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			status = GetExceptionCode();
+		}
 
-            if (_wcsnicmp(TruePath, File_NamedPipe, 8) == 0) {
+		Dll_PopTlsNameBuffer(TlsData);
+		SetLastError(LastError);
 
-                if (IoControlCode == 0x00128004 &&
-                        _wcsicmp(TruePath + 8, L"TCP") == 0) {
+		if (DenyAccess)
+		{
+			SbieApi_Log(1314, Dll_ImageName);
+			SetLastError(LastError);
+			return STATUS_ACCESS_DENIED;
+		}
+	}
 
-                    DenyAccess = TRUE;
+	//
+	// otherwise
+	//
 
-                } else if (IoControlCode == 0x00120013 &&
-                        _wcsicmp(TruePath + 8, L"NSI") == 0) {
-
-                    DenyAccess = TRUE;
-                }
-            }
-
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            status = GetExceptionCode();
-        }
-
-        Dll_PopTlsNameBuffer(TlsData);
-        SetLastError(LastError);
-
-        if (DenyAccess) {
-            SbieApi_Log(1314, Dll_ImageName);
-            SetLastError(LastError);
-            return STATUS_ACCESS_DENIED;
-        }
-    }
-
-    //
-    // otherwise
-    //
-
-    return __sys_NtDeviceIoControlFile(
-        FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock,
-        IoControlCode, InputBuffer, InputBufferLength,
-        OutputBuffer, OutputBufferLength);
+	return __sys_NtDeviceIoControlFile(FileHandle, Event, ApcRoutine, ApcContext, IoStatusBlock, IoControlCode, InputBuffer, InputBufferLength, OutputBuffer, OutputBufferLength);
 }

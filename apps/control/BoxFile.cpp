@@ -19,11 +19,12 @@
 // Files in Box
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "BoxFile.h"
+
 #include "Box.h"
+#include "MyApp.h"
 #include "common/win32_ntddk.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -31,16 +32,16 @@
 //---------------------------------------------------------------------------
 
 
-struct FileEntry {
-
-    FileEntry *parent;
-    CPtrList *children;
-    BOOL analyzed;
-    BOOL expanded;
-    ULONG64 size;
-    FILETIME time;
-    CString *path;
-    WCHAR name[1];
+struct FileEntry
+{
+	FileEntry* parent;
+	CPtrList* children;
+	BOOL analyzed;
+	BOOL expanded;
+	ULONG64 size;
+	FILETIME time;
+	CString* path;
+	WCHAR name[1];
 };
 
 
@@ -57,14 +58,14 @@ int CBoxFile::m_RefreshCounter = 0;
 //---------------------------------------------------------------------------
 
 
-CBoxFile::CBoxFile(const CString &name)
-    : m_name(name)
+CBoxFile::CBoxFile(const CString& name) :
+    m_name(name)
 {
-    m_root      = NULL;
-    m_curdir    = NULL;
-    m_IncludeDeleted = FALSE;
+	m_root           = NULL;
+	m_curdir         = NULL;
+	m_IncludeDeleted = FALSE;
 
-    RebuildSkeletonTree();
+	RebuildSkeletonTree();
 }
 
 
@@ -75,8 +76,10 @@ CBoxFile::CBoxFile(const CString &name)
 
 CBoxFile::~CBoxFile()
 {
-    if (m_root)
-        DeleteFolder(m_root, TRUE);
+	if (m_root)
+	{
+		DeleteFolder(m_root, TRUE);
+	}
 }
 
 
@@ -85,9 +88,9 @@ CBoxFile::~CBoxFile()
 //---------------------------------------------------------------------------
 
 
-const CString &CBoxFile::GetPathNt() const
+const CString& CBoxFile::GetPathNt() const
 {
-    return m_FilePath;
+	return m_FilePath;
 }
 
 
@@ -96,9 +99,9 @@ const CString &CBoxFile::GetPathNt() const
 //---------------------------------------------------------------------------
 
 
-const CString &CBoxFile::GetPathDos() const
+const CString& CBoxFile::GetPathDos() const
 {
-    return m_FilePathDos;
+	return m_FilePathDos;
 }
 
 
@@ -109,25 +112,27 @@ const CString &CBoxFile::GetPathDos() const
 
 void CBoxFile::RebuildSkeletonTree()
 {
-    ++m_RefreshCounter;
+	++m_RefreshCounter;
 
-    if (m_root)
-        DeleteFolder(m_root, TRUE);
+	if (m_root)
+	{
+		DeleteFolder(m_root, TRUE);
+	}
 
-    ULONG buf_len = 4096 * sizeof(WCHAR);
-    WCHAR *buf = malloc_WCHAR(buf_len);
+	ULONG buf_len = 4096 * sizeof(WCHAR);
+	WCHAR* buf    = malloc_WCHAR(buf_len);
 
-    SbieApi_QueryBoxPath(m_name, buf, NULL, NULL, &buf_len, NULL, NULL);
-    if (buf[0]) {
+	SbieApi_QueryBoxPath(m_name, buf, NULL, NULL, &buf_len, NULL, NULL);
+	if (buf[0])
+	{
+		m_FilePath    = buf;
+		m_FilePathDos = buf;
+		TranslateNtToDosPath(m_FilePathDos);
 
-        m_FilePath = buf;
-        m_FilePathDos = buf;
-        TranslateNtToDosPath(m_FilePathDos);
+		CreateSkeletonTree();
+	}
 
-        CreateSkeletonTree();
-    }
-
-    free(buf);
+	free(buf);
 }
 
 
@@ -138,22 +143,22 @@ void CBoxFile::RebuildSkeletonTree()
 
 void CBoxFile::CreateSkeletonTree()
 {
-    ULONG len;
-    FileEntry *folder;
+	ULONG len;
+	FileEntry* folder;
 
-    len = sizeof(FileEntry) + 2 * sizeof(WCHAR);
-    folder = (FileEntry *)malloc(len);
-    memzero(folder, len);
-    folder->children = new CPtrList();
+	len    = sizeof(FileEntry) + 2 * sizeof(WCHAR);
+	folder = (FileEntry*)malloc(len);
+	memzero(folder, len);
+	folder->children = new CPtrList();
 
-    m_root = folder;
-    m_curdir = m_root;
+	m_root   = folder;
+	m_curdir = m_root;
 
-    FileEntry *qr = (FileEntry *)AddFolder(CMyMsg(MSG_3520), m_root);
-    qr->time.dwLowDateTime = 0xFFFF;
+	FileEntry* qr          = (FileEntry*)AddFolder(CMyMsg(MSG_3520), m_root);
+	qr->time.dwLowDateTime = 0xFFFF;
 
-    FileEntry *all = (FileEntry *)AddFolder(CMyMsg(MSG_3521), m_root);
-    all->path = new CString(m_FilePath);
+	FileEntry* all = (FileEntry*)AddFolder(CMyMsg(MSG_3521), m_root);
+	all->path      = new CString(m_FilePath);
 }
 
 
@@ -164,128 +169,156 @@ void CBoxFile::CreateSkeletonTree()
 
 void CBoxFile::CreateQuickRecoveryFolders()
 {
-    FileEntry *folder = (FileEntry *)m_curdir;
-    if (folder->children->GetCount())
-        return;
+	FileEntry* folder = (FileEntry*)m_curdir;
+	if (folder->children->GetCount())
+	{
+		return;
+	}
 
-    //
-    // collect RecoverFolder settings
-    //
+	//
+	// collect RecoverFolder settings
+	//
 
-    CStringList qrFolders;
+	CStringList qrFolders;
 
-    ULONG buf_len = 4096 * sizeof(WCHAR);
-    WCHAR *buf = malloc_WCHAR(buf_len);
+	ULONG buf_len = 4096 * sizeof(WCHAR);
+	WCHAR* buf    = malloc_WCHAR(buf_len);
 
-    int index = 0;
-    while (1) {
+	int index = 0;
+	while (1)
+	{
+		SbieApi_QueryConf(m_name, CBox::_RecoverFolder, index, buf, buf_len - 16 * sizeof(WCHAR));
+		if (!buf[0])
+		{
+			break;
+		}
+		++index;
 
-        SbieApi_QueryConf(
-            m_name, CBox::_RecoverFolder, index,
-            buf, buf_len - 16 * sizeof(WCHAR));
-        if (! buf[0])
-            break;
-        ++index;
+		while (1)
+		{
+			int len = wcslen(buf);
+			if (len > 1 && buf[len - 1] == L'\\')
+			{
+				buf[len - 1] = L'\0';
+			}
+			else
+			{
+				break;
+			}
+		}
 
-        while (1) {
-            int len = wcslen(buf);
-            if (len > 1 && buf[len - 1] == L'\\')
-                buf[len - 1] = L'\0';
-            else
-                break;
-        }
+		qrFolders.AddTail(buf);
 
-        qrFolders.AddTail(buf);
+		if (GetAbsolutePathForRecoveryFolder(buf, buf_len))
+		{
+			while (1)
+			{
+				int len = wcslen(buf);
+				if (len > 1 && buf[len - 1] == L'\\')
+				{
+					buf[len - 1] = L'\0';
+				}
+				else
+				{
+					break;
+				}
+			}
 
-        if (GetAbsolutePathForRecoveryFolder(buf, buf_len)) {
+			qrFolders.AddTail(buf);
+		}
+	}
 
-            while (1) {
-                int len = wcslen(buf);
-                if (len > 1 && buf[len - 1] == L'\\')
-                    buf[len - 1] = L'\0';
-                else
-                    break;
-            }
+	free(buf);
 
-            qrFolders.AddTail(buf);
-        }
-    }
+	//
+	// process each Quick Recovery folder
+	//
 
-    free(buf);
+	int qrFolderCount = (int)qrFolders.GetCount();
+	int qrIndex0, qrIndex1;
 
-    //
-    // process each Quick Recovery folder
-    //
+	for (qrIndex0 = 0; qrIndex0 < qrFolderCount; ++qrIndex0)
+	{
+		const CString& qrFolder0 = qrFolders.GetAt(qrFolders.FindIndex(qrIndex0));
 
-    int qrFolderCount = (int)qrFolders.GetCount();
-    int qrIndex0, qrIndex1;
+		int qrBackslash0 = qrFolder0.ReverseFind(L'\\');
+		if (qrBackslash0 == -1)
+		{
+			qrBackslash0
+				= 0;
+				else if (qrBackslash0 < qrFolder0.GetLength())++ qrBackslash0;
+				CString qrFolder0Name = qrFolder0.Mid(qrBackslash0);
 
-    for (qrIndex0 = 0; qrIndex0 < qrFolderCount; ++qrIndex0) {
+				CString DriveName = GetDriveNameForTruePath(qrFolder0);
+				if (!DriveName.IsEmpty())
+				{
+					qrFolder0Name
+						= DriveName;
 
-        const CString &qrFolder0 =
-            qrFolders.GetAt(qrFolders.FindIndex(qrIndex0));
+						bool qrPathDup = false;
+						bool qrNameDup = false;
+						for (qrIndex1 = 0; qrIndex1 < qrFolderCount; ++qrIndex1)
+						{
+							const CString& qrFolder1 = qrFolders.GetAt(qrFolders.FindIndex(qrIndex1));
 
-        int qrBackslash0 = qrFolder0.ReverseFind(L'\\');
-        if (qrBackslash0 == -1)
-            qrBackslash0 = 0;
-        else if (qrBackslash0 < qrFolder0.GetLength())
-            ++qrBackslash0;
-        CString qrFolder0Name = qrFolder0.Mid(qrBackslash0);
+							if (qrIndex1 > qrIndex0)
+							{
+								if (qrFolder1.CompareNoCase(qrFolder0) == 0)
+								{
+									qrPathDup = true;
+								}
+							}
 
-        CString DriveName = GetDriveNameForTruePath(qrFolder0);
-        if (! DriveName.IsEmpty())
-            qrFolder0Name = DriveName;
+							if (qrIndex1 != qrIndex0)
+							{
+								int qrBackslash1 = qrFolder1.ReverseFind(L'\\');
+								if (qrBackslash1 == -1)
+								{
+									qrBackslash1 = 0;
+								}
+								else if (qrBackslash1 < qrFolder1.GetLength())
+								{
+									++qrBackslash1;
+								}
+								CString qrFolder1Name = qrFolder1.Mid(qrBackslash1);
 
-        bool qrPathDup = false;
-        bool qrNameDup = false;
-        for (qrIndex1 = 0; qrIndex1 < qrFolderCount; ++qrIndex1) {
+								if (qrFolder1Name.CompareNoCase(qrFolder0Name) == 0)
+								{
+									qrNameDup = true;
+								}
+							}
+						}
 
-            const CString &qrFolder1 =
-                qrFolders.GetAt(qrFolders.FindIndex(qrIndex1));
+						//
+						//
+						//
 
-            if (qrIndex1 > qrIndex0) {
+						if (qrPathDup)
+						{
+							continue;
+						}
 
-                if (qrFolder1.CompareNoCase(qrFolder0) == 0)
-                    qrPathDup = true;
-            }
+						CString ChildCopyPath = GetCopyPathForTruePath(qrFolder0);
+						if (ChildCopyPath.IsEmpty())
+						{
+							continue;
+						}
 
-            if (qrIndex1 != qrIndex0) {
+						if (qrNameDup)
+						{
+							CString qrFolder0Dos = qrFolder0;
+							TranslateNtToDosPath(qrFolder0Dos);
+							qrFolder0Name
+								+= L" <" + qrFolder0Dos + L">";
+						}
 
-                int qrBackslash1 = qrFolder1.ReverseFind(L'\\');
-                if (qrBackslash1 == -1)
-                    qrBackslash1 = 0;
-                else if (qrBackslash1 < qrFolder1.GetLength())
-                    ++qrBackslash1;
-                CString qrFolder1Name = qrFolder1.Mid(qrBackslash1);
+						FileEntry* child = (FileEntry*)AddFolder(qrFolder0Name, folder);
+						child->path      = new CString(ChildCopyPath);
 
-                if (qrFolder1Name.CompareNoCase(qrFolder0Name) == 0)
-                    qrNameDup = true;
-            }
-        }
-
-        //
-        //
-        //
-
-        if (qrPathDup)
-            continue;
-
-        CString ChildCopyPath = GetCopyPathForTruePath(qrFolder0);
-        if (ChildCopyPath.IsEmpty())
-            continue;
-
-        if (qrNameDup) {
-
-            CString qrFolder0Dos = qrFolder0;
-            TranslateNtToDosPath(qrFolder0Dos);
-            qrFolder0Name += L" <" + qrFolder0Dos + L">";
-        }
-
-        FileEntry *child = (FileEntry *)AddFolder(qrFolder0Name, folder);
-        child->path = new CString(ChildCopyPath);
-
-        ReadFolder(child);
-    }
+						ReadFolder(child);
+				}
+		}
+	}
 }
 
 
@@ -294,39 +327,35 @@ void CBoxFile::CreateQuickRecoveryFolders()
 //---------------------------------------------------------------------------
 
 
-bool CBoxFile::GetAbsolutePathForRecoveryFolder(WCHAR *buf, ULONG buf_len)
+bool CBoxFile::GetAbsolutePathForRecoveryFolder(WCHAR* buf, ULONG buf_len)
 {
-    CString SavePath(buf);
-    bool converted = false;
+	CString SavePath(buf);
+	bool converted = false;
 
-    NTSTATUS status;
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    IO_STATUS_BLOCK MyIoStatusBlock;
-    HANDLE hFile;
+	NTSTATUS status;
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	IO_STATUS_BLOCK MyIoStatusBlock;
+	HANDLE hFile;
 
-    RtlInitUnicodeString(&uni, buf);
+	RtlInitUnicodeString(&uni, buf);
 
-    InitializeObjectAttributes(
-        &objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtCreateFile(
-        &hFile, FILE_READ_ATTRIBUTES | SYNCHRONIZE, &objattrs,
-        &MyIoStatusBlock, NULL, 0,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-        NULL, 0);
+	status = NtCreateFile(&hFile, FILE_READ_ATTRIBUTES | SYNCHRONIZE, &objattrs, &MyIoStatusBlock, NULL, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
 
-    if (NT_SUCCESS(status)) {
+	if (NT_SUCCESS(status))
+	{
+		status = SbieApi_GetFileName(hFile, buf_len - 4, buf);
+		if (status == 0 && SavePath.CompareNoCase(buf) != 0)
+		{
+			converted = true;
+		}
 
-        status = SbieApi_GetFileName(hFile, buf_len - 4, buf);
-        if (status == 0 && SavePath.CompareNoCase(buf) != 0)
-            converted = true;
+		CloseHandle(hFile);
+	}
 
-        CloseHandle(hFile);
-    }
-
-    return converted;
+	return converted;
 }
 
 
@@ -337,15 +366,17 @@ bool CBoxFile::GetAbsolutePathForRecoveryFolder(WCHAR *buf, ULONG buf_len)
 
 void CBoxFile::RebuildQuickRecoveryFolders()
 {
-    if (m_root) {
-        void *qrFolder = ((FileEntry *)m_root)->children->GetHead();
-        if (qrFolder) {
-            CString path = CString(L"\\") + ((FileEntry *)qrFolder)->name;
-            DeleteFolder(qrFolder, FALSE);
-            ++m_RefreshCounter;
-            ChangeFolder(path, TRUE);
-        }
-    }
+	if (m_root)
+	{
+		void* qrFolder = ((FileEntry*)m_root)->children->GetHead();
+		if (qrFolder)
+		{
+			CString path = CString(L"\\") + ((FileEntry*)qrFolder)->name;
+			DeleteFolder(qrFolder, FALSE);
+			++m_RefreshCounter;
+			ChangeFolder(path, TRUE);
+		}
+	}
 }
 
 
@@ -354,52 +385,71 @@ void CBoxFile::RebuildQuickRecoveryFolders()
 //---------------------------------------------------------------------------
 
 
-CString CBoxFile::GetCopyPathForTruePath(const WCHAR *TruePath) const
+CString CBoxFile::GetCopyPathForTruePath(const WCHAR* TruePath) const
 {
-    ULONG TruePath_len = wcslen(TruePath);
+	ULONG TruePath_len = wcslen(TruePath);
 
-    for (int index = -4; index < 26; ++index) {
+	for (int index = -4; index < 26; ++index)
+	{
+		const WCHAR* prefix = NULL;
+		if (index == -4)
+		{
+			prefix = L"\\device\\mup";
+		}
+		else if (index == -3)
+		{
+			prefix = SbieDll_GetUserPathEx(L'a');
+		}
+		else if (index == -2)
+		{
+			prefix = SbieDll_GetUserPathEx(L'c');
+		}
+		else if (index == -1)
+		{
+			prefix = SbieDll_GetUserPathEx(L'p');
+		}
+		else
+		{
+			prefix = SbieDll_GetDrivePath(index);
+		}
+		if (!prefix)
+		{
+			continue;
+		}
 
-        const WCHAR *prefix = NULL;
-        if (index == -4)
-            prefix = L"\\device\\mup";
-        else if (index == -3)
-            prefix = SbieDll_GetUserPathEx(L'a');
-        else if (index == -2)
-            prefix = SbieDll_GetUserPathEx(L'c');
-        else if (index == -1)
-            prefix = SbieDll_GetUserPathEx(L'p');
-        else
-            prefix = SbieDll_GetDrivePath(index);
-        if (! prefix)
-            continue;
+		ULONG prefix_len = wcslen(prefix);
+		if (TruePath_len >= prefix_len && (TruePath[prefix_len] == L'\\' || TruePath[prefix_len] == L'\0') && _wcsnicmp(TruePath, prefix, prefix_len) == 0)
+		{
+			CString CopyPath(m_FilePath);
+			if (index == -4)
+			{
+				CopyPath += L"\\share";
+			}
+			else if (index == -3)
+			{
+				CopyPath += L"\\user\\all";
+			}
+			else if (index == -2)
+			{
+				CopyPath += L"\\user\\current";
+			}
+			else if (index == -1)
+			{
+				CopyPath += L"\\user\\public";
+			}
+			else
+			{
+				WCHAR letter = L'a' + index;
+				CopyPath += L"\\drive\\";
+				CopyPath += letter;
+			}
+			CopyPath += &TruePath[prefix_len];
 
-        ULONG prefix_len = wcslen(prefix);
-        if (TruePath_len >= prefix_len &&
-            (TruePath[prefix_len] == L'\\' || TruePath[prefix_len] == L'\0')
-            && _wcsnicmp(TruePath, prefix, prefix_len) == 0) {
+			return CopyPath;
+		}
+	}
 
-            CString CopyPath(m_FilePath);
-            if (index == -4)
-                CopyPath += L"\\share";
-            else if (index == -3)
-                CopyPath += L"\\user\\all";
-            else if (index == -2)
-                CopyPath += L"\\user\\current";
-            else if (index == -1)
-                CopyPath += L"\\user\\public";
-            else {
-                WCHAR letter = L'a' + index;
-                CopyPath += L"\\drive\\";
-                CopyPath += letter;
-            }
-            CopyPath += &TruePath[prefix_len];
-
-            return CopyPath;
-        }
-    }
-
-    return CString();
+	return CString();
 }
 
 
@@ -408,68 +458,84 @@ CString CBoxFile::GetCopyPathForTruePath(const WCHAR *TruePath) const
 //---------------------------------------------------------------------------
 
 
-CString CBoxFile::GetTruePathForCopyPath(const WCHAR *CopyPath) const
+CString CBoxFile::GetTruePathForCopyPath(const WCHAR* CopyPath) const
 {
-    int CopyPath_len = wcslen(CopyPath);
+	int CopyPath_len = wcslen(CopyPath);
 
-    if (CopyPath_len >= m_FilePath.GetLength() &&
-        _wcsnicmp(CopyPath, m_FilePath, m_FilePath.GetLength()) == 0 &&
-        (CopyPath[m_FilePath.GetLength()] == L'\\' ||
-         CopyPath[m_FilePath.GetLength()] == L'\0')) {
-        CopyPath += m_FilePath.GetLength();
-        CopyPath_len -= m_FilePath.GetLength();
-    }
+	if (CopyPath_len >= m_FilePath.GetLength() && _wcsnicmp(CopyPath, m_FilePath, m_FilePath.GetLength()) == 0
+	    && (CopyPath[m_FilePath.GetLength()] == L'\\' || CopyPath[m_FilePath.GetLength()] == L'\0'))
+	{
+		CopyPath += m_FilePath.GetLength();
+		CopyPath_len -= m_FilePath.GetLength();
+	}
 
-    if (CopyPath_len >= m_FilePathDos.GetLength() &&
-        _wcsnicmp(CopyPath, m_FilePathDos, m_FilePathDos.GetLength()) == 0 &&
-        (CopyPath[m_FilePathDos.GetLength()] == L'\\' ||
-         CopyPath[m_FilePathDos.GetLength()] == L'\0')) {
-        CopyPath += m_FilePathDos.GetLength();
-        CopyPath_len -= m_FilePathDos.GetLength();
-    }
+	if (CopyPath_len >= m_FilePathDos.GetLength() && _wcsnicmp(CopyPath, m_FilePathDos, m_FilePathDos.GetLength()) == 0
+	    && (CopyPath[m_FilePathDos.GetLength()] == L'\\' || CopyPath[m_FilePathDos.GetLength()] == L'\0'))
+	{
+		CopyPath += m_FilePathDos.GetLength();
+		CopyPath_len -= m_FilePathDos.GetLength();
+	}
 
-    for (int index = -4; index < 26; ++index) {
+	for (int index = -4; index < 26; ++index)
+	{
+		WCHAR drive_space[32];
+		const WCHAR* prefix = NULL;
+		if (index == -4)
+		{
+			prefix = L"\\share";
+		}
+		else if (index == -3)
+		{
+			prefix = L"\\user\\all";
+		}
+		else if (index == -2)
+		{
+			prefix = L"\\user\\current";
+		}
+		else if (index == -1)
+		{
+			prefix = L"\\user\\public";
+		}
+		else
+		{
+			wcscpy(drive_space, L"\\drive\\x");
+			drive_space[wcslen(drive_space) - 1] = (L'a' + index);
+			prefix                               = drive_space;
+		}
+		if (!prefix)
+		{
+			continue;
+		}
 
-        WCHAR drive_space[32];
-        const WCHAR *prefix = NULL;
-        if (index == -4)
-            prefix = L"\\share";
-        else if (index == -3)
-            prefix = L"\\user\\all";
-        else if (index == -2)
-            prefix = L"\\user\\current";
-        else if (index == -1)
-            prefix = L"\\user\\public";
-        else {
-            wcscpy(drive_space, L"\\drive\\x");
-            drive_space[wcslen(drive_space) - 1] = (L'a' + index);
-            prefix = drive_space;
-        }
-        if (! prefix)
-            continue;
+		int prefix_len = wcslen(prefix);
+		if (CopyPath_len >= prefix_len && (CopyPath[prefix_len] == L'\\' || CopyPath[prefix_len] == L'\0') && _wcsnicmp(CopyPath, prefix, prefix_len) == 0)
+		{
+			if (index == -4)
+			{
+				prefix = L"\\";
+			}
+			else if (index == -3)
+			{
+				prefix = SbieDll_GetUserPathEx(L'a');
+			}
+			else if (index == -2)
+			{
+				prefix = SbieDll_GetUserPathEx(L'c');
+			}
+			else if (index == -1)
+			{
+				prefix = SbieDll_GetUserPathEx(L'p');
+			}
+			else
+			{
+				prefix = SbieDll_GetDrivePath(index);
+			}
+			CString TruePath = CString(prefix) + CString(&CopyPath[prefix_len]);
+			return TruePath;
+		}
+	}
 
-        int prefix_len = wcslen(prefix);
-        if (CopyPath_len >= prefix_len &&
-            (CopyPath[prefix_len] == L'\\' || CopyPath[prefix_len] == L'\0')
-            && _wcsnicmp(CopyPath, prefix, prefix_len) == 0) {
-
-            if (index == -4)
-                prefix = L"\\";
-            else if (index == -3)
-                prefix = SbieDll_GetUserPathEx(L'a');
-            else if (index == -2)
-                prefix = SbieDll_GetUserPathEx(L'c');
-            else if (index == -1)
-                prefix = SbieDll_GetUserPathEx(L'p');
-            else
-                prefix = SbieDll_GetDrivePath(index);
-            CString TruePath =
-                CString(prefix) + CString(&CopyPath[prefix_len]);
-            return TruePath;
-        }
-    }
-
-    return CString();
+	return CString();
 }
 
 
@@ -478,27 +544,28 @@ CString CBoxFile::GetTruePathForCopyPath(const WCHAR *CopyPath) const
 //---------------------------------------------------------------------------
 
 
-CString CBoxFile::GetDriveNameForTruePath(const WCHAR *TruePath) const
+CString CBoxFile::GetDriveNameForTruePath(const WCHAR* TruePath) const
 {
-    ULONG TruePath_len = wcslen(TruePath);
+	ULONG TruePath_len = wcslen(TruePath);
 
-    for (int index = 0; index < 26; ++index) {
+	for (int index = 0; index < 26; ++index)
+	{
+		const WCHAR* prefix = SbieDll_GetDrivePath(index);
+		if (!prefix)
+		{
+			continue;
+		}
 
-        const WCHAR *prefix = SbieDll_GetDrivePath(index);
-        if (! prefix)
-            continue;
+		ULONG prefix_len = wcslen(prefix);
+		if (TruePath_len == prefix_len && _wcsnicmp(TruePath, prefix, prefix_len) == 0)
+		{
+			CString DriveName;
+			DriveName.Format(L"%c:", (L'A' + index));
+			return DriveName;
+		}
+	}
 
-        ULONG prefix_len = wcslen(prefix);
-        if (TruePath_len == prefix_len
-                && _wcsnicmp(TruePath, prefix, prefix_len) == 0) {
-
-            CString DriveName;
-            DriveName.Format(L"%c:", (L'A' + index));
-            return DriveName;
-        }
-    }
-
-    return CString();
+	return CString();
 }
 
 
@@ -507,16 +574,18 @@ CString CBoxFile::GetDriveNameForTruePath(const WCHAR *TruePath) const
 //---------------------------------------------------------------------------
 
 
-void CBoxFile::TranslateNtToDosPath(CString &InOutPath) const
+void CBoxFile::TranslateNtToDosPath(CString& InOutPath) const
 {
-    WCHAR *path;
-    path = malloc_WCHAR((InOutPath.GetLength() + 8) * sizeof(WCHAR));
-    wcscpy(path, InOutPath);
-    SbieDll_TranslateNtToDosPath(path);
-    InOutPath = path;
-    free(path);
-    if (InOutPath.GetLength() == 2 && InOutPath.Mid(1, 1) == L':')
-        InOutPath += L'\\';
+	WCHAR* path;
+	path = malloc_WCHAR((InOutPath.GetLength() + 8) * sizeof(WCHAR));
+	wcscpy(path, InOutPath);
+	SbieDll_TranslateNtToDosPath(path);
+	InOutPath = path;
+	free(path);
+	if (InOutPath.GetLength() == 2 && InOutPath.Mid(1, 1) == L':')
+	{
+		InOutPath += L'\\';
+	}
 }
 
 
@@ -525,27 +594,35 @@ void CBoxFile::TranslateNtToDosPath(CString &InOutPath) const
 //---------------------------------------------------------------------------
 
 
-void CBoxFile::DeleteFolder(void *voidfolder, BOOL DeleteSelf)
+void CBoxFile::DeleteFolder(void* voidfolder, BOOL DeleteSelf)
 {
-    FileEntry *folder = (FileEntry *)voidfolder;
+	FileEntry* folder = (FileEntry*)voidfolder;
 
-    if (folder->children) {
-        while (! folder->children->IsEmpty()) {
-            FileEntry *child = (FileEntry *)folder->children->RemoveHead();
-            DeleteFolder(child, TRUE);
-        }
-    }
+	if (folder->children)
+	{
+		while (!folder->children->IsEmpty())
+		{
+			FileEntry* child = (FileEntry*)folder->children->RemoveHead();
+			DeleteFolder(child, TRUE);
+		}
+	}
 
-    if (DeleteSelf) {
-
-        if (folder->children)
-            delete folder->children;
-        if (folder->path)
-            delete folder->path;
-        free(folder);
-
-    } else
-        folder->analyzed = FALSE;
+	if (DeleteSelf)
+	{
+		if (folder->children)
+		{
+			delete folder->children;
+		}
+		if (folder->path)
+		{
+			delete folder->path;
+		}
+		free(folder);
+	}
+	else
+	{
+		folder->analyzed = FALSE;
+	}
 }
 
 
@@ -554,16 +631,16 @@ void CBoxFile::DeleteFolder(void *voidfolder, BOOL DeleteSelf)
 //---------------------------------------------------------------------------
 
 
-void *CBoxFile::AddFolder(const WCHAR *name, void *parent)
+void* CBoxFile::AddFolder(const WCHAR* name, void* parent)
 {
-    ULONG len = sizeof(FileEntry) + (wcslen(name) + 1) * sizeof(WCHAR);
-    FileEntry *folder = (FileEntry *)malloc(len);
-    memzero(folder, len);
-    folder->parent = (FileEntry *)parent;
-    folder->children = new CPtrList();
-    wcscpy(folder->name, name);
-    ((FileEntry *)parent)->children->AddTail(folder);
-    return folder;
+	ULONG len         = sizeof(FileEntry) + (wcslen(name) + 1) * sizeof(WCHAR);
+	FileEntry* folder = (FileEntry*)malloc(len);
+	memzero(folder, len);
+	folder->parent   = (FileEntry*)parent;
+	folder->children = new CPtrList();
+	wcscpy(folder->name, name);
+	((FileEntry*)parent)->children->AddTail(folder);
+	return folder;
 }
 
 
@@ -572,163 +649,173 @@ void *CBoxFile::AddFolder(const WCHAR *name, void *parent)
 //---------------------------------------------------------------------------
 
 
-BOOL CBoxFile::ReadFolder(void *voidfolder)
+BOOL CBoxFile::ReadFolder(void* voidfolder)
 {
-    FileEntry *folder = (FileEntry *)voidfolder;
+	FileEntry* folder = (FileEntry*)voidfolder;
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    NTSTATUS status;
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    IO_STATUS_BLOCK MyIoStatusBlock;
-    HANDLE hFile;
+	NTSTATUS status;
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	IO_STATUS_BLOCK MyIoStatusBlock;
+	HANDLE hFile;
 
-    CString &folder_path = *folder->path;
-    uni.Buffer = (WCHAR *)(const WCHAR *)folder_path;
-    uni.Length = folder_path.GetLength() * sizeof(WCHAR);
-    uni.MaximumLength = uni.Length + sizeof(WCHAR);
+	CString& folder_path = *folder->path;
+	uni.Buffer           = (WCHAR*)(const WCHAR*)folder_path;
+	uni.Length           = folder_path.GetLength() * sizeof(WCHAR);
+	uni.MaximumLength    = uni.Length + sizeof(WCHAR);
 
-    InitializeObjectAttributes(
-        &objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtCreateFile(
-        &hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL,
-        0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-        NULL, NULL);
+	status = NtCreateFile(&hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL, NULL);
 
-    if (! NT_SUCCESS(status))
-        return FALSE;
+	if (!NT_SUCCESS(status))
+	{
+		return FALSE;
+	}
 
-    //
-    // compare timestamps in order to avoid unnecessary refresh
-    //
+	//
+	// compare timestamps in order to avoid unnecessary refresh
+	//
 
-    FILETIME time;
-    BOOL ok = GetFileTime(hFile, NULL, NULL, &time);
-    if (! ok) {
-        CloseHandle(hFile);
-        return FALSE;
-    }
+	FILETIME time;
+	BOOL ok = GetFileTime(hFile, NULL, NULL, &time);
+	if (!ok)
+	{
+		CloseHandle(hFile);
+		return FALSE;
+	}
 
-    if (time.dwLowDateTime == folder->time.dwLowDateTime &&
-        time.dwHighDateTime == folder->time.dwHighDateTime) {
+	if (time.dwLowDateTime == folder->time.dwLowDateTime && time.dwHighDateTime == folder->time.dwHighDateTime)
+	{
+		CloseHandle(hFile);
+		return TRUE;
+	}
 
-        CloseHandle(hFile);
-        return TRUE;
-    }
+	//
+	// refresh timestamp and delete existing items
+	//
 
-    //
-    // refresh timestamp and delete existing items
-    //
+	DeleteFolder(folder, FALSE);
 
-    DeleteFolder(folder, FALSE);
+	folder->time.dwLowDateTime  = time.dwLowDateTime;
+	folder->time.dwHighDateTime = time.dwHighDateTime;
 
-    folder->time.dwLowDateTime  = time.dwLowDateTime;
-    folder->time.dwHighDateTime = time.dwHighDateTime;
+	//
+	//
+	//
 
-    //
-    //
-    //
+	const ULONG DIR_INFO_LENGTH = 10240;
 
-    const ULONG DIR_INFO_LENGTH = 10240;
+	void* dir_info = malloc(DIR_INFO_LENGTH);
+	status         = STATUS_SUCCESS;
 
-    void *dir_info = malloc(DIR_INFO_LENGTH);
-    status = STATUS_SUCCESS;
+	while (status == STATUS_SUCCESS)
+	{
+		status = NtQueryDirectoryFile(hFile, NULL, NULL, NULL, &MyIoStatusBlock, dir_info, DIR_INFO_LENGTH, FileDirectoryInformation, FALSE, NULL, FALSE);
 
-    while (status == STATUS_SUCCESS) {
+		if (status != STATUS_SUCCESS && status != STATUS_BUFFER_OVERFLOW)
+		{
+			break;
+		}
 
-        status = NtQueryDirectoryFile(
-            hFile, NULL, NULL, NULL, &MyIoStatusBlock,
-            dir_info, DIR_INFO_LENGTH, FileDirectoryInformation,
-            FALSE, NULL, FALSE);
+		FILE_DIRECTORY_INFORMATION* info = (FILE_DIRECTORY_INFORMATION*)dir_info;
 
-        if (status != STATUS_SUCCESS &&
-            status != STATUS_BUFFER_OVERFLOW)
-            break;
+		while (1)
+		{
+			if (m_IncludeDeleted || (info->CreationTime.HighPart != 0x01B01234 && info->CreationTime.LowPart != 0xDEAD44A0))
+			{
+				CString name(info->FileName, info->FileNameLength / sizeof(WCHAR));
 
-        FILE_DIRECTORY_INFORMATION *info =
-            (FILE_DIRECTORY_INFORMATION *)dir_info;
+				if (info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+				{
+					if (name.Compare(L".") != 0 && name.Compare(L"..") != 0)
+					{
+						CString* name2    = &name;
+						FileEntry* parent = folder->parent;
+						if (parent == m_root)
+						{
+							if (_wcsicmp(name, L"drive") == 0)
+							{
+								name2 = new CMyMsg(MSG_3522);
+							}
+							else if (_wcsicmp(name, L"share") == 0)
+							{
+								name2 = new CMyMsg(MSG_3523);
+							}
+							else if (_wcsicmp(name, L"user") == 0)
+							{
+								name2 = new CMyMsg(MSG_3524);
+							}
+						}
+						else if (parent && parent->parent == m_root)
+						{
+							if (_wcsicmp(name, L"all") == 0)
+							{
+								name2 = new CMyMsg(MSG_3526);
+							}
+							else if (_wcsicmp(name, L"current") == 0)
+							{
+								name2 = new CMyMsg(MSG_3525);
+							}
+							else if (_wcsicmp(name, L"public") == 0)
+							{
+								name2 = new CMyMsg(MSG_3541);
+							}
+						}
 
-        while (1) {
+						FileEntry* child = (FileEntry*)AddFolder(*name2, folder);
+						child->path      = new CString(folder_path + L'\\' + name);
 
-            if (m_IncludeDeleted || (
-                    info->CreationTime.HighPart != 0x01B01234 &&
-                    info->CreationTime.LowPart  != 0xDEAD44A0)) {
+						if (name2 != &name)
+						{
+							delete name2;
+						}
+					}
+				}
+				else
+				{
+					ULONG len       = sizeof(FileEntry) + (name.GetLength() + 1) * sizeof(WCHAR);
+					FileEntry* file = (FileEntry*)malloc(len);
+					memzero(file, len);
+					file->parent = folder;
+					wcscpy(file->name, name);
+					file->size = info->EndOfFile.QuadPart;
 
-                CString name(
-                    info->FileName, info->FileNameLength / sizeof(WCHAR));
+					folder->children->AddTail(file);
+				}
+			}
 
-                if (info->FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+			if (folder->children->GetCount() > 100)
+			{
+				break;
+			}
+			if (info->NextEntryOffset == 0)
+			{
+				break;
+			}
+			char* next_entry = ((char*)info) + info->NextEntryOffset;
+			info             = (FILE_DIRECTORY_INFORMATION*)next_entry;
+		}
+	}
 
-                    if (name.Compare(L".") != 0 &&
-                        name.Compare(L"..") != 0) {
+	free(dir_info);
 
-                        CString *name2 = &name;
-                        FileEntry *parent = folder->parent;
-                        if (parent == m_root) {
-                            if (_wcsicmp(name, L"drive") == 0)
-                                name2 = new CMyMsg(MSG_3522);
-                            else if (_wcsicmp(name, L"share") == 0)
-                                name2 = new CMyMsg(MSG_3523);
-                            else if (_wcsicmp(name, L"user") == 0)
-                                name2 = new CMyMsg(MSG_3524);
-                        } else if (parent && parent->parent == m_root) {
-                            if (_wcsicmp(name, L"all") == 0)
-                                name2 = new CMyMsg(MSG_3526);
-                            else if (_wcsicmp(name, L"current") == 0)
-                                name2 = new CMyMsg(MSG_3525);
-                            else if (_wcsicmp(name, L"public") == 0)
-                                name2 = new CMyMsg(MSG_3541);
-                        }
+	//
+	//
+	//
 
-                        FileEntry *child =
-                            (FileEntry *)AddFolder(*name2, folder);
-                        child->path =
-                            new CString(folder_path + L'\\' + name);
+	CloseHandle(hFile);
 
-                        if (name2 != &name)
-                            delete name2;
-                    }
+	if (status != STATUS_SUCCESS && status != STATUS_NO_MORE_FILES)
+	{
+		return FALSE;
+	}
 
-                } else {
-
-                    ULONG len = sizeof(FileEntry)
-                              + (name.GetLength() + 1) * sizeof(WCHAR);
-                    FileEntry *file = (FileEntry *)malloc(len);
-                    memzero(file, len);
-                    file->parent = folder;
-                    wcscpy(file->name, name);
-                    file->size = info->EndOfFile.QuadPart;
-
-                    folder->children->AddTail(file);
-                }
-            }
-
-            if (folder->children->GetCount() > 100)
-                break;
-            if (info->NextEntryOffset == 0)
-                break;
-            char *next_entry = ((char *)info) + info->NextEntryOffset;
-            info = (FILE_DIRECTORY_INFORMATION *)next_entry;
-        }
-    }
-
-    free(dir_info);
-
-    //
-    //
-    //
-
-    CloseHandle(hFile);
-
-    if (status != STATUS_SUCCESS && status != STATUS_NO_MORE_FILES)
-        return FALSE;
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -737,110 +824,130 @@ BOOL CBoxFile::ReadFolder(void *voidfolder)
 //---------------------------------------------------------------------------
 
 
-int CBoxFile::ChangeFolder(const CString &path, BOOL ForceRead)
+int CBoxFile::ChangeFolder(const CString& path, BOOL ForceRead)
 {
-    FileEntry *old_curdir = (FileEntry *)m_curdir;
+	FileEntry* old_curdir = (FileEntry*)m_curdir;
 
-    //
-    // follow the specified path to change the current folder
-    //
+	//
+	// follow the specified path to change the current folder
+	//
 
-    FileEntry *folder;
-    int index = 0;
+	FileEntry* folder;
+	int index = 0;
 
-    if (path.GetLength() > 0 && path.GetAt(0) == L'\\') {
-        if (! m_root)
-            return -1;
-        m_curdir = m_root;
-        index = 1;
-    }
+	if (path.GetLength() > 0 && path.GetAt(0) == L'\\')
+	{
+		if (!m_root)
+		{
+			return -1;
+		}
+		m_curdir = m_root;
+		index    = 1;
+	}
 
-    int AngleBracketIndex = path.Find(L'<');
-    if (AngleBracketIndex == -1)
-        AngleBracketIndex = 99999;
+	int AngleBracketIndex = path.Find(L'<');
+	if (AngleBracketIndex == -1)
+	{
+		AngleBracketIndex = 99999;
+	}
 
-    while (index < path.GetLength()) {
+	while (index < path.GetLength())
+	{
+		folder = (FileEntry*)m_curdir;
 
-        folder = (FileEntry *)m_curdir;
+		int backslash = path.Find(L'\\', index);
+		if (backslash > AngleBracketIndex)
+		{
+			int AngleBracketIndex2 = path.Find(L'>', index);
+			if (backslash < AngleBracketIndex2)
+			{
+				backslash = path.Find(L'\\', AngleBracketIndex2);
+			}
+		}
+		if (backslash == -1)
+		{
+			backslash = path.GetLength();
+		}
 
-        int backslash = path.Find(L'\\', index);
-        if (backslash > AngleBracketIndex) {
-            int AngleBracketIndex2 = path.Find(L'>', index);
-            if (backslash < AngleBracketIndex2)
-                backslash = path.Find(L'\\', AngleBracketIndex2);
-        }
-        if (backslash == -1)
-            backslash = path.GetLength();
+		CString component = path.Mid(index, backslash - index);
 
-        CString component = path.Mid(index, backslash - index);
+		if (component == L"..")
+		{
+			m_curdir = folder->parent;
+		}
+		else
+		{
+			BOOL found = FALSE;
+			if (folder->children)
+			{
+				POSITION pos = folder->children->GetHeadPosition();
+				while (pos)
+				{
+					FileEntry* child = (FileEntry*)folder->children->GetNext(pos);
+					if (child->children && component == child->name)
+					{
+						m_curdir = child;
+						found    = TRUE;
+						break;
+					}
+				}
+			}
 
-        if (component == L"..")
-            m_curdir = folder->parent;
-        else {
+			if (!found)
+			{
+				m_curdir = old_curdir;
+				return -1;
+			}
+		}
 
-            BOOL found = FALSE;
-            if (folder->children) {
+		index = backslash + 1;
+	}
 
-                POSITION pos = folder->children->GetHeadPosition();
-                while (pos) {
-                    FileEntry *child =
-                        (FileEntry *)folder->children->GetNext(pos);
-                    if (child->children && component == child->name) {
-                        m_curdir = child;
-                        found = TRUE;
-                        break;
-                    }
-                }
-            }
+	//
+	// refresh current folder if necessary
+	//
 
-            if (! found) {
-                m_curdir = old_curdir;
-                return -1;
-            }
-        }
+	int retval = 0;
 
-        index = backslash + 1;
-    }
+	folder = (FileEntry*)m_curdir;
+	if (ForceRead)
+	{
+		folder->analyzed = FALSE;
+	}
 
-    //
-    // refresh current folder if necessary
-    //
+	if (!folder->analyzed)
+	{
+		if (folder->parent == m_root && folder == ((FileEntry*)m_root)->children->GetHead())
+		{
+			if (folder->time.dwLowDateTime != (m_RefreshCounter & 0xFFFF))
+			{
+				DeleteFolder(folder, FALSE);
+				folder->time.dwLowDateTime = (m_RefreshCounter & 0xFFFF);
+			}
+			CreateQuickRecoveryFolders();
+		}
+		else if (folder->path)
+		{
+			BOOL ok = ReadFolder(folder);
+			if (!ok)
+			{
+				if (folder->parent == m_root || IsQuickRecoverFolder())
+				{
+					ok = TRUE;
+				}
+			}
+			if (!ok)
+			{
+				m_curdir = old_curdir;
+				return -1;
+			}
+		}
 
-    int retval = 0;
+		folder->analyzed = TRUE;
+		return 1;
+	}
 
-    folder = (FileEntry *)m_curdir;
-    if (ForceRead)
-        folder->analyzed = FALSE;
-
-    if (! folder->analyzed) {
-
-        if (folder->parent == m_root &&
-                folder == ((FileEntry *)m_root)->children->GetHead()) {
-
-            if (folder->time.dwLowDateTime != (m_RefreshCounter & 0xFFFF)) {
-                DeleteFolder(folder, FALSE);
-                folder->time.dwLowDateTime = (m_RefreshCounter & 0xFFFF);
-            }
-            CreateQuickRecoveryFolders();
-
-        } else if (folder->path) {
-
-            BOOL ok = ReadFolder(folder);
-            if (! ok) {
-                if (folder->parent == m_root || IsQuickRecoverFolder())
-                    ok = TRUE;
-            }
-            if (! ok) {
-                m_curdir = old_curdir;
-                return -1;
-            }
-        }
-
-        folder->analyzed = TRUE;
-        return 1;
-    }
-
-    return 0;
+	return 0;
 }
 
 
@@ -851,8 +958,8 @@ int CBoxFile::ChangeFolder(const CString &path, BOOL ForceRead)
 
 BOOL CBoxFile::IsFolderExpandedView() const
 {
-    FileEntry *folder = ((FileEntry *)m_curdir);
-    return folder->expanded;
+	FileEntry* folder = ((FileEntry*)m_curdir);
+	return folder->expanded;
 }
 
 
@@ -863,8 +970,8 @@ BOOL CBoxFile::IsFolderExpandedView() const
 
 void CBoxFile::SetFolderExpandedView(BOOL view)
 {
-    FileEntry *folder = ((FileEntry *)m_curdir);
-    folder->expanded = view;
+	FileEntry* folder = ((FileEntry*)m_curdir);
+	folder->expanded  = view;
 }
 
 
@@ -875,14 +982,17 @@ void CBoxFile::SetFolderExpandedView(BOOL view)
 
 BOOL CBoxFile::IsQuickRecoverFolder() const
 {
-    FileEntry *folder = ((FileEntry *)m_curdir);
-    FileEntry *qr = (FileEntry *)((FileEntry *)m_root)->children->GetHead();
-    while (folder != m_root && folder != qr) {
-        if (folder->parent == qr)
-            return TRUE;
-        folder = folder->parent;
-    }
-    return FALSE;
+	FileEntry* folder = ((FileEntry*)m_curdir);
+	FileEntry* qr     = (FileEntry*)((FileEntry*)m_root)->children->GetHead();
+	while (folder != m_root && folder != qr)
+	{
+		if (folder->parent == qr)
+		{
+			return TRUE;
+		}
+		folder = folder->parent;
+	}
+	return FALSE;
 }
 
 
@@ -893,11 +1003,12 @@ BOOL CBoxFile::IsQuickRecoverFolder() const
 
 BOOL CBoxFile::IsPhysicalFolder() const
 {
-    FileEntry *folder = ((FileEntry *)m_curdir);
-    if (folder->time.dwHighDateTime == 0
-                        && folder->time.dwLowDateTime <= 0xFFFF)
-        return FALSE;
-    return TRUE;
+	FileEntry* folder = ((FileEntry*)m_curdir);
+	if (folder->time.dwHighDateTime == 0 && folder->time.dwLowDateTime <= 0xFFFF)
+	{
+		return FALSE;
+	}
+	return TRUE;
 }
 
 
@@ -906,22 +1017,26 @@ BOOL CBoxFile::IsPhysicalFolder() const
 //---------------------------------------------------------------------------
 
 
-void CBoxFile::GetFolderPaths(CString &TruePath, CString &CopyPath) const
+void CBoxFile::GetFolderPaths(CString& TruePath, CString& CopyPath) const
 {
-    FileEntry *folder = ((FileEntry *)m_curdir);
-    if (folder->path && folder->children)
-        CopyPath = *folder->path;
-    else if (folder->parent && folder->parent->path) {
-        CopyPath = CString(*folder->parent->path)
-                 + CString(L"\\")
-                 + CString(folder->name);
-    } else
-        CopyPath = CString();
+	FileEntry* folder = ((FileEntry*)m_curdir);
+	if (folder->path && folder->children)
+	{
+		CopyPath = *folder->path;
+	}
+	else if (folder->parent && folder->parent->path)
+	{
+		CopyPath = CString(*folder->parent->path) + CString(L"\\") + CString(folder->name);
+	}
+	else
+	{
+		CopyPath = CString();
+	}
 
-    TruePath = GetTruePathForCopyPath(CopyPath);
+	TruePath = GetTruePathForCopyPath(CopyPath);
 
-    TranslateNtToDosPath(TruePath);
-    TranslateNtToDosPath(CopyPath);
+	TranslateNtToDosPath(TruePath);
+	TranslateNtToDosPath(CopyPath);
 }
 
 
@@ -932,11 +1047,15 @@ void CBoxFile::GetFolderPaths(CString &TruePath, CString &CopyPath) const
 
 int CBoxFile::GetFolderNumChildren() const
 {
-    CPtrList *children = ((FileEntry *)m_curdir)->children;
-    if (children)
-        return (int)children->GetCount();
-    else
-        return -1;
+	CPtrList* children = ((FileEntry*)m_curdir)->children;
+	if (children)
+	{
+		return (int)children->GetCount();
+	}
+	else
+	{
+		return -1;
+	}
 }
 
 
@@ -947,7 +1066,7 @@ int CBoxFile::GetFolderNumChildren() const
 
 POSITION CBoxFile::GetFolderHeadPosition() const
 {
-    return ((FileEntry *)m_curdir)->children->GetHeadPosition();
+	return ((FileEntry*)m_curdir)->children->GetHeadPosition();
 }
 
 
@@ -956,18 +1075,18 @@ POSITION CBoxFile::GetFolderHeadPosition() const
 //---------------------------------------------------------------------------
 
 
-const WCHAR *CBoxFile::GetNextFolder(
-    POSITION &pos, BOOL &IsExpandedView) const
+const WCHAR* CBoxFile::GetNextFolder(POSITION& pos, BOOL& IsExpandedView) const
 {
-    while (pos) {
-        FileEntry *folder = (FileEntry *)
-            ((FileEntry *)m_curdir)->children->GetNext(pos);
-        if (folder->children) {
-            IsExpandedView = folder->expanded;
-            return folder->name;
-        }
-    }
-    return NULL;
+	while (pos)
+	{
+		FileEntry* folder = (FileEntry*)((FileEntry*)m_curdir)->children->GetNext(pos);
+		if (folder->children)
+		{
+			IsExpandedView = folder->expanded;
+			return folder->name;
+		}
+	}
+	return NULL;
 }
 
 
@@ -976,17 +1095,18 @@ const WCHAR *CBoxFile::GetNextFolder(
 //---------------------------------------------------------------------------
 
 
-const WCHAR *CBoxFile::GetNextFile(POSITION &pos, ULONG64 &size) const
+const WCHAR* CBoxFile::GetNextFile(POSITION& pos, ULONG64& size) const
 {
-    while (pos) {
-        FileEntry *file = (FileEntry *)
-            ((FileEntry *)m_curdir)->children->GetNext(pos);
-        if (! file->children) {
-            size = file->size;
-            return file->name;
-        }
-    }
-    return NULL;
+	while (pos)
+	{
+		FileEntry* file = (FileEntry*)((FileEntry*)m_curdir)->children->GetNext(pos);
+		if (!file->children)
+		{
+			size = file->size;
+			return file->name;
+		}
+	}
+	return NULL;
 }
 
 
@@ -997,7 +1117,7 @@ const WCHAR *CBoxFile::GetNextFile(POSITION &pos, ULONG64 &size) const
 
 void CBoxFile::SetIncludeDeleted(BOOL include)
 {
-    m_IncludeDeleted = include;
+	m_IncludeDeleted = include;
 }
 
 
@@ -1008,79 +1128,77 @@ void CBoxFile::SetIncludeDeleted(BOOL include)
 
 BOOL CBoxFile::IsEmpty()
 {
-    NTSTATUS status;
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    IO_STATUS_BLOCK MyIoStatusBlock;
-    HANDLE hFile;
+	NTSTATUS status;
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	IO_STATUS_BLOCK MyIoStatusBlock;
+	HANDLE hFile;
 
-    CString &folder_path = m_FilePath;
-    uni.Buffer = (WCHAR *)(const WCHAR *)folder_path;
-    uni.Length = folder_path.GetLength() * sizeof(WCHAR);
-    uni.MaximumLength = uni.Length + sizeof(WCHAR);
+	CString& folder_path = m_FilePath;
+	uni.Buffer           = (WCHAR*)(const WCHAR*)folder_path;
+	uni.Length           = folder_path.GetLength() * sizeof(WCHAR);
+	uni.MaximumLength    = uni.Length + sizeof(WCHAR);
 
-    InitializeObjectAttributes(
-        &objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtCreateFile(
-        &hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL,
-        0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-        NULL, NULL);
+	status = NtCreateFile(&hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL, NULL);
 
-    if (status == STATUS_OBJECT_NAME_NOT_FOUND ||
-        status == STATUS_OBJECT_PATH_NOT_FOUND ||
-        status == STATUS_OBJECT_PATH_SYNTAX_BAD ||
-        status == STATUS_NO_MEDIA_IN_DEVICE)
-        return TRUE;
+	if (status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND || status == STATUS_OBJECT_PATH_SYNTAX_BAD || status == STATUS_NO_MEDIA_IN_DEVICE)
+	{
+		return TRUE;
+	}
 
-    if (! NT_SUCCESS(status))
-        return FALSE;
+	if (!NT_SUCCESS(status))
+	{
+		return FALSE;
+	}
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    BOOL empty = TRUE;
+	BOOL empty = TRUE;
 
-    const ULONG DIR_INFO_LENGTH = 10240;
+	const ULONG DIR_INFO_LENGTH = 10240;
 
-    void *dir_info = malloc(DIR_INFO_LENGTH);
-    status = STATUS_SUCCESS;
+	void* dir_info = malloc(DIR_INFO_LENGTH);
+	status         = STATUS_SUCCESS;
 
-    while (status == STATUS_SUCCESS && empty) {
+	while (status == STATUS_SUCCESS && empty)
+	{
+		status = NtQueryDirectoryFile(hFile, NULL, NULL, NULL, &MyIoStatusBlock, dir_info, DIR_INFO_LENGTH, FileDirectoryInformation, FALSE, NULL, FALSE);
 
-        status = NtQueryDirectoryFile(
-            hFile, NULL, NULL, NULL, &MyIoStatusBlock,
-            dir_info, DIR_INFO_LENGTH, FileDirectoryInformation,
-            FALSE, NULL, FALSE);
+		if (status != STATUS_SUCCESS && status != STATUS_BUFFER_OVERFLOW)
+		{
+			break;
+		}
 
-        if (status != STATUS_SUCCESS &&
-            status != STATUS_BUFFER_OVERFLOW)
-            break;
+		FILE_DIRECTORY_INFORMATION* info = (FILE_DIRECTORY_INFORMATION*)dir_info;
 
-        FILE_DIRECTORY_INFORMATION *info =
-            (FILE_DIRECTORY_INFORMATION *)dir_info;
+		while (empty)
+		{
+			CString name(info->FileName, info->FileNameLength / sizeof(WCHAR));
+			if (name.Compare(L".") != 0 && name.Compare(L"..") != 0)
+			{
+				empty = FALSE;
+			}
+			else
+			{
+				if (info->NextEntryOffset == 0)
+				{
+					break;
+				}
+				char* next_entry = ((char*)info) + info->NextEntryOffset;
+				info             = (FILE_DIRECTORY_INFORMATION*)next_entry;
+			}
+		}
+	}
 
-        while (empty) {
-            CString name(
-                info->FileName, info->FileNameLength / sizeof(WCHAR));
-            if (name.Compare(L".") != 0 && name.Compare(L"..") != 0)
-                empty = FALSE;
-            else {
-                if (info->NextEntryOffset == 0)
-                    break;
-                char *next_entry = ((char *)info) + info->NextEntryOffset;
-                info = (FILE_DIRECTORY_INFORMATION *)next_entry;
-            }
-        }
-    }
+	free(dir_info);
 
-    free(dir_info);
+	CloseHandle(hFile);
 
-    CloseHandle(hFile);
-
-    return empty;
+	return empty;
 }
 
 
@@ -1091,7 +1209,7 @@ BOOL CBoxFile::IsEmpty()
 
 int CBoxFile::GetBoxRefreshCounter() const
 {
-    return m_RefreshCounter;
+	return m_RefreshCounter;
 }
 
 
@@ -1100,46 +1218,43 @@ int CBoxFile::GetBoxRefreshCounter() const
 //---------------------------------------------------------------------------
 
 
-BOOL CBoxFile::GetBoxCreationTime(FILETIME *out_time)
+BOOL CBoxFile::GetBoxCreationTime(FILETIME* out_time)
 {
-    NTSTATUS status;
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    IO_STATUS_BLOCK MyIoStatusBlock;
-    HANDLE hFile;
-    BOOL ok;
+	NTSTATUS status;
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	IO_STATUS_BLOCK MyIoStatusBlock;
+	HANDLE hFile;
+	BOOL ok;
 
-    CString &folder_path = m_FilePath;
-    uni.Buffer = (WCHAR *)(const WCHAR *)folder_path;
-    uni.Length = folder_path.GetLength() * sizeof(WCHAR);
-    uni.MaximumLength = uni.Length + sizeof(WCHAR);
+	CString& folder_path = m_FilePath;
+	uni.Buffer           = (WCHAR*)(const WCHAR*)folder_path;
+	uni.Length           = folder_path.GetLength() * sizeof(WCHAR);
+	uni.MaximumLength    = uni.Length + sizeof(WCHAR);
 
-    InitializeObjectAttributes(
-        &objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtCreateFile(
-        &hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL,
-        0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-        FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT,
-        NULL, NULL);
+	status = NtCreateFile(&hFile, FILE_GENERIC_READ, &objattrs, &MyIoStatusBlock, NULL, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, FILE_DIRECTORY_FILE | FILE_SYNCHRONOUS_IO_NONALERT, NULL, NULL);
 
-    if (status == STATUS_OBJECT_NAME_NOT_FOUND ||
-        status == STATUS_OBJECT_PATH_NOT_FOUND ||
-        status == STATUS_OBJECT_PATH_SYNTAX_BAD)
-        return FALSE;
+	if (status == STATUS_OBJECT_NAME_NOT_FOUND || status == STATUS_OBJECT_PATH_NOT_FOUND || status == STATUS_OBJECT_PATH_SYNTAX_BAD)
+	{
+		return FALSE;
+	}
 
-    if (! NT_SUCCESS(status))
-        return FALSE;
+	if (!NT_SUCCESS(status))
+	{
+		return FALSE;
+	}
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    ok = GetFileTime(hFile, out_time, NULL, NULL);
+	ok = GetFileTime(hFile, out_time, NULL, NULL);
 
-    CloseHandle(hFile);
+	CloseHandle(hFile);
 
-    return ok;
+	return ok;
 }
 
 
@@ -1148,28 +1263,28 @@ BOOL CBoxFile::GetBoxCreationTime(FILETIME *out_time)
 //---------------------------------------------------------------------------
 
 
-BOOL CBoxFile::QueryFileAttributes(
-    const WCHAR *path, ULONG *attrs, ULONG64 *size)
+BOOL CBoxFile::QueryFileAttributes(const WCHAR* path, ULONG* attrs, ULONG64* size)
 {
-    NTSTATUS status;
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    FILE_NETWORK_OPEN_INFORMATION info;
+	NTSTATUS status;
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	FILE_NETWORK_OPEN_INFORMATION info;
 
-    CString prefixed_path = CString(L"\\??\\") + path;
-    uni.Buffer = (WCHAR *)(const WCHAR *)prefixed_path;
-    uni.Length = prefixed_path.GetLength() * sizeof(WCHAR);
-    uni.MaximumLength = uni.Length + sizeof(WCHAR);
+	CString prefixed_path = CString(L"\\??\\") + path;
+	uni.Buffer            = (WCHAR*)(const WCHAR*)prefixed_path;
+	uni.Length            = prefixed_path.GetLength() * sizeof(WCHAR);
+	uni.MaximumLength     = uni.Length + sizeof(WCHAR);
 
-    InitializeObjectAttributes(
-        &objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtQueryFullAttributesFile(&objattrs, &info);
+	status = NtQueryFullAttributesFile(&objattrs, &info);
 
-    if (! NT_SUCCESS(status))
-        return FALSE;
+	if (!NT_SUCCESS(status))
+	{
+		return FALSE;
+	}
 
-    *attrs = info.FileAttributes;
-    *size = info.EndOfFile.QuadPart;
-    return TRUE;
+	*attrs = info.FileAttributes;
+	*size  = info.EndOfFile.QuadPart;
+	return TRUE;
 }

@@ -29,8 +29,8 @@
 //---------------------------------------------------------------------------
 
 
-#define ID_RUN_BROWSER_EXPLAIN  10111
-#define ID_RUN_BROWSER_URL      10222
+#define ID_RUN_BROWSER_EXPLAIN 10111
+#define ID_RUN_BROWSER_URL 10222
 
 
 //---------------------------------------------------------------------------
@@ -41,32 +41,30 @@
 #ifndef RC_INVOKED
 
 
-#include <afxcmn.h>
+	#include <afxcmn.h>
 
 
 class CRunBrowser : public CDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CString m_url;
+	CString m_url;
 
-    void *m_DlgTmplCopy;
+	void* m_DlgTmplCopy;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnYes();
-    afx_msg void OnNo();
+	afx_msg void OnYes();
+	afx_msg void OnNo();
 
 public:
+	CRunBrowser(CWnd* pParentWnd, const CString& url);
+	~CRunBrowser();
 
-    CRunBrowser(CWnd *pParentWnd, const CString &url);
-    ~CRunBrowser();
+	static CString GetTopicUrl(const CString& topic);
 
-    static CString GetTopicUrl(const CString &topic);
-
-    static void OpenHelp(CWnd *pParentWnd, const CString &topic);
-    static void OpenForum(CWnd *pParentWnd);
-
+	static void OpenHelp(CWnd* pParentWnd, const CString& topic);
+	static void OpenForum(CWnd* pParentWnd);
 };
 
 

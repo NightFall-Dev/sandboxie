@@ -20,10 +20,11 @@
 //---------------------------------------------------------------------------
 
 
-#include <windows.h>
-#include <shellapi.h>
 #include "CommonUtils.h"
 #include "common/defines.h"
+
+#include <shellapi.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -31,11 +32,9 @@
 //---------------------------------------------------------------------------
 
 
-static LRESULT CALLBACK MyFileOp_Hook(
-    int nCode, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK MyFileOp_Hook(int nCode, WPARAM wParam, LPARAM lParam);
 
-static LRESULT CALLBACK MyFileOp_NewWindowProc(
-    HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK MyFileOp_NewWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static HWND MyFileOp_InsertYesToAllButton(HWND hwnd);
 
@@ -47,11 +46,11 @@ static BOOL MyFileOp_CountButtons(HWND hwnd, LPARAM lParam);
 //---------------------------------------------------------------------------
 
 
-static HWND MyFileOp_main_hwnd = NULL;
-static HWND MyFileOp_button_hwnd = NULL;
-static const WCHAR *MyFileOp_button_text = NULL;
+static HWND MyFileOp_main_hwnd           = NULL;
+static HWND MyFileOp_button_hwnd         = NULL;
+static const WCHAR* MyFileOp_button_text = NULL;
 
-static BOOL *MyFileOp_pYesToAll = NULL;
+static BOOL* MyFileOp_pYesToAll = NULL;
 
 WNDPROC MyFileOp_OldWindowProc = NULL;
 
@@ -61,28 +60,25 @@ WNDPROC MyFileOp_OldWindowProc = NULL;
 //---------------------------------------------------------------------------
 
 
-_FX LRESULT CALLBACK MyFileOp_Hook(
-    int nCode, WPARAM wParam, LPARAM lParam)
+_FX LRESULT CALLBACK MyFileOp_Hook(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    HWND hwnd = (HWND)wParam;
+	HWND hwnd = (HWND)wParam;
 
-    if (MyFileOp_main_hwnd != (HWND)-1) {
+	if (MyFileOp_main_hwnd != (HWND)-1)
+	{
+		if (nCode == HCBT_ACTIVATE && GetParent(hwnd) == MyFileOp_main_hwnd)
+		{
+			MyFileOp_main_hwnd     = hwnd;
+			MyFileOp_OldWindowProc = (WNDPROC)SetWindowLongPtr(hwnd, GWLP_WNDPROC, (ULONG_PTR)MyFileOp_NewWindowProc);
+		}
 
-        if (nCode == HCBT_ACTIVATE
-                    && GetParent(hwnd) == MyFileOp_main_hwnd) {
+		if (nCode == HCBT_DESTROYWND && hwnd == MyFileOp_main_hwnd)
+		{
+			MyFileOp_main_hwnd = (HWND)-1;
+		}
+	}
 
-            MyFileOp_main_hwnd = hwnd;
-            MyFileOp_OldWindowProc = (WNDPROC)SetWindowLongPtr(
-                hwnd, GWLP_WNDPROC, (ULONG_PTR)MyFileOp_NewWindowProc);
-        }
-
-        if (nCode == HCBT_DESTROYWND && hwnd == MyFileOp_main_hwnd) {
-
-            MyFileOp_main_hwnd = (HWND)-1;
-        }
-    }
-
-    return CallNextHookEx(NULL, nCode, wParam, lParam);
+	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
 
@@ -91,29 +87,27 @@ _FX LRESULT CALLBACK MyFileOp_Hook(
 //---------------------------------------------------------------------------
 
 
-_FX LRESULT CALLBACK MyFileOp_NewWindowProc(
-    HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+_FX LRESULT CALLBACK MyFileOp_NewWindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (MyFileOp_main_hwnd && MyFileOp_pYesToAll) {
+	if (MyFileOp_main_hwnd && MyFileOp_pYesToAll)
+	{
+		if (msg == WM_WINDOWPOSCHANGED)
+		{
+			WINDOWPOS* pos = (WINDOWPOS*)lParam;
+			if (pos->flags & SWP_SHOWWINDOW)
+			{
+				MyFileOp_button_hwnd = MyFileOp_InsertYesToAllButton(hwnd);
+			}
+		}
 
-        if (msg == WM_WINDOWPOSCHANGED) {
-            WINDOWPOS *pos = (WINDOWPOS *)lParam;
-            if (pos->flags & SWP_SHOWWINDOW) {
+		if (msg == WM_COMMAND && HIWORD(wParam) == BN_CLICKED && lParam == (LPARAM)MyFileOp_button_hwnd)
+		{
+			*MyFileOp_pYesToAll = TRUE;
+			msg                 = WM_CLOSE;
+		}
+	}
 
-                MyFileOp_button_hwnd = MyFileOp_InsertYesToAllButton(hwnd);
-            }
-        }
-
-        if (msg == WM_COMMAND && HIWORD(wParam) == BN_CLICKED
-                && lParam == (LPARAM)MyFileOp_button_hwnd) {
-
-            *MyFileOp_pYesToAll = TRUE;
-            msg = WM_CLOSE;
-        }
-    }
-
-    return CallWindowProc(
-                MyFileOp_OldWindowProc, hwnd, msg,  wParam, lParam);
+	return CallWindowProc(MyFileOp_OldWindowProc, hwnd, msg, wParam, lParam);
 }
 
 
@@ -124,87 +118,88 @@ _FX LRESULT CALLBACK MyFileOp_NewWindowProc(
 
 _FX HWND MyFileOp_InsertYesToAllButton(HWND hwnd)
 {
-    RECT rc;
-    SIZE sz;
-    int width, height;
-    HWND button;
-    HDC dc;
-    HFONT font;
-    ULONG ButtonCount;
+	RECT rc;
+	SIZE sz;
+	int width, height;
+	HWND button;
+	HDC dc;
+	HFONT font;
+	ULONG ButtonCount;
 
-    //
-    // window with just one button is probably an error window
-    //
+	//
+	// window with just one button is probably an error window
+	//
 
-    ButtonCount = 0;
-    EnumChildWindows(hwnd, MyFileOp_CountButtons, (LPARAM)&ButtonCount);
-    if (ButtonCount == 1)
-        return NULL;
+	ButtonCount = 0;
+	EnumChildWindows(hwnd, MyFileOp_CountButtons, (LPARAM)&ButtonCount);
+	if (ButtonCount == 1)
+	{
+		return NULL;
+	}
 
-    //
-    // create a button and measure its dimensions
-    //
+	//
+	// create a button and measure its dimensions
+	//
 
-    button = CreateWindow(
-        L"BUTTON", MyFileOp_button_text,
-        BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE,
-        0, 0, -1, -1, hwnd, (HMENU)'tz', NULL, NULL);
+	button = CreateWindow(L"BUTTON", MyFileOp_button_text, BS_DEFPUSHBUTTON | WS_CHILD | WS_VISIBLE, 0, 0, -1, -1, hwnd, (HMENU)'tz', NULL, NULL);
 
-    dc = GetDC(button);
-    font = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
-    if (font) {
-        SelectObject(dc, font);
-        SendMessage(button, WM_SETFONT, (WPARAM)font, 0);
-    }
+	dc   = GetDC(button);
+	font = (HFONT)SendMessage(hwnd, WM_GETFONT, 0, 0);
+	if (font)
+	{
+		SelectObject(dc, font);
+		SendMessage(button, WM_SETFONT, (WPARAM)font, 0);
+	}
 
-    GetTextExtentPoint32(
-        dc, MyFileOp_button_text, wcslen(MyFileOp_button_text), &sz);
+	GetTextExtentPoint32(dc, MyFileOp_button_text, wcslen(MyFileOp_button_text), &sz);
 
-    ReleaseDC(button, dc);
+	ReleaseDC(button, dc);
 
-    sz.cx += 40;
-    sz.cy += 40;
+	sz.cx += 40;
+	sz.cy += 40;
 
-    //
-    // resize dialog box window
-    //
+	//
+	// resize dialog box window
+	//
 
-    GetWindowRect(hwnd, &rc);
+	GetWindowRect(hwnd, &rc);
 
-    width = rc.right - rc.left;
-    height = rc.bottom - rc.top;
+	width  = rc.right - rc.left;
+	height = rc.bottom - rc.top;
 
-    while (width < sz.cx) {
-        rc.left -= 20;
-        width += 20;
-    }
+	while (width < sz.cx)
+	{
+		rc.left -= 20;
+		width += 20;
+	}
 
-    height += sz.cy + 10;
+	height += sz.cy + 10;
 
-    MoveWindow(hwnd, rc.left, rc.top, width, height, TRUE);
+	MoveWindow(hwnd, rc.left, rc.top, width, height, TRUE);
 
-    //
-    // resize and move button
-    //
+	//
+	// resize and move button
+	//
 
-    GetClientRect(hwnd, &rc);
+	GetClientRect(hwnd, &rc);
 
-    if (rc.right - rc.left > sz.cx + 20)
-        sz.cx = rc.right - rc.left - 20;
+	if (rc.right - rc.left > sz.cx + 20)
+	{
+		sz.cx = rc.right - rc.left - 20;
+	}
 
-    rc.bottom -= 10;
-    rc.top = rc.bottom - sz.cy;
-    rc.left = (rc.right - rc.left - sz.cx) / 2;
-    rc.right = rc.left + sz.cx;
+	rc.bottom -= 10;
+	rc.top   = rc.bottom - sz.cy;
+	rc.left  = (rc.right - rc.left - sz.cx) / 2;
+	rc.right = rc.left + sz.cx;
 
-    SetWindowPos(button, NULL,
-        rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, 0);
+	SetWindowPos(button, NULL, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, 0);
 
-    //
-    // finish
-    //
+	//
+	// finish
+	//
 
-    return button;
+	return button;
 }
 
 
@@ -215,14 +210,15 @@ _FX HWND MyFileOp_InsertYesToAllButton(HWND hwnd)
 
 _FX BOOL MyFileOp_CountButtons(HWND hwnd, LPARAM lParam)
 {
-    WCHAR clsnm[256];
-    GetClassName(hwnd, clsnm, 250);
-    clsnm[250] = L'\0';
-    if (_wcsicmp(clsnm, L"BUTTON") == 0) {
-        ULONG *ButtonCount = (ULONG *)lParam;
-        ++(*ButtonCount);
-    }
-    return TRUE;
+	WCHAR clsnm[256];
+	GetClassName(hwnd, clsnm, 250);
+	clsnm[250] = L'\0';
+	if (_wcsicmp(clsnm, L"BUTTON") == 0)
+	{
+		ULONG* ButtonCount = (ULONG*)lParam;
+		++(*ButtonCount);
+	}
+	return TRUE;
 }
 
 
@@ -231,45 +227,43 @@ _FX BOOL MyFileOp_CountButtons(HWND hwnd, LPARAM lParam)
 //---------------------------------------------------------------------------
 
 
-_FX int Common_SHFileOperation(void *lpSHFileOpStruct, BOOL *pYesToAll,
-                               const WCHAR *ReplaceButtonText)
+_FX int Common_SHFileOperation(void* lpSHFileOpStruct, BOOL* pYesToAll, const WCHAR* ReplaceButtonText)
 {
-    SHFILEOPSTRUCT *shop = (SHFILEOPSTRUCT *)lpSHFileOpStruct;
-    HHOOK hhk = NULL;
-    int rv;
+	SHFILEOPSTRUCT* shop = (SHFILEOPSTRUCT*)lpSHFileOpStruct;
+	HHOOK hhk            = NULL;
+	int rv;
 
-    MyFileOp_main_hwnd = NULL;
-    MyFileOp_button_hwnd = NULL;
-    MyFileOp_button_text = NULL;
-    MyFileOp_pYesToAll = NULL;
+	MyFileOp_main_hwnd   = NULL;
+	MyFileOp_button_hwnd = NULL;
+	MyFileOp_button_text = NULL;
+	MyFileOp_pYesToAll   = NULL;
 
-    if (pYesToAll) {
+	if (pYesToAll)
+	{
+		*pYesToAll = FALSE;
 
-        *pYesToAll = FALSE;
+		if (!(shop->fFlags & FOF_NOCONFIRMATION))
+		{
+			MyFileOp_main_hwnd   = shop->hwnd;
+			MyFileOp_button_hwnd = NULL;
+			MyFileOp_button_text = ReplaceButtonText;
+			MyFileOp_pYesToAll   = pYesToAll;
 
-        if (! (shop->fFlags & FOF_NOCONFIRMATION)) {
+			hhk = SetWindowsHookEx(WH_CBT, MyFileOp_Hook, NULL, GetCurrentThreadId());
+		}
+	}
 
-            MyFileOp_main_hwnd = shop->hwnd;
-            MyFileOp_button_hwnd = NULL;
-            MyFileOp_button_text = ReplaceButtonText;
-            MyFileOp_pYesToAll = pYesToAll;
+	rv = SHFileOperation(lpSHFileOpStruct);
 
-            hhk = SetWindowsHookEx(
-                WH_CBT, MyFileOp_Hook, NULL, GetCurrentThreadId());
-        }
-    }
+	if (hhk)
+	{
+		MyFileOp_main_hwnd   = (HWND)-1;
+		MyFileOp_button_hwnd = NULL;
+		MyFileOp_button_text = NULL;
+		MyFileOp_pYesToAll   = NULL;
 
-    rv = SHFileOperation(lpSHFileOpStruct);
+		UnhookWindowsHookEx(hhk);
+	}
 
-    if (hhk) {
-
-        MyFileOp_main_hwnd = (HWND)-1;
-        MyFileOp_button_hwnd = NULL;
-        MyFileOp_button_text = NULL;
-        MyFileOp_pYesToAll = NULL;
-
-        UnhookWindowsHookEx(hhk);
-    }
-
-    return rv;
+	return rv;
 }

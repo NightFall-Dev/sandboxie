@@ -20,21 +20,22 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "ThirdPartyDialog.h"
 
-#include "TemplateListBox.h"
-#include "SbieIni.h"
-#include "UserSettings.h"
 #include "Boxes.h"
+#include "SbieIni.h"
+#include "TemplateListBox.h"
+#include "UserSettings.h"
 #include "apps/common/RunBrowser.h"
 #include "common/win32_ntddk.h"
+#include "stdafx.h"
+
 #include <psapi.h>
 
 
 #define PATTERN XPATTERN
-#define _MY_POOL_H          // prevent inclusion of pool.h by pattern.h
-typedef void *POOL;
+#define _MY_POOL_H // prevent inclusion of pool.h by pattern.h
+typedef void* POOL;
 #include "common/pattern.h"
 
 
@@ -45,13 +46,13 @@ typedef void *POOL;
 
 BEGIN_MESSAGE_MAP(CThirdPartyDialog, CBaseDialog)
 
-    ON_COMMAND(ID_APP_TEMPLATE_ADD,                 OnAdd)
-    ON_COMMAND(ID_APP_TEMPLATE_REMOVE,              OnRemove)
-    ON_CONTROL(LBN_DBLCLK, ID_APP_TEMPLATE_LIST,    OnToggle)
-    ON_COMMAND(ID_APP_TEMPLATE_AUTORUN,             OnCheckBox)
-    ON_COMMAND(ID_APP_TEMPLATE_REMOVE_OLD,          OnRemoveOld)
-    ON_COMMAND(ID_APP_TEMPLATE_CONFLICTS,           OnKnownConflicts)
-    ON_WM_SHOWWINDOW()
+ON_COMMAND(ID_APP_TEMPLATE_ADD, OnAdd)
+ON_COMMAND(ID_APP_TEMPLATE_REMOVE, OnRemove)
+ON_CONTROL(LBN_DBLCLK, ID_APP_TEMPLATE_LIST, OnToggle)
+ON_COMMAND(ID_APP_TEMPLATE_AUTORUN, OnCheckBox)
+ON_COMMAND(ID_APP_TEMPLATE_REMOVE_OLD, OnRemoveOld)
+ON_COMMAND(ID_APP_TEMPLATE_CONFLICTS, OnKnownConflicts)
+ON_WM_SHOWWINDOW()
 
 END_MESSAGE_MAP()
 
@@ -61,10 +62,10 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-#define KC_MUST_SEE     1
-#define KC_AUTO_OPEN    2
-#define KC_POST_OK      4
-#define KC_POST_CANCEL  8
+#define KC_MUST_SEE 1
+#define KC_AUTO_OPEN 2
+#define KC_POST_OK 4
+#define KC_POST_CANCEL 8
 
 
 //---------------------------------------------------------------------------
@@ -74,7 +75,7 @@ END_MESSAGE_MAP()
 
 HANDLE CThirdPartyDialog::hWatchThread = NULL;
 
-static const WCHAR *_KnownConflicts = L"KnownConflicts";
+static const WCHAR* _KnownConflicts = L"KnownConflicts";
 
 
 //---------------------------------------------------------------------------
@@ -82,50 +83,54 @@ static const WCHAR *_KnownConflicts = L"KnownConflicts";
 //---------------------------------------------------------------------------
 
 
-CThirdPartyDialog::CThirdPartyDialog(
-    CWnd *pParentWnd, BOOL AutoRun, WPARAM wParamAlert)
-    : CBaseDialog(pParentWnd)
+CThirdPartyDialog::CThirdPartyDialog(CWnd* pParentWnd, BOOL AutoRun, WPARAM wParamAlert) :
+    CBaseDialog(pParentWnd)
 {
-    //
-    // launch watch thread
-    //
+	//
+	// launch watch thread
+	//
 
-    if (hWatchThread == NULL) {
+	if (hWatchThread == NULL)
+	{
+		ULONG ThreadId;
+		ULONG_PTR* ThreadArgs = new ULONG_PTR[2];
+		ThreadArgs[0]         = (ULONG_PTR)pParentWnd->m_hWnd;
+		ThreadArgs[1]         = (ULONG_PTR)wParamAlert;
+		hWatchThread          = CreateThread(NULL, 0, WatchThread, (void*)ThreadArgs, 0, &ThreadId);
+		if (!hWatchThread)
+		{
+			hWatchThread = INVALID_HANDLE_VALUE;
+		}
+	}
 
-        ULONG ThreadId;
-        ULONG_PTR *ThreadArgs = new ULONG_PTR[2];
-        ThreadArgs[0] = (ULONG_PTR)pParentWnd->m_hWnd;
-        ThreadArgs[1] = (ULONG_PTR)wParamAlert;
-        hWatchThread = CreateThread(
-            NULL, 0, WatchThread, (void *)ThreadArgs, 0, &ThreadId);
-        if (! hWatchThread)
-            hWatchThread = INVALID_HANDLE_VALUE;
-    }
+	//
+	// don't bother if user can't make any changes
+	//
 
-    //
-    // don't bother if user can't make any changes
-    //
+	if (AutoRun && (!CUserSettings::GetInstance().CanEdit()))
+	{
+		return;
+	}
 
-    if (AutoRun && (! CUserSettings::GetInstance().CanEdit()))
-        return;
+	//
+	// display dialog
+	//
 
-    //
-    // display dialog
-    //
+	m_doKnownConflicts = 0;
 
-    m_doKnownConflicts = 0;
+	m_autorun     = AutoRun;
+	m_checkbox    = AutoRunSoftCompat();
+	BOOL oldcheck = m_checkbox;
 
-    m_autorun  = AutoRun;
-    m_checkbox = AutoRunSoftCompat();
-    BOOL oldcheck = m_checkbox;
+	SetDialogTemplate(L"THIRD_PARTY_DIALOG");
 
-    SetDialogTemplate(L"THIRD_PARTY_DIALOG");
+	DoModal();
 
-    DoModal();
-
-    BOOL newcheck = m_checkbox;
-    if (newcheck != oldcheck)
-        AutoRunSoftCompat(&newcheck);
+	BOOL newcheck = m_checkbox;
+	if (newcheck != oldcheck)
+	{
+		AutoRunSoftCompat(&newcheck);
+	}
 }
 
 
@@ -134,16 +139,20 @@ CThirdPartyDialog::CThirdPartyDialog(
 //---------------------------------------------------------------------------
 
 
-BOOL CThirdPartyDialog::AutoRunSoftCompat(BOOL *NewValue)
+BOOL CThirdPartyDialog::AutoRunSoftCompat(BOOL* NewValue)
 {
-    static const WCHAR *_AutoRunSoftCompat = L"AutoRunSoftCompat";
-    BOOL value;
-    CUserSettings &settings = CUserSettings::GetInstance();
-    if (NewValue)
-        value = settings.SetBool(_AutoRunSoftCompat, *NewValue);
-    else
-        settings.GetBool(_AutoRunSoftCompat, value, TRUE);
-    return value;
+	static const WCHAR* _AutoRunSoftCompat = L"AutoRunSoftCompat";
+	BOOL value;
+	CUserSettings& settings = CUserSettings::GetInstance();
+	if (NewValue)
+	{
+		value = settings.SetBool(_AutoRunSoftCompat, *NewValue);
+	}
+	else
+	{
+		settings.GetBool(_AutoRunSoftCompat, value, TRUE);
+	}
+	return value;
 }
 
 
@@ -164,137 +173,146 @@ CThirdPartyDialog::~CThirdPartyDialog()
 
 BOOL CThirdPartyDialog::OnInitDialog()
 {
-    CWaitCursor cursor;
+	CWaitCursor cursor;
 
-    SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 
-    //
-    // prepare dialog text
-    //
+	//
+	// prepare dialog text
+	//
 
-    SetWindowText(CMyMsg(MSG_4251));
+	SetWindowText(CMyMsg(MSG_4251));
 
-    GetDlgItem(ID_PAGE_LABEL_1)->SetWindowText(CMyMsg(MSG_4252));
-    GetDlgItem(ID_PAGE_LABEL_2)->SetWindowText(CMyMsg(MSG_4253));
-    GetDlgItem(ID_PAGE_LABEL_3)->SetWindowText(CMyMsg(MSG_4254));
+	GetDlgItem(ID_PAGE_LABEL_1)->SetWindowText(CMyMsg(MSG_4252));
+	GetDlgItem(ID_PAGE_LABEL_2)->SetWindowText(CMyMsg(MSG_4253));
+	GetDlgItem(ID_PAGE_LABEL_3)->SetWindowText(CMyMsg(MSG_4254));
 
-    GetDlgItem(ID_APP_TEMPLATE_ADD)->SetWindowText(CMyMsg(MSG_3352));
-    GetDlgItem(ID_APP_TEMPLATE_REMOVE)->SetWindowText(CMyMsg(MSG_3351));
+	GetDlgItem(ID_APP_TEMPLATE_ADD)->SetWindowText(CMyMsg(MSG_3352));
+	GetDlgItem(ID_APP_TEMPLATE_REMOVE)->SetWindowText(CMyMsg(MSG_3351));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
 
-    GetDlgItem(ID_APP_TEMPLATE_AUTORUN)->SetWindowText(CMyMsg(MSG_4255));
+	GetDlgItem(ID_APP_TEMPLATE_AUTORUN)->SetWindowText(CMyMsg(MSG_4255));
 
-    CButton *pCheckBox = (CButton *)GetDlgItem(ID_APP_TEMPLATE_AUTORUN);
-    pCheckBox->SetCheck(m_checkbox ? BST_UNCHECKED : BST_CHECKED);
+	CButton* pCheckBox = (CButton*)GetDlgItem(ID_APP_TEMPLATE_AUTORUN);
+	pCheckBox->SetCheck(m_checkbox ? BST_UNCHECKED : BST_CHECKED);
 
-    MakeLTR(ID_APP_TEMPLATE_LIST);
+	MakeLTR(ID_APP_TEMPLATE_LIST);
 
-    //
-    // collect data
-    //
+	//
+	// collect data
+	//
 
-    CollectObjects();
-    CollectClasses();
-    CollectServices();
-    CollectProducts();
-    CollectTemplates();
+	CollectObjects();
+	CollectClasses();
+	CollectServices();
+	CollectProducts();
+	CollectTemplates();
 
-    //
-    // check for any known conflicts
-    //
+	//
+	// check for any known conflicts
+	//
 
-    CStringList conflicts;
-    FindConflicts(conflicts, 1);
-    if (! conflicts.IsEmpty()) {
+	CStringList conflicts;
+	FindConflicts(conflicts, 1);
+	if (!conflicts.IsEmpty())
+	{
+		GetDlgItem(ID_APP_TEMPLATE_CONFLICTS)->SetWindowText(CMyMsg(MSG_4452));
+		GetDlgItem(ID_APP_TEMPLATE_CONFLICTS)->ShowWindow(SW_SHOW);
 
-        GetDlgItem(ID_APP_TEMPLATE_CONFLICTS)->SetWindowText(
-                                                        CMyMsg(MSG_4452));
-        GetDlgItem(ID_APP_TEMPLATE_CONFLICTS)->ShowWindow(SW_SHOW);
+		while (!conflicts.IsEmpty())
+		{
+			conflicts.RemoveHead();
+		}
+		FindConflicts(conflicts, 0);
+		if (!conflicts.IsEmpty())
+		{
+			m_ConflictsButton.Init(this, ID_APP_TEMPLATE_CONFLICTS);
+			m_doKnownConflicts |= KC_MUST_SEE;
+		}
+	}
 
-        while (! conflicts.IsEmpty())
-            conflicts.RemoveHead();
-        FindConflicts(conflicts, 0);
-        if (! conflicts.IsEmpty()) {
+	//
+	// populate list box
+	//
 
-            m_ConflictsButton.Init(this, ID_APP_TEMPLATE_CONFLICTS);
-            m_doKnownConflicts |= KC_MUST_SEE;
-        }
-    }
+	BOOL quit = m_autorun;
 
-    //
-    // populate list box
-    //
+	CBox& GlobalSettings = CBoxes::GetInstance().GetBox(0);
 
-    BOOL quit = m_autorun;
+	CListBox* pListBox = (CListBox*)GetDlgItem(ID_APP_TEMPLATE_LIST);
 
-    CBox &GlobalSettings = CBoxes::GetInstance().GetBox(0);
+	pListBox->SetItemHeight(0, pListBox->GetItemHeight(0) * 3 / 2);
 
-    CListBox *pListBox = (CListBox *)GetDlgItem(ID_APP_TEMPLATE_LIST);
+	POSITION pos = m_templates.GetStartPosition();
+	while (pos)
+	{
+		void* enabled;
+		CString tmpl_name;
+		m_templates.GetNextAssoc(pos, tmpl_name, enabled);
+		if (enabled)
+		{
+			CString descr = CTemplateListBox::GetTemplateTitle(tmpl_name);
 
-    pListBox->SetItemHeight(0, pListBox->GetItemHeight(0) * 3 / 2);
+			BOOL checked = TRUE;
+			if (GlobalSettings.IsTemplateRejected(tmpl_name))
+			{
+				checked = FALSE;
+			}
+			else if (!GlobalSettings.IsTemplateEnabled(tmpl_name))
+			{
+				quit = FALSE;
+			}
 
-    POSITION pos = m_templates.GetStartPosition();
-    while (pos) {
-        void *enabled;
-        CString tmpl_name;
-        m_templates.GetNextAssoc(pos, tmpl_name, enabled);
-        if (enabled) {
+			CTemplateListBox::Decorate(descr, checked, TRUE);
+			int index = pListBox->AddString(descr);
 
-            CString descr = CTemplateListBox::GetTemplateTitle(tmpl_name);
+			const WCHAR* srckey;
+			m_templates.LookupKey(tmpl_name, srckey);
+			pListBox->SetItemDataPtr(index, (void*)srckey);
+		}
+	}
 
-            BOOL checked = TRUE;
-            if (GlobalSettings.IsTemplateRejected(tmpl_name))
-                checked = FALSE;
-            else if (! GlobalSettings.IsTemplateEnabled(tmpl_name))
-                quit = FALSE;
+	//
+	// if this is AutoRun, and no new template was detetected, then quit
+	// if this is AutoRun, and a new template was detected, disable close
+	//
 
-            CTemplateListBox::Decorate(descr, checked, TRUE);
-            int index = pListBox->AddString(descr);
+	if (m_autorun)
+	{
+		if (quit)
+		{
+			if (m_doKnownConflicts & KC_MUST_SEE)
+			{
+				m_doKnownConflicts |= KC_AUTO_OPEN;
+			}
+			else
+			{
+				EndDialog(0);
+			}
+		}
 
-            const WCHAR *srckey;
-            m_templates.LookupKey(tmpl_name, srckey);
-            pListBox->SetItemDataPtr(index, (void *)srckey);
-        }
-    }
+		CRect rc;
+		GetDlgItem(IDCANCEL)->GetWindowRect(&rc);
+		ScreenToClient(&rc);
+		GetDlgItem(IDOK)->MoveWindow(rc);
 
-    //
-    // if this is AutoRun, and no new template was detetected, then quit
-    // if this is AutoRun, and a new template was detected, disable close
-    //
+		GetDlgItem(IDCANCEL)->ShowWindow(SW_HIDE);
+	}
+	else if (!m_stale_templates.IsEmpty())
+	{
+		GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->SetWindowText(CMyMsg(MSG_4257));
+		GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->ShowWindow(SW_SHOW);
+	}
 
-    if (m_autorun) {
+	//
+	//
+	//
 
-        if (quit) {
+	AddMinimizeButton();
 
-            if (m_doKnownConflicts & KC_MUST_SEE)
-                m_doKnownConflicts |= KC_AUTO_OPEN;
-            else
-                EndDialog(0);
-        }
-
-        CRect rc;
-        GetDlgItem(IDCANCEL)->GetWindowRect(&rc);
-        ScreenToClient(&rc);
-        GetDlgItem(IDOK)->MoveWindow(rc);
-
-        GetDlgItem(IDCANCEL)->ShowWindow(SW_HIDE);
-
-    } else if (! m_stale_templates.IsEmpty()) {
-
-        GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->SetWindowText(
-                                                        CMyMsg(MSG_4257));
-        GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->ShowWindow(SW_SHOW);
-    }
-
-    //
-    //
-    //
-
-    AddMinimizeButton();
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -305,32 +323,35 @@ BOOL CThirdPartyDialog::OnInitDialog()
 
 void CThirdPartyDialog::ApplyTemplates()
 {
-    CSbieIni &ini = CSbieIni::GetInstance();
-    CBox &GlobalSettings = CBoxes::GetInstance().GetBox(0);
+	CSbieIni& ini        = CSbieIni::GetInstance();
+	CBox& GlobalSettings = CBoxes::GetInstance().GetBox(0);
 
-    CListBox *pListBox = (CListBox *)GetDlgItem(ID_APP_TEMPLATE_LIST);
+	CListBox* pListBox = (CListBox*)GetDlgItem(ID_APP_TEMPLATE_LIST);
 
-    int size = pListBox->GetCount();
-    for (int index = 0; index < size; ++index) {
+	int size = pListBox->GetCount();
+	for (int index = 0; index < size; ++index)
+	{
+		CString text;
+		pListBox->GetText(index, text);
+		if (text.IsEmpty())
+		{
+			continue;
+		}
 
-        CString text;
-        pListBox->GetText(index, text);
-        if (text.IsEmpty())
-            continue;
+		const WCHAR* tmpl_name = (const WCHAR*)pListBox->GetItemDataPtr(index);
 
-        const WCHAR *tmpl_name =
-            (const WCHAR *)pListBox->GetItemDataPtr(index);
+		if (CTemplateListBox::IsCheck(text))
+		{
+			GlobalSettings.RejectTemplate(tmpl_name, FALSE);
+			GlobalSettings.EnableTemplate(tmpl_name, TRUE);
+		}
 
-        if (CTemplateListBox::IsCheck(text)) {
-            GlobalSettings.RejectTemplate(tmpl_name, FALSE);
-            GlobalSettings.EnableTemplate(tmpl_name, TRUE);
-        }
-
-        if (CTemplateListBox::IsClear(text)) {
-            GlobalSettings.EnableTemplate(tmpl_name, FALSE);
-            GlobalSettings.RejectTemplate(tmpl_name, TRUE);
-        }
-    }
+		if (CTemplateListBox::IsClear(text))
+		{
+			GlobalSettings.EnableTemplate(tmpl_name, FALSE);
+			GlobalSettings.RejectTemplate(tmpl_name, TRUE);
+		}
+	}
 }
 
 
@@ -341,7 +362,7 @@ void CThirdPartyDialog::ApplyTemplates()
 
 void CThirdPartyDialog::OnAdd()
 {
-    CTemplateListBox::OnAddRemove(this, TRUE);
+	CTemplateListBox::OnAddRemove(this, TRUE);
 }
 
 
@@ -352,7 +373,7 @@ void CThirdPartyDialog::OnAdd()
 
 void CThirdPartyDialog::OnRemove()
 {
-    CTemplateListBox::OnAddRemove(this, FALSE);
+	CTemplateListBox::OnAddRemove(this, FALSE);
 }
 
 
@@ -363,7 +384,7 @@ void CThirdPartyDialog::OnRemove()
 
 void CThirdPartyDialog::OnToggle()
 {
-    CTemplateListBox::OnAddRemove(this, FALSE, TRUE);
+	CTemplateListBox::OnAddRemove(this, FALSE, TRUE);
 }
 
 
@@ -374,9 +395,9 @@ void CThirdPartyDialog::OnToggle()
 
 void CThirdPartyDialog::OnCheckBox()
 {
-    m_checkbox = ! m_checkbox;
-    CButton *pCheckBox = (CButton *)GetDlgItem(ID_APP_TEMPLATE_AUTORUN);
-    pCheckBox->SetCheck(m_checkbox ? BST_UNCHECKED : BST_CHECKED);
+	m_checkbox         = !m_checkbox;
+	CButton* pCheckBox = (CButton*)GetDlgItem(ID_APP_TEMPLATE_AUTORUN);
+	pCheckBox->SetCheck(m_checkbox ? BST_UNCHECKED : BST_CHECKED);
 }
 
 
@@ -387,14 +408,17 @@ void CThirdPartyDialog::OnCheckBox()
 
 void CThirdPartyDialog::OnOK()
 {
-    ApplyTemplates();
+	ApplyTemplates();
 
-    if (m_doKnownConflicts & KC_MUST_SEE) {
-        m_doKnownConflicts |= KC_POST_OK;
-        PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
-
-    } else
-        EndDialog(0);
+	if (m_doKnownConflicts & KC_MUST_SEE)
+	{
+		m_doKnownConflicts |= KC_POST_OK;
+		PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
+	}
+	else
+	{
+		EndDialog(0);
+	}
 }
 
 
@@ -405,15 +429,20 @@ void CThirdPartyDialog::OnOK()
 
 void CThirdPartyDialog::OnCancel()
 {
-    if (m_autorun)
-        OnOK();
+	if (m_autorun)
+	{
+		OnOK();
+	}
 
-    else if (m_doKnownConflicts & KC_MUST_SEE) {
-        m_doKnownConflicts |= KC_POST_CANCEL;
-        PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
-
-    } else
-        CDialog::OnCancel();
+	else if (m_doKnownConflicts & KC_MUST_SEE)
+	{
+		m_doKnownConflicts |= KC_POST_CANCEL;
+		PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
+	}
+	else
+	{
+		CDialog::OnCancel();
+	}
 }
 
 
@@ -424,29 +453,31 @@ void CThirdPartyDialog::OnCancel()
 
 void CThirdPartyDialog::OnRemoveOld()
 {
-    CString descrs;
+	CString descrs;
 
-    POSITION pos = m_stale_templates.GetHeadPosition();
-    while (pos) {
-        const CString &tmpl_name = m_stale_templates.GetNext(pos);
-        CString descr = CTemplateListBox::GetTemplateTitle(tmpl_name);
-        descrs += descr;
-        descrs += L"\r\n";
-    }
+	POSITION pos = m_stale_templates.GetHeadPosition();
+	while (pos)
+	{
+		const CString& tmpl_name = m_stale_templates.GetNext(pos);
+		CString descr            = CTemplateListBox::GetTemplateTitle(tmpl_name);
+		descrs += descr;
+		descrs += L"\r\n";
+	}
 
-    int rv = CMyApp::MsgBox(this, CMyMsg(MSG_4258, descrs), MB_OKCANCEL);
-    if (rv == IDOK) {
+	int rv = CMyApp::MsgBox(this, CMyMsg(MSG_4258, descrs), MB_OKCANCEL);
+	if (rv == IDOK)
+	{
+		CBox& GlobalSettings = CBoxes::GetInstance().GetBox(0);
 
-        CBox &GlobalSettings = CBoxes::GetInstance().GetBox(0);
+		pos = m_stale_templates.GetHeadPosition();
+		while (pos)
+		{
+			const CString& tmpl_name = m_stale_templates.GetNext(pos);
+			GlobalSettings.RejectTemplate(tmpl_name, FALSE);
+		}
 
-        pos = m_stale_templates.GetHeadPosition();
-        while (pos) {
-            const CString &tmpl_name = m_stale_templates.GetNext(pos);
-            GlobalSettings.RejectTemplate(tmpl_name, FALSE);
-        }
-
-        GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->ShowWindow(SW_HIDE);
-    }
+		GetDlgItem(ID_APP_TEMPLATE_REMOVE_OLD)->ShowWindow(SW_HIDE);
+	}
 }
 
 
@@ -457,54 +488,68 @@ void CThirdPartyDialog::OnRemoveOld()
 
 void CThirdPartyDialog::OnKnownConflicts()
 {
-    CString text;
+	CString text;
 
-    m_doKnownConflicts &= ~KC_MUST_SEE;
+	m_doKnownConflicts &= ~KC_MUST_SEE;
 
-    CStringList conflicts;
-    FindConflicts(conflicts, 2);
-    if (conflicts.IsEmpty())
-        goto finish;
+	CStringList conflicts;
+	FindConflicts(conflicts, 2);
+	if (conflicts.IsEmpty())
+	{
+		goto finish;
+	}
 
-    m_ConflictsButton.EnableFlashing(false);
+	m_ConflictsButton.EnableFlashing(false);
 
-    while (! conflicts.IsEmpty())
-        text += conflicts.RemoveHead() + L"\n";
-    text = CMyMsg(MSG_4451, text);
+	while (!conflicts.IsEmpty())
+	{
+		text += conflicts.RemoveHead() + L"\n";
+	}
+	text = CMyMsg(MSG_4451, text);
 
-    int rv = CMyApp::MsgBox(this, text, MB_YESNO);
-    if (rv == IDYES) {
-        ShellExecute(m_pParentWnd->m_hWnd, NULL,
-                     CRunBrowser::GetTopicUrl(_KnownConflicts),
-                     NULL, NULL, SW_SHOWNORMAL);
-    }
+	int rv = CMyApp::MsgBox(this, text, MB_YESNO);
+	if (rv == IDYES)
+	{
+		ShellExecute(m_pParentWnd->m_hWnd, NULL, CRunBrowser::GetTopicUrl(_KnownConflicts), NULL, NULL, SW_SHOWNORMAL);
+	}
 
-    if (! CUserSettings::GetInstance().CanEdit())
-        goto finish;
+	if (!CUserSettings::GetInstance().CanEdit())
+	{
+		goto finish;
+	}
 
-    while (! conflicts.IsEmpty())
-        conflicts.RemoveHead();
-    FindConflicts(conflicts, 1);
+	while (!conflicts.IsEmpty())
+	{
+		conflicts.RemoveHead();
+	}
+	FindConflicts(conflicts, 1);
 
-    text = "";
-    while (! conflicts.IsEmpty()) {
-        if (! text.IsEmpty())
-            text += L",";
-        text += conflicts.RemoveHead();
-    }
-    CSbieIni &ini = CSbieIni::GetInstance();
-    ini.SetText(_GlobalSettings, _KnownConflicts, text);
+	text = "";
+	while (!conflicts.IsEmpty())
+	{
+		if (!text.IsEmpty())
+		{
+			text += L",";
+		}
+		text += conflicts.RemoveHead();
+	}
+	CSbieIni& ini = CSbieIni::GetInstance();
+	ini.SetText(_GlobalSettings, _KnownConflicts, text);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
 finish:
 
-    if (m_doKnownConflicts & KC_POST_OK)
-        PostMessage(WM_COMMAND, IDOK, 0);
-    else if (m_doKnownConflicts & KC_POST_CANCEL)
-        PostMessage(WM_COMMAND, IDCANCEL, 0);
+	if (m_doKnownConflicts & KC_POST_OK)
+	{
+		PostMessage(WM_COMMAND, IDOK, 0);
+	}
+	else if (m_doKnownConflicts & KC_POST_CANCEL)
+	{
+		PostMessage(WM_COMMAND, IDCANCEL, 0);
+	}
 }
 
 
@@ -515,11 +560,12 @@ finish:
 
 void CThirdPartyDialog::OnShowWindow(BOOL bShow, UINT nStatus)
 {
-    if (bShow && (m_doKnownConflicts & KC_AUTO_OPEN)) {
-        m_doKnownConflicts &= ~KC_AUTO_OPEN;
-        ApplyTemplates();
-        PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
-    }
+	if (bShow && (m_doKnownConflicts & KC_AUTO_OPEN))
+	{
+		m_doKnownConflicts &= ~KC_AUTO_OPEN;
+		ApplyTemplates();
+		PostMessage(WM_COMMAND, ID_APP_TEMPLATE_CONFLICTS, 0);
+	}
 }
 
 
@@ -530,17 +576,21 @@ void CThirdPartyDialog::OnShowWindow(BOOL bShow, UINT nStatus)
 
 void CThirdPartyDialog::CollectObjects()
 {
-    while (! m_objects.IsEmpty())
-        m_objects.RemoveHead();
+	while (!m_objects.IsEmpty())
+	{
+		m_objects.RemoveHead();
+	}
 
-    CStringList objdirs;
-    objdirs.AddTail(L"\\BaseNamedObjects");
-    objdirs.AddTail(L"\\Sessions");
-    objdirs.AddTail(L"\\RPC Control");
-    objdirs.AddTail(L"\\Device");
+	CStringList objdirs;
+	objdirs.AddTail(L"\\BaseNamedObjects");
+	objdirs.AddTail(L"\\Sessions");
+	objdirs.AddTail(L"\\RPC Control");
+	objdirs.AddTail(L"\\Device");
 
-    while (! objdirs.IsEmpty())
-        CollectObjects2(objdirs);
+	while (!objdirs.IsEmpty())
+	{
+		CollectObjects2(objdirs);
+	}
 }
 
 
@@ -549,102 +599,110 @@ void CThirdPartyDialog::CollectObjects()
 //---------------------------------------------------------------------------
 
 
-void CThirdPartyDialog::CollectObjects2(CStringList &objdirs)
+void CThirdPartyDialog::CollectObjects2(CStringList& objdirs)
 {
-    static const WCHAR *_WantedTypes[] = {
-        L"Directory",
-        L"Event", L"Mutant", L"Section", L"Semaphore",
-        L"Port", L"ALPC Port",
-        L"Device",
-        NULL
-    };
+	static const WCHAR* _WantedTypes[] = {L"Directory", L"Event", L"Mutant", L"Section", L"Semaphore", L"Port", L"ALPC Port", L"Device", NULL};
 
-    NTSTATUS status;
-    OBJECT_ATTRIBUTES objattrs;
-    UNICODE_STRING objname;
-    HANDLE handle;
-    OBJECT_DIRECTORY_INFORMATION *info, *info_ptr;
-    ULONG info_len, len, i, context;
+	NTSTATUS status;
+	OBJECT_ATTRIBUTES objattrs;
+	UNICODE_STRING objname;
+	HANDLE handle;
+	OBJECT_DIRECTORY_INFORMATION *info, *info_ptr;
+	ULONG info_len, len, i, context;
 
-    //
-    // enumerate contents of the object directory
-    //
+	//
+	// enumerate contents of the object directory
+	//
 
-    CString objdir = objdirs.RemoveHead();
-    if (objdir.Left(10) == L"\\Sessions\\" && objdir.GetLength() <= 13)
-        objdir += L"\\BaseNamedObjects";
+	CString objdir = objdirs.RemoveHead();
+	if (objdir.Left(10) == L"\\Sessions\\" && objdir.GetLength() <= 13)
+	{
+		objdir += L"\\BaseNamedObjects";
+	}
 
-    InitializeObjectAttributes(
-        &objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, NULL);
-    RtlInitUnicodeString(&objname, objdir);
+	InitializeObjectAttributes(&objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	RtlInitUnicodeString(&objname, objdir);
 
-    status = NtOpenDirectoryObject(&handle, DIRECTORY_QUERY, &objattrs);
-    if (! NT_SUCCESS(status))
-        return;
+	status = NtOpenDirectoryObject(&handle, DIRECTORY_QUERY, &objattrs);
+	if (!NT_SUCCESS(status))
+	{
+		return;
+	}
 
-    info = NULL;
-    info_len = 32768;
+	info     = NULL;
+	info_len = 32768;
 
-    for (i = 0; i < 10; ++i) {
+	for (i = 0; i < 10; ++i)
+	{
+		info = (OBJECT_DIRECTORY_INFORMATION*)HeapAlloc(GetProcessHeap(), 0, info_len);
+		if (!info)
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			break;
+		}
 
-        info = (OBJECT_DIRECTORY_INFORMATION *)
-            HeapAlloc(GetProcessHeap(), 0, info_len);
-        if (! info) {
-            status = STATUS_INSUFFICIENT_RESOURCES;
-            break;
-        }
+		status = NtQueryDirectoryObject(handle, info, info_len, FALSE, TRUE, &context, &len);
 
-        status = NtQueryDirectoryObject(
-            handle, info, info_len, FALSE, TRUE, &context, &len);
+		if (status == STATUS_MORE_ENTRIES)
+		{
+			status = STATUS_BUFFER_OVERFLOW;
+		}
 
-        if (status == STATUS_MORE_ENTRIES)
-            status = STATUS_BUFFER_OVERFLOW;
+		if (NT_SUCCESS(status))
+		{
+			break;
+		}
 
-        if (NT_SUCCESS(status))
-            break;
+		HeapFree(GetProcessHeap(), 0, info);
+		info_len += 32768;
 
-        HeapFree(GetProcessHeap(), 0, info);
-        info_len += 32768;
+		if (status == STATUS_BUFFER_OVERFLOW || status == STATUS_INFO_LENGTH_MISMATCH || status == STATUS_BUFFER_TOO_SMALL)
+		{
+			continue;
+		}
 
-        if (status == STATUS_BUFFER_OVERFLOW ||
-            status == STATUS_INFO_LENGTH_MISMATCH ||
-            status == STATUS_BUFFER_TOO_SMALL) {
+		break;
+	}
 
-            continue;
-        }
+	NtClose(handle);
+	if (!NT_SUCCESS(status))
+	{
+		return;
+	}
 
-        break;
-    }
+	//
+	// collect IPC objects
+	//
 
-    NtClose(handle);
-    if (! NT_SUCCESS(status))
-        return;
+	for (info_ptr = info; info_ptr->Name.Buffer; ++info_ptr)
+	{
+		for (i = 0; _WantedTypes[i]; ++i)
+		{
+			if (_wcsicmp(info_ptr->TypeName.Buffer, _WantedTypes[i]) == 0)
+			{
+				break;
+			}
+		}
+		if (!_WantedTypes[i])
+		{
+			continue;
+		}
 
-    //
-    // collect IPC objects
-    //
+		CString ThisObjectName;
+		ThisObjectName.Format(L"%s\\%s", objdir, info_ptr->Name.Buffer);
 
-    for (info_ptr = info; info_ptr->Name.Buffer; ++info_ptr) {
+		if (i == 0)
+		{
+			objdirs.AddTail(ThisObjectName);
+		}
+		else
+		{
+			ThisObjectName.MakeLower();
+			m_objects.AddTail(ThisObjectName);
+		}
+	}
 
-        for (i = 0; _WantedTypes[i]; ++i) {
-            if (_wcsicmp(info_ptr->TypeName.Buffer, _WantedTypes[i]) == 0)
-                break;
-        }
-        if (! _WantedTypes[i])
-            continue;
-
-        CString ThisObjectName;
-        ThisObjectName.Format(L"%s\\%s", objdir, info_ptr->Name.Buffer);
-
-        if (i == 0)
-            objdirs.AddTail(ThisObjectName);
-        else {
-            ThisObjectName.MakeLower();
-            m_objects.AddTail(ThisObjectName);
-        }
-    }
-
-    HeapFree(GetProcessHeap(), 0, info);
+	HeapFree(GetProcessHeap(), 0, info);
 }
 
 
@@ -655,10 +713,12 @@ void CThirdPartyDialog::CollectObjects2(CStringList &objdirs)
 
 void CThirdPartyDialog::CollectClasses()
 {
-    while (! m_classes.IsEmpty())
-        m_classes.RemoveHead();
+	while (!m_classes.IsEmpty())
+	{
+		m_classes.RemoveHead();
+	}
 
-    EnumWindows(CollectClasses2, (LPARAM)this);
+	EnumWindows(CollectClasses2, (LPARAM)this);
 }
 
 
@@ -669,18 +729,19 @@ void CThirdPartyDialog::CollectClasses()
 
 BOOL CThirdPartyDialog::CollectClasses2(HWND hwnd, LPARAM lparam)
 {
-    WCHAR clsnm[256];
+	WCHAR clsnm[256];
 
-    GetClassName(hwnd, clsnm, 250);
-    clsnm[250] = L'\0';
-    _wcslwr(clsnm);
+	GetClassName(hwnd, clsnm, 250);
+	clsnm[250] = L'\0';
+	_wcslwr(clsnm);
 
-    if (clsnm[0] && wcsncmp(clsnm, L"Sandbox:", 8) != 0) {
-        CThirdPartyDialog *_this = (CThirdPartyDialog *)lparam;
-        _this->m_classes.AddTail(clsnm);
-    }
+	if (clsnm[0] && wcsncmp(clsnm, L"Sandbox:", 8) != 0)
+	{
+		CThirdPartyDialog* _this = (CThirdPartyDialog*)lparam;
+		_this->m_classes.AddTail(clsnm);
+	}
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -691,55 +752,58 @@ BOOL CThirdPartyDialog::CollectClasses2(HWND hwnd, LPARAM lparam)
 
 void CThirdPartyDialog::CollectServices()
 {
-    SC_HANDLE hManager;
-    ENUM_SERVICE_STATUS *info;
-    ULONG info_len;
-    ULONG ResumeHandle;
+	SC_HANDLE hManager;
+	ENUM_SERVICE_STATUS* info;
+	ULONG info_len;
+	ULONG ResumeHandle;
 
-    while (! m_services.IsEmpty())
-        m_services.RemoveHead();
+	while (!m_services.IsEmpty())
+	{
+		m_services.RemoveHead();
+	}
 
-    hManager = OpenSCManager(NULL, NULL, SC_MANAGER_ENUMERATE_SERVICE);
-    if (! hManager)
-        return;
+	hManager = OpenSCManager(NULL, NULL, SC_MANAGER_ENUMERATE_SERVICE);
+	if (!hManager)
+	{
+		return;
+	}
 
-    info_len = 10240;
-    info = (ENUM_SERVICE_STATUS *)HeapAlloc(GetProcessHeap(), 0, info_len);
-    if (! info) {
-        CloseServiceHandle(hManager);
-        return;
-    }
+	info_len = 10240;
+	info     = (ENUM_SERVICE_STATUS*)HeapAlloc(GetProcessHeap(), 0, info_len);
+	if (!info)
+	{
+		CloseServiceHandle(hManager);
+		return;
+	}
 
-    ResumeHandle = 0;
-    while (1) {
+	ResumeHandle = 0;
+	while (1)
+	{
+		ULONG i, num, len;
+		BOOL b = EnumServicesStatus(hManager, SERVICE_TYPE_ALL, SERVICE_STATE_ALL, info, info_len, &len, &num, &ResumeHandle);
 
-        ULONG i, num, len;
-        BOOL b = EnumServicesStatus(
-                    hManager,
-                    SERVICE_TYPE_ALL,
-                    SERVICE_STATE_ALL,
-                    info,
-                    info_len,
-                    &len,
-                    &num,
-                    &ResumeHandle);
+		if (!b)
+		{
+			if (GetLastError() != ERROR_MORE_DATA)
+			{
+				break;
+			}
+		}
 
-        if (! b) {
-            if (GetLastError() != ERROR_MORE_DATA)
-                break;
-        }
+		for (i = 0; i < num; ++i)
+		{
+			_wcslwr(info[i].lpServiceName);
+			m_services.AddTail(info[i].lpServiceName);
+		}
 
-        for (i = 0; i < num; ++i) {
-            _wcslwr(info[i].lpServiceName);
-            m_services.AddTail(info[i].lpServiceName);
-        }
+		if (b)
+		{
+			break;
+		}
+	}
 
-        if (b)
-            break;
-    }
-
-    HeapFree(GetProcessHeap(), 0, info);
-    CloseServiceHandle(hManager);
+	HeapFree(GetProcessHeap(), 0, info);
+	CloseServiceHandle(hManager);
 }
 
 
@@ -750,52 +814,54 @@ void CThirdPartyDialog::CollectServices()
 
 void CThirdPartyDialog::CollectProducts()
 {
-    HKEY hkey;
-    ULONG DesiredAccess;
+	HKEY hkey;
+	ULONG DesiredAccess;
 
-    while (! m_products.IsEmpty())
-        m_products.RemoveHead();
+	while (!m_products.IsEmpty())
+	{
+		m_products.RemoveHead();
+	}
 
-    DesiredAccess = KEY_READ;
+	DesiredAccess = KEY_READ;
 
-    while (1) {
+	while (1)
+	{
+		const WCHAR* _Uninstall = L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+		LONG rc                 = RegOpenKeyEx(HKEY_LOCAL_MACHINE, _Uninstall, 0, DesiredAccess, &hkey);
+		if (rc == 0)
+		{
+			ULONG index = 0;
+			WCHAR name[128];
+			while (rc != ERROR_NO_MORE_ITEMS)
+			{
+				ULONG name_len = 120;
+				rc             = RegEnumKeyEx(hkey, index, name, &name_len, NULL, NULL, NULL, NULL);
+				if (rc == 0)
+				{
+					_wcslwr(name);
+					m_products.AddTail(name);
+				}
+				++index;
+			}
 
-        const WCHAR *_Uninstall =
-            L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
-        LONG rc = RegOpenKeyEx(
-            HKEY_LOCAL_MACHINE, _Uninstall, 0, DesiredAccess, &hkey);
-        if (rc == 0) {
-
-            ULONG index = 0;
-            WCHAR name[128];
-            while (rc != ERROR_NO_MORE_ITEMS) {
-                ULONG name_len = 120;
-                rc = RegEnumKeyEx(hkey, index, name, &name_len,
-                                  NULL, NULL, NULL, NULL);
-                if (rc == 0) {
-                    _wcslwr(name);
-                    m_products.AddTail(name);
-                }
-                ++index;
-            }
-
-            RegCloseKey(hkey);
-        }
+			RegCloseKey(hkey);
+		}
 
 #ifdef _WIN64
 
-        if (DesiredAccess & KEY_WOW64_32KEY)
-            break;
-        DesiredAccess |= KEY_WOW64_32KEY;
-        continue;
+		if (DesiredAccess & KEY_WOW64_32KEY)
+		{
+			break;
+		}
+		DesiredAccess |= KEY_WOW64_32KEY;
+		continue;
 
 #else // ! _WIN64
 
-        break;
+		break;
 
 #endif _WIN64
-
-    }
+	}
 }
 
 
@@ -806,43 +872,52 @@ void CThirdPartyDialog::CollectProducts()
 
 void CThirdPartyDialog::CollectTemplates()
 {
-    CSbieIni &ini = CSbieIni::GetInstance();
-    CBox &GlobalSettings = CBoxes::GetInstance().GetBox(0);
+	CSbieIni& ini        = CSbieIni::GetInstance();
+	CBox& GlobalSettings = CBoxes::GetInstance().GetBox(0);
 
-    CStringList names;
-    ini.GetTemplateNames(L"EmailReader", names);
-    ini.GetTemplateNames(L"Print", names);
-    ini.GetTemplateNames(L"Security", names);
-    ini.GetTemplateNames(L"Desktop", names);
-    ini.GetTemplateNames(L"Download", names);
-    ini.GetTemplateNames(L"Misc", names);
+	CStringList names;
+	ini.GetTemplateNames(L"EmailReader", names);
+	ini.GetTemplateNames(L"Print", names);
+	ini.GetTemplateNames(L"Security", names);
+	ini.GetTemplateNames(L"Desktop", names);
+	ini.GetTemplateNames(L"Download", names);
+	ini.GetTemplateNames(L"Misc", names);
 
-    m_templates.RemoveAll();
-    while (! names.IsEmpty()) {
-        CString tmpl_name = names.RemoveHead();
-        m_templates.SetAt(tmpl_name, NULL);
-    }
+	m_templates.RemoveAll();
+	while (!names.IsEmpty())
+	{
+		CString tmpl_name = names.RemoveHead();
+		m_templates.SetAt(tmpl_name, NULL);
+	}
 
-    void *dummy;
-    CString tmpl_name;
-    BOOL enabled;
+	void* dummy;
+	CString tmpl_name;
+	BOOL enabled;
 
-    POSITION pos = m_templates.GetStartPosition();
-    while (pos) {
-        m_templates.GetNextAssoc(pos, tmpl_name, dummy);
+	POSITION pos = m_templates.GetStartPosition();
+	while (pos)
+	{
+		m_templates.GetNextAssoc(pos, tmpl_name, dummy);
 
-        if (GlobalSettings.IsTemplateEnabled(tmpl_name))
-            enabled = TRUE;
-        else {
-            enabled = CheckTemplate(tmpl_name);
+		if (GlobalSettings.IsTemplateEnabled(tmpl_name))
+		{
+			enabled = TRUE;
+		}
+		else
+		{
+			enabled = CheckTemplate(tmpl_name);
 
-            if ((! enabled) && GlobalSettings.IsTemplateRejected(tmpl_name))
-                m_stale_templates.AddTail(tmpl_name);
-        }
+			if ((!enabled) && GlobalSettings.IsTemplateRejected(tmpl_name))
+			{
+				m_stale_templates.AddTail(tmpl_name);
+			}
+		}
 
-        if (enabled)
-            m_templates.SetAt(tmpl_name, (void *)1);
-    }
+		if (enabled)
+		{
+			m_templates.SetAt(tmpl_name, (void*)1);
+		}
+	}
 }
 
 
@@ -851,94 +926,138 @@ void CThirdPartyDialog::CollectTemplates()
 //---------------------------------------------------------------------------
 
 
-BOOL CThirdPartyDialog::CheckTemplate(const CString &tmpl_name)
+BOOL CThirdPartyDialog::CheckTemplate(const CString& tmpl_name)
 {
-    CSbieIni &ini = CSbieIni::GetInstance();
-    CString SectionName = ini.m_Template_ + tmpl_name;
+	CSbieIni& ini       = CSbieIni::GetInstance();
+	CString SectionName = ini.m_Template_ + tmpl_name;
 
-    CStringList settings;
-    ini.GetSettingsNames(SectionName, settings);
+	CStringList settings;
+	ini.GetSettingsNames(SectionName, settings);
 
-    CString scan;
-    ini.GetText(SectionName, L"Tmpl.Scan", scan);
-    BOOL scanIpc  = (scan.Find(L'i') != -1);
-    BOOL scanWin  = (scan.Find(L'w') != -1);
-    BOOL scanSvc  = (scan.Find(L's') != -1);
+	CString scan;
+	ini.GetText(SectionName, L"Tmpl.Scan", scan);
+	BOOL scanIpc = (scan.Find(L'i') != -1);
+	BOOL scanWin = (scan.Find(L'w') != -1);
+	BOOL scanSvc = (scan.Find(L's') != -1);
 
-    if (! (scanIpc || scanWin || scanSvc))
-        return FALSE;
+	if (!(scanIpc || scanWin || scanSvc))
+	{
+		return FALSE;
+	}
 
-    CStringList keys, files;
+	CStringList keys, files;
 
-    while (! settings.IsEmpty()) {
-        CString setting = settings.RemoveHead();
+	while (!settings.IsEmpty())
+	{
+		CString setting = settings.RemoveHead();
 
-        CStringList *list = NULL;
-        if (scanIpc && setting.CompareNoCase(L"OpenIpcPath") == 0)
-            list = &m_objects;
-        else if (scanWin && setting.CompareNoCase(L"OpenWinClass") == 0)
-            list = &m_classes;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanService") == 0)
-            list = &m_services;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanWinClass") == 0)
-            list = &m_classes;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanProduct") == 0)
-            list = &m_products;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanIpc") == 0)
-            list = &m_objects;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanKey") == 0)
-            list = &keys;
-        else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanFile") == 0)
-            list = &files;
-        else
-            continue;
+		CStringList* list = NULL;
+		if (scanIpc && setting.CompareNoCase(L"OpenIpcPath") == 0)
+		{
+			list = &m_objects;
+		}
+		else if (scanWin && setting.CompareNoCase(L"OpenWinClass") == 0)
+		{
+			list = &m_classes;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanService") == 0)
+		{
+			list = &m_services;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanWinClass") == 0)
+		{
+			list = &m_classes;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanProduct") == 0)
+		{
+			list = &m_products;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanIpc") == 0)
+		{
+			list = &m_objects;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanKey") == 0)
+		{
+			list = &keys;
+		}
+		else if (scanSvc && setting.CompareNoCase(L"Tmpl.ScanFile") == 0)
+		{
+			list = &files;
+		}
+		else
+		{
+			continue;
+		}
 
-        CStringList values;
-        ini.GetTextList(SectionName, setting, values);
+		CStringList values;
+		ini.GetTextList(SectionName, setting, values);
 
-        while (! values.IsEmpty()) {
-            CString value = values.RemoveHead();
+		while (!values.IsEmpty())
+		{
+			CString value = values.RemoveHead();
 
-            if (list == &m_classes && value.Left(2).Compare(L"*:") == 0)
-                continue;
-            if (list == &m_objects) {
-                if (value.Compare(L"\\RPC Control\\epmapper") == 0)
-                    continue;
-                if (value.Compare(L"\\RPC Control\\OLE*") == 0)
-                    continue;
-                if (value.Compare(L"\\RPC Control\\LRPC*") == 0)
-                    continue;
-                if (value.Compare(L"*\\BaseNamedObjects*\\"
-                                       L"NamedBuffer*mAH*Process*API*") == 0)
-                    continue;
-            }
+			if (list == &m_classes && value.Left(2).Compare(L"*:") == 0)
+			{
+				continue;
+			}
+			if (list == &m_objects)
+			{
+				if (value.Compare(L"\\RPC Control\\epmapper") == 0)
+				{
+					continue;
+				}
+				if (value.Compare(L"\\RPC Control\\OLE*") == 0)
+				{
+					continue;
+				}
+				if (value.Compare(L"\\RPC Control\\LRPC*") == 0)
+				{
+					continue;
+				}
+				if (value.Compare(L"*\\BaseNamedObjects*\\"
+				                  L"NamedBuffer*mAH*Process*API*")
+				    == 0)
+				{
+					continue;
+				}
+			}
 
-            if (list == &keys) {
-                if (CheckRegistryKey(value))
-                    return TRUE;
-                continue;
-            } else if (list == &files) {
-                if (CheckFile(value))
-                    return TRUE;
-                continue;
-            }
+			if (list == &keys)
+			{
+				if (CheckRegistryKey(value))
+				{
+					return TRUE;
+				}
+				continue;
+			}
+			else if (list == &files)
+			{
+				if (CheckFile(value))
+				{
+					return TRUE;
+				}
+				continue;
+			}
 
-            PATTERN *pat = Pattern_Create(NULL, value, TRUE);
-            BOOLEAN match = FALSE;
+			PATTERN* pat  = Pattern_Create(NULL, value, TRUE);
+			BOOLEAN match = FALSE;
 
-            POSITION pos = list->GetHeadPosition();
-            while (pos && (! match)) {
-                const CString &name = list->GetNext(pos);
-                match = Pattern_Match(pat, name, name.GetLength());
-            }
+			POSITION pos = list->GetHeadPosition();
+			while (pos && (!match))
+			{
+				const CString& name = list->GetNext(pos);
+				match               = Pattern_Match(pat, name, name.GetLength());
+			}
 
-            Pattern_Free(pat);
-            if (match)
-                return TRUE;
-        }
-    }
+			Pattern_Free(pat);
+			if (match)
+			{
+				return TRUE;
+			}
+		}
+	}
 
-    return FALSE;
+	return FALSE;
 }
 
 
@@ -947,24 +1066,24 @@ BOOL CThirdPartyDialog::CheckTemplate(const CString &tmpl_name)
 //---------------------------------------------------------------------------
 
 
-BOOL CThirdPartyDialog::CheckRegistryKey(const WCHAR *keypath)
+BOOL CThirdPartyDialog::CheckRegistryKey(const WCHAR* keypath)
 {
-    NTSTATUS status;
-    OBJECT_ATTRIBUTES objattrs;
-    UNICODE_STRING objname;
-    HANDLE handle;
+	NTSTATUS status;
+	OBJECT_ATTRIBUTES objattrs;
+	UNICODE_STRING objname;
+	HANDLE handle;
 
-    RtlInitUnicodeString(&objname, keypath);
-    InitializeObjectAttributes(
-        &objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, NULL);
+	RtlInitUnicodeString(&objname, keypath);
+	InitializeObjectAttributes(&objattrs, &objname, OBJ_CASE_INSENSITIVE, NULL, NULL);
 
-    status = NtOpenKey(&handle, KEY_QUERY_VALUE, &objattrs);
-    if (NT_SUCCESS(status)) {
-        NtClose(handle);
-        return TRUE;
-    }
+	status = NtOpenKey(&handle, KEY_QUERY_VALUE, &objattrs);
+	if (NT_SUCCESS(status))
+	{
+		NtClose(handle);
+		return TRUE;
+	}
 
-    return FALSE;
+	return FALSE;
 }
 
 
@@ -973,12 +1092,14 @@ BOOL CThirdPartyDialog::CheckRegistryKey(const WCHAR *keypath)
 //---------------------------------------------------------------------------
 
 
-BOOL CThirdPartyDialog::CheckFile(const WCHAR *filepath)
+BOOL CThirdPartyDialog::CheckFile(const WCHAR* filepath)
 {
-    CString path = CSbieIni::GetInstance().MakeSpecificPath(filepath);
-    if (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
-        return TRUE;
-    return FALSE;
+	CString path = CSbieIni::GetInstance().MakeSpecificPath(filepath);
+	if (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES)
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 
@@ -987,81 +1108,96 @@ BOOL CThirdPartyDialog::CheckFile(const WCHAR *filepath)
 //---------------------------------------------------------------------------
 
 
-void CThirdPartyDialog::FindConflicts(CStringList &list, int what)
+void CThirdPartyDialog::FindConflicts(CStringList& list, int what)
 {
-    //
-    // what == 0:  get new product codes
-    // what == 1:  get all product codes
-    // what == 2:  get all product names
-    //
+	//
+	// what == 0:  get new product codes
+	// what == 1:  get all product codes
+	// what == 2:  get all product names
+	//
 
-    CSbieIni &ini = CSbieIni::GetInstance();
-    CString TemplateName = ini.m_Template_ + _KnownConflicts;
-    CStringList entries;
-    ini.GetTextList(TemplateName, L"Tmpl.Entry", entries);
+	CSbieIni& ini        = CSbieIni::GetInstance();
+	CString TemplateName = ini.m_Template_ + _KnownConflicts;
+	CStringList entries;
+	ini.GetTextList(TemplateName, L"Tmpl.Entry", entries);
 
-    CStringList KnownConflicts;
-    if (what == 0) {
-        CString text;
-        ini.GetText(_GlobalSettings, _KnownConflicts, text);
-        while (! text.IsEmpty()) {
+	CStringList KnownConflicts;
+	if (what == 0)
+	{
+		CString text;
+		ini.GetText(_GlobalSettings, _KnownConflicts, text);
+		while (!text.IsEmpty())
+		{
+			int index = text.Find(',');
+			if (index < 1)
+			{
+				index = text.GetLength();
+			}
+			CString left = text.Left(index);
+			left.TrimLeft();
+			left.TrimRight();
+			if (!left.IsEmpty())
+			{
+				KnownConflicts.AddTail(left);
+			}
 
-            int index = text.Find(',');
-            if (index < 1)
-                index = text.GetLength();
-            CString left = text.Left(index);
-            left.TrimLeft();
-            left.TrimRight();
-            if (! left.IsEmpty())
-                KnownConflicts.AddTail(left);
+			text = text.Mid(index + 1);
+		}
+	}
 
-            text = text.Mid(index + 1);
-        }
-    }
+	while (!entries.IsEmpty())
+	{
+		CString entry = entries.RemoveHead();
+		int index     = entry.Find(L'|');
+		if (index < 1)
+		{
+			continue;
+		}
+		CString left  = entry.Left(index);
+		CString right = entry.Mid(index + 1);
+		left.TrimLeft();
+		left.TrimRight();
+		right.TrimLeft();
+		right.TrimRight();
+		if (right.IsEmpty())
+		{
+			right = left;
+		}
 
-    while (! entries.IsEmpty()) {
+		bool add = false;
 
-        CString entry = entries.RemoveHead();
-        int index = entry.Find(L'|');
-        if (index < 1)
-            continue;
-        CString left  = entry.Left(index);
-        CString right = entry.Mid(index + 1);
-        left.TrimLeft();
-        left.TrimRight();
-        right.TrimLeft();
-        right.TrimRight();
-        if (right.IsEmpty())
-            right = left;
+		POSITION pos = m_products.GetHeadPosition();
+		while (pos)
+		{
+			const CString& product = m_products.GetNext(pos);
+			if (product.CompareNoCase(right) == 0)
+			{
+				add = true;
+				break;
+			}
+		}
 
-        bool add = false;
+		if (add && (what == 0))
+		{
+			pos = KnownConflicts.GetHeadPosition();
+			while (pos)
+			{
+				const CString& product = KnownConflicts.GetNext(pos);
+				if (product.CompareNoCase(right) == 0)
+				{
+					add = false;
+					break;
+				}
+			}
+		}
 
-        POSITION pos = m_products.GetHeadPosition();
-        while (pos) {
-            const CString &product = m_products.GetNext(pos);
-            if (product.CompareNoCase(right) == 0) {
-                add = true;
-                break;
-            }
-        }
-
-        if (add && (what == 0)) {
-            pos = KnownConflicts.GetHeadPosition();
-            while (pos) {
-                const CString &product = KnownConflicts.GetNext(pos);
-                if (product.CompareNoCase(right) == 0) {
-                    add = false;
-                    break;
-                }
-            }
-        }
-
-        if (add) {
-            CString msg;
-            msg.Format(L"Left=<%s> Right=<%s>\n", left, right);
-            list.AddTail((what == 2) ? left : right);
-        }
-    }
+		if (add)
+		{
+			CString msg;
+			msg.Format(L"Left=<%s> Right=<%s>\n", left, right);
+			list.AddTail((what == 2) ? left : right);
+		}
+	}
 }
 
 
@@ -1070,82 +1206,93 @@ void CThirdPartyDialog::FindConflicts(CStringList &list, int what)
 //---------------------------------------------------------------------------
 
 
-ULONG CThirdPartyDialog::WatchThread(void *lpParameter)
+ULONG CThirdPartyDialog::WatchThread(void* lpParameter)
 {
-    ULONG_PTR *ThreadArgs = (ULONG_PTR *)lpParameter;
-    HWND   hWnd   = (HWND)ThreadArgs[0];
-    WPARAM wParam = (WPARAM)ThreadArgs[1];
-    delete ThreadArgs;
+	ULONG_PTR* ThreadArgs = (ULONG_PTR*)lpParameter;
+	HWND hWnd             = (HWND)ThreadArgs[0];
+	WPARAM wParam         = (WPARAM)ThreadArgs[1];
+	delete ThreadArgs;
 
-    static const WCHAR *_KeyPath =
-        L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
+	static const WCHAR* _KeyPath = L"Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall";
 
-    HKEY hKey1 = NULL;
-    HKEY hKey2 = NULL;
-    HANDLE hEvent1 = NULL;
-    HANDLE hEvent2 = NULL;
+	HKEY hKey1     = NULL;
+	HKEY hKey2     = NULL;
+	HANDLE hEvent1 = NULL;
+	HANDLE hEvent2 = NULL;
 
 restart:
 
-    if (hKey1) {
-        CloseHandle(hKey1);
-        hKey1 = NULL;
-    }
-    if (hEvent1) {
-        CloseHandle(hEvent1);
-        hEvent1 = NULL;
-    }
+	if (hKey1)
+	{
+		CloseHandle(hKey1);
+		hKey1 = NULL;
+	}
+	if (hEvent1)
+	{
+		CloseHandle(hEvent1);
+		hEvent1 = NULL;
+	}
 
-    if (hKey2) {
-        CloseHandle(hKey2);
-        hKey2 = NULL;
-    }
-    if (hEvent2) {
-        CloseHandle(hEvent1);
-        hEvent2 = NULL;
-    }
+	if (hKey2)
+	{
+		CloseHandle(hKey2);
+		hKey2 = NULL;
+	}
+	if (hEvent2)
+	{
+		CloseHandle(hEvent1);
+		hEvent2 = NULL;
+	}
 
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE, _KeyPath, 0, KEY_NOTIFY, &hKey1);
-    if (hKey1)
-        hEvent1 = CreateEvent(NULL, TRUE, FALSE, NULL);
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, _KeyPath, 0, KEY_NOTIFY, &hKey1);
+	if (hKey1)
+	{
+		hEvent1 = CreateEvent(NULL, TRUE, FALSE, NULL);
+	}
 
 #ifdef _WIN64
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE, _KeyPath, 0,
-                 KEY_NOTIFY | KEY_WOW64_32KEY, &hKey2);
-    if (hKey2)
-        hEvent2 = CreateEvent(NULL, TRUE, FALSE, NULL);
+	RegOpenKeyEx(HKEY_LOCAL_MACHINE, _KeyPath, 0, KEY_NOTIFY | KEY_WOW64_32KEY, &hKey2);
+	if (hKey2)
+	{
+		hEvent2 = CreateEvent(NULL, TRUE, FALSE, NULL);
+	}
 #endif _WIN64
 
-    if (hKey1) {
-        RegNotifyChangeKeyValue(
-            hKey1, TRUE, REG_NOTIFY_CHANGE_NAME, hEvent1, TRUE);
-    }
-    if (hKey2) {
-        RegNotifyChangeKeyValue(
-            hKey2, TRUE, REG_NOTIFY_CHANGE_NAME, hEvent2, TRUE);
-    }
+	if (hKey1)
+	{
+		RegNotifyChangeKeyValue(hKey1, TRUE, REG_NOTIFY_CHANGE_NAME, hEvent1, TRUE);
+	}
+	if (hKey2)
+	{
+		RegNotifyChangeKeyValue(hKey2, TRUE, REG_NOTIFY_CHANGE_NAME, hEvent2, TRUE);
+	}
 
-    HANDLE Handles[2];
-    ULONG HandleCount = 0;
-    if (hKey1) {
-        Handles[HandleCount] = hEvent1;
-        ++HandleCount;
-    }
-    if (hKey2) {
-        Handles[HandleCount] = hEvent2;
-        ++HandleCount;
-    }
+	HANDLE Handles[2];
+	ULONG HandleCount = 0;
+	if (hKey1)
+	{
+		Handles[HandleCount] = hEvent1;
+		++HandleCount;
+	}
+	if (hKey2)
+	{
+		Handles[HandleCount] = hEvent2;
+		++HandleCount;
+	}
 
-    if (! HandleCount)
-        return 0;
-    LONG rc =
-        WaitForMultipleObjects(HandleCount, Handles, FALSE, INFINITE);
-    if (rc != STATUS_WAIT_0 && rc != STATUS_WAIT_1)
-        return 0;
+	if (!HandleCount)
+	{
+		return 0;
+	}
+	LONG rc = WaitForMultipleObjects(HandleCount, Handles, FALSE, INFINITE);
+	if (rc != STATUS_WAIT_0 && rc != STATUS_WAIT_1)
+	{
+		return 0;
+	}
 
-    Sleep(10 * 1000);
-    ::PostMessage(hWnd, WM_COMMAND, wParam, 0);
-    goto restart;
+	Sleep(10 * 1000);
+	::PostMessage(hWnd, WM_COMMAND, wParam, 0);
+	goto restart;
 }
 
 
@@ -1154,9 +1301,9 @@ restart:
 //---------------------------------------------------------------------------
 
 
-#pragma warning( disable: 4200 )
+#pragma warning(disable : 4200)
 
-#define Pool_Alloc(pool,size) (PATTERN *)HeapAlloc(GetProcessHeap(),0,size)
-#define Pool_Free(ptr,size)   HeapFree(GetProcessHeap(),0,ptr)
+#define Pool_Alloc(pool, size) (PATTERN*)HeapAlloc(GetProcessHeap(), 0, size)
+#define Pool_Free(ptr, size) HeapFree(GetProcessHeap(), 0, ptr)
 
 #include "common/pattern.c"

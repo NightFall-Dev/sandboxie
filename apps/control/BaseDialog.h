@@ -27,39 +27,36 @@
 class CBaseDialog : public CDialog
 {
 protected:
+	DECLARE_MESSAGE_MAP()
 
-    DECLARE_MESSAGE_MAP()
+	void* m_template_copy;
 
-    void *m_template_copy;
+	CPtrList m_hidden_windows;
 
-    CPtrList m_hidden_windows;
-
-    void ShowOrHideAllWindows(bool hide);
-    static BOOL ShowOrHideAllWindowsEnum(HWND hwnd, LPARAM lparam);
-
-public:
-
-    afx_msg void OnDestroy();
-    afx_msg void OnSize(UINT nType, int cx, int cy);
-    afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
+	void ShowOrHideAllWindows(bool hide);
+	static BOOL ShowOrHideAllWindowsEnum(HWND hwnd, LPARAM lparam);
 
 public:
+	afx_msg void OnDestroy();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
 
-    void SetDialogTemplate(const WCHAR *TemplateName);
+public:
+	void SetDialogTemplate(const WCHAR* TemplateName);
 
-    static void MakeLTR(CWnd *pWnd);
-    void MakeLTR(UINT id);
+	static void MakeLTR(CWnd* pWnd);
+	void MakeLTR(UINT id);
 
-    void AddMinimizeButton();
+	void AddMinimizeButton();
 
-    void FlashTitle();
+	void FlashTitle();
 
-    CBaseDialog(CWnd *pParentWnd, const WCHAR *TemplateName = NULL);
-    ~CBaseDialog();
+	CBaseDialog(CWnd* pParentWnd, const WCHAR* TemplateName = NULL);
+	~CBaseDialog();
 
-    static CWnd *GetInputWindow(bool *inModal = NULL);
-    static BOOL GetInputWindowEnum(HWND hwnd, LPARAM lparam);
-    static bool InModalState();
+	static CWnd* GetInputWindow(bool* inModal = NULL);
+	static BOOL GetInputWindowEnum(HWND hwnd, LPARAM lparam);
+	static bool InModalState();
 };
 
 

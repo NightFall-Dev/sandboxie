@@ -29,40 +29,36 @@
 
 class CProgramSelector : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CStringList m_list1;
-    CStringList m_list2;
-    CStringList m_list3;
+	CStringList m_list1;
+	CStringList m_list2;
+	CStringList m_list3;
 
-    void GetProgramNamesFromSettings(CBox &box);
-    void GetProgramNamesFromPathLists(CBox &box, CStringList &pgms);
-    void GetProgramNamesFromGroups(
-            CBox &box, const CStringList &groups, CStringList &out_pgms);
+	void GetProgramNamesFromSettings(CBox& box);
+	void GetProgramNamesFromPathLists(CBox& box, CStringList& pgms);
+	void GetProgramNamesFromGroups(CBox& box, const CStringList& groups, CStringList& out_pgms);
 
-    void PrepareListBox(int idCtrl, CStringList &list);
+	void PrepareListBox(int idCtrl, CStringList& list);
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnListSelected();
+	afx_msg void OnListSelected();
 
-    afx_msg void OnEditChanged();
+	afx_msg void OnEditChanged();
 
-    afx_msg void OnOpenFile();
+	afx_msg void OnOpenFile();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    virtual void OnCancel();
+	virtual void OnCancel();
 
 public:
+	CProgramSelector(CWnd* pParentWnd, CBox* box, bool withProgramGroups, const CString& groupName = CString());
+	~CProgramSelector();
 
-    CProgramSelector(CWnd *pParentWnd, CBox *box,
-                     bool withProgramGroups,
-                     const CString &groupName = CString());
-    ~CProgramSelector();
-
-    CString m_pgm1;
-    CString m_pgm2;
+	CString m_pgm1;
+	CString m_pgm2;
 };
 
 

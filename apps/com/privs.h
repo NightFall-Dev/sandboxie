@@ -25,7 +25,7 @@
 //---------------------------------------------------------------------------
 
 
-#define SE_ASSIGNPRIMARYTOKEN_PRIVILEGE     (3L)
+#define SE_ASSIGNPRIMARYTOKEN_PRIVILEGE (3L)
 
 
 //---------------------------------------------------------------------------
@@ -33,34 +33,15 @@
 //---------------------------------------------------------------------------
 
 
-DWORD my_RtlAdjustPrivilege(
-    DWORD dwPrivilege,
-    BOOL bEnablePrivilege,
-    DWORD dwAdjustWhat,
-    DWORD *dwPreviouslyEnabled);
+DWORD my_RtlAdjustPrivilege(DWORD dwPrivilege, BOOL bEnablePrivilege, DWORD dwAdjustWhat, DWORD* dwPreviouslyEnabled);
 
-BOOL my_AccessCheckByType(
-    PSECURITY_DESCRIPTOR pSecurityDescriptor,
-    PSID PrincipalSelfSid,
-    HANDLE ClientToken,
-    DWORD DesiredAccess,
-    POBJECT_TYPE_LIST ObjectTypeList,
-    DWORD ObjectTypeListLength,
-    PGENERIC_MAPPING GenericMapping,
-    PPRIVILEGE_SET PrivilegeSet,
-    LPDWORD PrivilegeSetLength,
-    LPDWORD GrantedAccess,
-    LPBOOL AccessStatus);
+BOOL my_AccessCheckByType(PSECURITY_DESCRIPTOR pSecurityDescriptor, PSID PrincipalSelfSid, HANDLE ClientToken, DWORD DesiredAccess, POBJECT_TYPE_LIST ObjectTypeList, DWORD ObjectTypeListLength, PGENERIC_MAPPING GenericMapping, PPRIVILEGE_SET PrivilegeSet, LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess, LPBOOL AccessStatus);
 
 
 //---------------------------------------------------------------------------
 
 
-__declspec(dllimport) ULONG RtlAdjustPrivilege(
-    DWORD dwPrivilege,
-    BOOL bEnablePrivilege,
-    DWORD dwAdjustWhat,
-    DWORD *dwPreviouslyEnabled);
+__declspec(dllimport) ULONG RtlAdjustPrivilege(DWORD dwPrivilege, BOOL bEnablePrivilege, DWORD dwAdjustWhat, DWORD* dwPreviouslyEnabled);
 
 
 //---------------------------------------------------------------------------
@@ -71,10 +52,10 @@ __declspec(dllimport) ULONG RtlAdjustPrivilege(
 static ULONG ThreadTokenTlsIndex = TLS_OUT_OF_INDEXES;
 
 
-static ULONG_PTR __sys_RtlAdjustPrivilege                       = 0;
-static ULONG_PTR __sys_AccessCheckByType                        = 0;
-static ULONG_PTR __sys_SetThreadToken                           = 0;
-static ULONG_PTR __sys_GetTokenInformation                      = 0;
+static ULONG_PTR __sys_RtlAdjustPrivilege  = 0;
+static ULONG_PTR __sys_AccessCheckByType   = 0;
+static ULONG_PTR __sys_SetThreadToken      = 0;
+static ULONG_PTR __sys_GetTokenInformation = 0;
 
 
 //---------------------------------------------------------------------------
@@ -82,26 +63,18 @@ static ULONG_PTR __sys_GetTokenInformation                      = 0;
 //---------------------------------------------------------------------------
 
 
-ALIGNED DWORD my_RtlAdjustPrivilege(
-    DWORD dwPrivilege,
-    BOOL bEnablePrivilege,
-    DWORD dwAdjustWhat,
-    DWORD *dwPreviouslyEnabled)
+ALIGNED DWORD my_RtlAdjustPrivilege(DWORD dwPrivilege, BOOL bEnablePrivilege, DWORD dwAdjustWhat, DWORD* dwPreviouslyEnabled)
 {
-    typedef DWORD (*P_RtlAdjustPrivilege)(
-        DWORD dwPrivilege,
-        BOOL bEnablePrivilege,
-        DWORD dwAdjustWhat,
-        DWORD *dwPreviouslyEnabled);
+	typedef DWORD (*P_RtlAdjustPrivilege)(DWORD dwPrivilege, BOOL bEnablePrivilege, DWORD dwAdjustWhat, DWORD* dwPreviouslyEnabled);
 
-    DWORD rv = ((P_RtlAdjustPrivilege)__sys_RtlAdjustPrivilege)(
-        dwPrivilege, bEnablePrivilege, dwAdjustWhat, dwPreviouslyEnabled);
+	DWORD rv = ((P_RtlAdjustPrivilege)__sys_RtlAdjustPrivilege)(dwPrivilege, bEnablePrivilege, dwAdjustWhat, dwPreviouslyEnabled);
 
-    if (rv == STATUS_PRIVILEGE_NOT_HELD &&
-        dwPrivilege == SE_ASSIGNPRIMARYTOKEN_PRIVILEGE)
-        rv = 0;
+	if (rv == STATUS_PRIVILEGE_NOT_HELD && dwPrivilege == SE_ASSIGNPRIMARYTOKEN_PRIVILEGE)
+	{
+		rv = 0;
+	}
 
-    return rv;
+	return rv;
 }
 
 //---------------------------------------------------------------------------
@@ -109,23 +82,12 @@ ALIGNED DWORD my_RtlAdjustPrivilege(
 //---------------------------------------------------------------------------
 
 
-ALIGNED BOOL my_AccessCheckByType(
-    PSECURITY_DESCRIPTOR pSecurityDescriptor,
-    PSID PrincipalSelfSid,
-    HANDLE ClientToken,
-    DWORD DesiredAccess,
-    POBJECT_TYPE_LIST ObjectTypeList,
-    DWORD ObjectTypeListLength,
-    PGENERIC_MAPPING GenericMapping,
-    PPRIVILEGE_SET PrivilegeSet,
-    LPDWORD PrivilegeSetLength,
-    LPDWORD GrantedAccess,
-    LPBOOL AccessStatus)
+ALIGNED BOOL my_AccessCheckByType(PSECURITY_DESCRIPTOR pSecurityDescriptor, PSID PrincipalSelfSid, HANDLE ClientToken, DWORD DesiredAccess, POBJECT_TYPE_LIST ObjectTypeList, DWORD ObjectTypeListLength, PGENERIC_MAPPING GenericMapping, PPRIVILEGE_SET PrivilegeSet, LPDWORD PrivilegeSetLength, LPDWORD GrantedAccess, LPBOOL AccessStatus)
 {
-    *GrantedAccess = 0xFFFFFFFF;
-    *AccessStatus = TRUE;
-    SetLastError(0);
-    return TRUE;
+	*GrantedAccess = 0xFFFFFFFF;
+	*AccessStatus  = TRUE;
+	SetLastError(0);
+	return TRUE;
 }
 
 
@@ -136,65 +98,68 @@ ALIGNED BOOL my_AccessCheckByType(
 
 ALIGNED BOOL my_SetThreadToken(PHANDLE Thread, HANDLE Token)
 {
-    typedef BOOL (*P_SetThreadToken)(PHANDLE Thread, HANDLE Token);
-    BOOL ok;
+	typedef BOOL (*P_SetThreadToken)(PHANDLE Thread, HANDLE Token);
+	BOOL ok;
 
-    TlsSetValue(ThreadTokenTlsIndex, NULL);
+	TlsSetValue(ThreadTokenTlsIndex, NULL);
 
-    ok = ((P_SetThreadToken)__sys_SetThreadToken)(Thread, Token);
+	ok = ((P_SetThreadToken)__sys_SetThreadToken)(Thread, Token);
 
-    if ((! ok) && GetLastError() == ERROR_ACCESS_DENIED) {
+	if ((!ok) && GetLastError() == ERROR_ACCESS_DENIED)
+	{
+		//
+		// RpcSs and DcomLaunch typically run as a normal user account
+		// that does not have the the impersonation privilege.
+		// this means that if some other services (say EventSystem)
+		// runs as LocalSystem, RpcSs is going to have trouble
+		// impersonating that other service.
+		// to work around that, we do impersonate per the caler's
+		// request, but we impersonate ourselves
+		//
+		// and also:
+		//
+		// CryptSvc indirectly calls rsaenh!CPAcquireContext, which checks
+		// if it is running as LocalSystem and fails otherwise.  the check
+		// begins with a call to SetThreadToken(NULL, hTokenLocalSystem),
+		// follows with GetTokenInformation and concludes by comparing the
+		// SID. we fake success by impersonating our process token, but
+		// remember hTokenLocalSystem for GetTokenInformation (see below).
+		//
 
-        //
-        // RpcSs and DcomLaunch typically run as a normal user account
-        // that does not have the the impersonation privilege.
-        // this means that if some other services (say EventSystem)
-        // runs as LocalSystem, RpcSs is going to have trouble
-        // impersonating that other service.
-        // to work around that, we do impersonate per the caler's
-        // request, but we impersonate ourselves
-        //
-        // and also:
-        //
-        // CryptSvc indirectly calls rsaenh!CPAcquireContext, which checks
-        // if it is running as LocalSystem and fails otherwise.  the check
-        // begins with a call to SetThreadToken(NULL, hTokenLocalSystem),
-        // follows with GetTokenInformation and concludes by comparing the
-        // SID. we fake success by impersonating our process token, but
-        // remember hTokenLocalSystem for GetTokenInformation (see below).
-        //
+		if (Thread == NULL)
+		{
+			HANDLE PriToken;
+			ok = OpenProcessToken(NtCurrentProcess(), TOKEN_ALL_ACCESS, &PriToken);
+			if (ok)
+			{
+				HANDLE ImpToken;
+				ok = DuplicateToken(PriToken, SecurityImpersonation, &ImpToken);
+				CloseHandle(PriToken);
 
-        if (Thread == NULL) {
+				if (ok)
+				{
+					ok = ((P_SetThreadToken)__sys_SetThreadToken)(Thread, ImpToken);
+					CloseHandle(ImpToken);
 
-            HANDLE PriToken;
-            ok = OpenProcessToken(
-                            NtCurrentProcess(), TOKEN_ALL_ACCESS, &PriToken);
-            if (ok) {
+					if (ok)
+					{
+						TlsSetValue(ThreadTokenTlsIndex, Token);
+					}
+				}
+			}
 
-                HANDLE ImpToken;
-                ok = DuplicateToken(
-                                PriToken, SecurityImpersonation, &ImpToken);
-                CloseHandle(PriToken);
+			if (ok)
+			{
+				SetLastError(ERROR_SUCCESS);
+			}
+			else
+			{
+				SetLastError(ERROR_ACCESS_DENIED);
+			}
+		}
+	}
 
-                if (ok) {
-
-                    ok = ((P_SetThreadToken)__sys_SetThreadToken)(
-                                                        Thread, ImpToken);
-                    CloseHandle(ImpToken);
-
-                    if (ok)
-                        TlsSetValue(ThreadTokenTlsIndex, Token);
-                }
-            }
-
-            if (ok)
-                SetLastError(ERROR_SUCCESS);
-            else
-                SetLastError(ERROR_ACCESS_DENIED);
-        }
-    }
-
-    return ok;
+	return ok;
 }
 
 
@@ -203,32 +168,22 @@ ALIGNED BOOL my_SetThreadToken(PHANDLE Thread, HANDLE Token)
 //---------------------------------------------------------------------------
 
 
-ALIGNED BOOL my_GetTokenInformation(
-    HANDLE TokenHandle,
-    TOKEN_INFORMATION_CLASS TokenInformationClass,
-    LPVOID TokenInformation,
-    DWORD TokenInformationLength,
-    PDWORD ReturnLength)
+ALIGNED BOOL my_GetTokenInformation(HANDLE TokenHandle, TOKEN_INFORMATION_CLASS TokenInformationClass, LPVOID TokenInformation, DWORD TokenInformationLength, PDWORD ReturnLength)
 {
-    typedef BOOL (*P_GetTokenInformation)(
-        HANDLE TokenHandle,
-        TOKEN_INFORMATION_CLASS TokenInformationClass,
-        LPVOID TokenInformation,
-        DWORD TokenInformationLength,
-        PDWORD ReturnLength);
+	typedef BOOL (*P_GetTokenInformation)(HANDLE TokenHandle, TOKEN_INFORMATION_CLASS TokenInformationClass, LPVOID TokenInformation, DWORD TokenInformationLength, PDWORD ReturnLength);
 
-    //
-    // if our faked SetThreadToken saved hTokenLocalSystem,
-    // then use that saved token.
-    //
+	//
+	// if our faked SetThreadToken saved hTokenLocalSystem,
+	// then use that saved token.
+	//
 
-    HANDLE SavedToken = TlsGetValue(ThreadTokenTlsIndex);
-    if (SavedToken)
-        TokenHandle = SavedToken;
+	HANDLE SavedToken = TlsGetValue(ThreadTokenTlsIndex);
+	if (SavedToken)
+	{
+		TokenHandle = SavedToken;
+	}
 
-    return ((P_GetTokenInformation)__sys_GetTokenInformation)(
-        TokenHandle, TokenInformationClass, TokenInformation,
-        TokenInformationLength, ReturnLength);
+	return ((P_GetTokenInformation)__sys_GetTokenInformation)(TokenHandle, TokenInformationClass, TokenInformation, TokenInformationLength, ReturnLength);
 }
 
 
@@ -239,39 +194,27 @@ ALIGNED BOOL my_GetTokenInformation(
 
 ALIGNED BOOL Hook_Privilege(void)
 {
-    BOOL hook_success = TRUE;
+	BOOL hook_success = TRUE;
 
 #ifndef SANDBOXIECRYPTO
-    HOOK_WIN32(RtlAdjustPrivilege);
+	HOOK_WIN32(RtlAdjustPrivilege);
 #endif
-    HOOK_WIN32(AccessCheckByType);
-    HOOK_WIN32(SetThreadToken);
-    HOOK_WIN32(GetTokenInformation);
+	HOOK_WIN32(AccessCheckByType);
+	HOOK_WIN32(SetThreadToken);
+	HOOK_WIN32(GetTokenInformation);
 
-    if (hook_success) {
+	if (hook_success)
+	{
+		ThreadTokenTlsIndex = TlsAlloc();
+	}
+	else
+	{
+		ErrorMessageBox(L"Could not hook privilege adjustment services");
+		return FALSE;
+	}
 
-        ThreadTokenTlsIndex = TlsAlloc();
-
-    } else {
-
-        ErrorMessageBox(L"Could not hook privilege adjustment services");
-        return FALSE;
-    }
-
-    return TRUE;
+	return TRUE;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //---------------------------------------------------------------------------

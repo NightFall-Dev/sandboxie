@@ -21,10 +21,11 @@
 
 
 #include "api.h"
+
+#include "common/my_version.h"
+#include "hook.h"
 #include "process.h"
 #include "util.h"
-#include "hook.h"
-#include "common/my_version.h"
 
 
 //---------------------------------------------------------------------------
@@ -36,42 +37,37 @@ static KIRQL Api_EnterCriticalSection(void);
 
 static void Api_LeaveCriticalSection(KIRQL oldirql);
 
-static NTSTATUS Api_Irp_Finish(IRP *irp, NTSTATUS status);
+static NTSTATUS Api_Irp_Finish(IRP* irp, NTSTATUS status);
 
-static NTSTATUS Api_Irp_CREATE(DEVICE_OBJECT *device_object, IRP *irp);
+static NTSTATUS Api_Irp_CREATE(DEVICE_OBJECT* device_object, IRP* irp);
 
-static NTSTATUS Api_Irp_CLEANUP(DEVICE_OBJECT *device_object, IRP *irp);
+static NTSTATUS Api_Irp_CLEANUP(DEVICE_OBJECT* device_object, IRP* irp);
 
-static BOOLEAN Api_FastIo_DEVICE_CONTROL(
-    FILE_OBJECT *FileObject, BOOLEAN Wait,
-    void *InputBuffer, ULONG InputBufferLength,
-    void *OutputBuffer, ULONG OutputBufferLength,
-    ULONG IoControlCode, IO_STATUS_BLOCK *IoStatus,
-    DEVICE_OBJECT *DeviceObject);
+static BOOLEAN Api_FastIo_DEVICE_CONTROL(FILE_OBJECT* FileObject, BOOLEAN Wait, void* InputBuffer, ULONG InputBufferLength, void* OutputBuffer, ULONG OutputBufferLength, ULONG IoControlCode, IO_STATUS_BLOCK* IoStatus, DEVICE_OBJECT* DeviceObject);
 
-static void Api_DelWork(API_WORK_ITEM *work_item);
+static void Api_DelWork(API_WORK_ITEM* work_item);
 
 
 //---------------------------------------------------------------------------
 
 
-static NTSTATUS Api_GetVersion(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Api_GetVersion(PROCESS* proc, ULONG64* parms);
 
-static NTSTATUS Api_LogMessage(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Api_LogMessage(PROCESS* proc, ULONG64* parms);
 
-static NTSTATUS Api_GetWork(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Api_GetWork(PROCESS* proc, ULONG64* parms);
 
-static NTSTATUS Api_GetHomePath(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Api_GetHomePath(PROCESS* proc, ULONG64* parms);
 
-static NTSTATUS Api_SetServicePort(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Api_SetServicePort(PROCESS* proc, ULONG64* parms);
 
 
 //---------------------------------------------------------------------------
 
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (INIT, Api_Init)
-#pragma alloc_text (INIT, Api_SetFunction)
+	#pragma alloc_text(INIT, Api_Init)
+	#pragma alloc_text(INIT, Api_SetFunction)
 #endif // ALLOC_PRAGMA
 
 
@@ -80,13 +76,13 @@ static NTSTATUS Api_SetServicePort(PROCESS *proc, ULONG64 *parms);
 //---------------------------------------------------------------------------
 
 
-static P_Api_Function *Api_Functions = NULL;
+static P_Api_Function* Api_Functions = NULL;
 
-static DEVICE_OBJECT *Api_DeviceObject = NULL;
+static DEVICE_OBJECT* Api_DeviceObject = NULL;
 
-static FAST_IO_DISPATCH *Api_FastIoDispatch = NULL;
+static FAST_IO_DISPATCH* Api_FastIoDispatch = NULL;
 
-static void *Api_ServicePortObject = NULL;
+static void* Api_ServicePortObject = NULL;
 
 volatile HANDLE Api_ServiceProcessId = NULL;
 
@@ -105,86 +101,88 @@ static volatile LONG Api_UseCount = -1;
 
 _FX BOOLEAN Api_Init(void)
 {
-    NTSTATUS status;
-    UNICODE_STRING uni;
+	NTSTATUS status;
+	UNICODE_STRING uni;
 
-    //
-    // initialize work list
-    //
+	//
+	// initialize work list
+	//
 
-    List_Init(&Api_WorkList);
+	List_Init(&Api_WorkList);
 
-    if (! Mem_GetLockResource(&Api_LockResource, TRUE))
-        return FALSE;
+	if (!Mem_GetLockResource(&Api_LockResource, TRUE))
+	{
+		return FALSE;
+	}
 
-    Api_WorkListInitialized = TRUE;
+	Api_WorkListInitialized = TRUE;
 
-    //
-    // initialize Fast IO dispatch pointers
-    //
+	//
+	// initialize Fast IO dispatch pointers
+	//
 
-    Api_FastIoDispatch = ExAllocatePoolWithTag(
-                            NonPagedPool, sizeof(FAST_IO_DISPATCH), tzuk);
-    if (! Api_FastIoDispatch) {
-        Log_Status(MSG_API_DEVICE, 0, STATUS_INSUFFICIENT_RESOURCES);
-        return FALSE;
-    }
+	Api_FastIoDispatch = ExAllocatePoolWithTag(NonPagedPool, sizeof(FAST_IO_DISPATCH), tzuk);
+	if (!Api_FastIoDispatch)
+	{
+		Log_Status(MSG_API_DEVICE, 0, STATUS_INSUFFICIENT_RESOURCES);
+		return FALSE;
+	}
 
-    memzero(Api_FastIoDispatch, sizeof(FAST_IO_DISPATCH));
-    Api_FastIoDispatch->SizeOfFastIoDispatch = sizeof(FAST_IO_DISPATCH);
-    Api_FastIoDispatch->FastIoDeviceControl = Api_FastIo_DEVICE_CONTROL;
+	memzero(Api_FastIoDispatch, sizeof(FAST_IO_DISPATCH));
+	Api_FastIoDispatch->SizeOfFastIoDispatch = sizeof(FAST_IO_DISPATCH);
+	Api_FastIoDispatch->FastIoDeviceControl  = Api_FastIo_DEVICE_CONTROL;
 
-    Driver_Object->FastIoDispatch = Api_FastIoDispatch;
+	Driver_Object->FastIoDispatch = Api_FastIoDispatch;
 
-    //
-    // initialize IRP dispatch pointers
-    //
+	//
+	// initialize IRP dispatch pointers
+	//
 
-    Driver_Object->MajorFunction[IRP_MJ_CREATE] = Api_Irp_CREATE;
-    Driver_Object->MajorFunction[IRP_MJ_CLEANUP] = Api_Irp_CLEANUP;
+	Driver_Object->MajorFunction[IRP_MJ_CREATE]  = Api_Irp_CREATE;
+	Driver_Object->MajorFunction[IRP_MJ_CLEANUP] = Api_Irp_CLEANUP;
 
-    //
-    // create device object
-    //
+	//
+	// create device object
+	//
 
-    RtlInitUnicodeString(&uni, API_DEVICE_NAME);
-    status = IoCreateDevice(
-        Driver_Object, 0, &uni,
-        FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE,
-        &Api_DeviceObject);
+	RtlInitUnicodeString(&uni, API_DEVICE_NAME);
+	status = IoCreateDevice(Driver_Object, 0, &uni, FILE_DEVICE_UNKNOWN, FILE_DEVICE_SECURE_OPEN, FALSE, &Api_DeviceObject);
 
-    if (! NT_SUCCESS(status)) {
-        Api_DeviceObject = NULL;
-        Log_Status(MSG_API_DEVICE, 0, status);
-        return FALSE;
-    }
+	if (!NT_SUCCESS(status))
+	{
+		Api_DeviceObject = NULL;
+		Log_Status(MSG_API_DEVICE, 0, status);
+		return FALSE;
+	}
 
-    Api_DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
+	Api_DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 
-    //
-    // set API functions
-    //
+	//
+	// set API functions
+	//
 
-    Api_SetFunction(API_GET_VERSION,        Api_GetVersion);
-    Api_SetFunction(API_GET_WORK,           Api_GetWork);
-    Api_SetFunction(API_LOG_MESSAGE,        Api_LogMessage);
-    Api_SetFunction(API_GET_HOME_PATH,      Api_GetHomePath);
-    Api_SetFunction(API_SET_SERVICE_PORT,   Api_SetServicePort);
+	Api_SetFunction(API_GET_VERSION, Api_GetVersion);
+	Api_SetFunction(API_GET_WORK, Api_GetWork);
+	Api_SetFunction(API_LOG_MESSAGE, Api_LogMessage);
+	Api_SetFunction(API_GET_HOME_PATH, Api_GetHomePath);
+	Api_SetFunction(API_SET_SERVICE_PORT, Api_SetServicePort);
 
-    Api_SetFunction(API_UNLOAD_DRIVER,      Driver_Api_Unload);
+	Api_SetFunction(API_UNLOAD_DRIVER, Driver_Api_Unload);
 
-    Api_SetFunction(API_HOOK_TRAMP,         Hook_Api_Tramp);
+	Api_SetFunction(API_HOOK_TRAMP, Hook_Api_Tramp);
 
-    if ((! Api_Functions) || (Api_Functions == (void *)-1))
-        return FALSE;
+	if ((!Api_Functions) || (Api_Functions == (void*)-1))
+	{
+		return FALSE;
+	}
 
-    //
-    // indicate API is ready for use
-    //
+	//
+	// indicate API is ready for use
+	//
 
-    InterlockedExchange(&Api_UseCount, 0);
+	InterlockedExchange(&Api_UseCount, 0);
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -195,36 +193,42 @@ _FX BOOLEAN Api_Init(void)
 
 _FX void Api_Unload(void)
 {
-    API_WORK_ITEM *work_item;
+	API_WORK_ITEM* work_item;
 
-    if (Api_DeviceObject) {
-        IoDeleteDevice(Api_DeviceObject);
-        Api_DeviceObject = NULL;
-    }
+	if (Api_DeviceObject)
+	{
+		IoDeleteDevice(Api_DeviceObject);
+		Api_DeviceObject = NULL;
+	}
 
-    if (Api_FastIoDispatch) {
-        ExFreePoolWithTag(Api_FastIoDispatch, tzuk);
-        Api_FastIoDispatch = NULL;
-    }
+	if (Api_FastIoDispatch)
+	{
+		ExFreePoolWithTag(Api_FastIoDispatch, tzuk);
+		Api_FastIoDispatch = NULL;
+	}
 
-    if (Api_WorkListInitialized) {
+	if (Api_WorkListInitialized)
+	{
+		while (1)
+		{
+			work_item = List_Head(&Api_WorkList);
+			if (!work_item)
+			{
+				break;
+			}
+			Api_DelWork(work_item);
+		}
 
-        while (1) {
-            work_item = List_Head(&Api_WorkList);
-            if (! work_item)
-                break;
-            Api_DelWork(work_item);
-        }
+		Mem_FreeLockResource(&Api_LockResource);
 
-        Mem_FreeLockResource(&Api_LockResource);
+		Api_WorkListInitialized = FALSE;
+	}
 
-        Api_WorkListInitialized = FALSE;
-    }
-
-    if (Api_ServicePortObject) {
-        ObDereferenceObject(Api_ServicePortObject);
-        Api_ServicePortObject = NULL;
-    }
+	if (Api_ServicePortObject)
+	{
+		ObDereferenceObject(Api_ServicePortObject);
+		Api_ServicePortObject = NULL;
+	}
 }
 
 
@@ -235,22 +239,25 @@ _FX void Api_Unload(void)
 
 _FX void Api_SetFunction(ULONG func_code, P_Api_Function func_ptr)
 {
-    if (! Api_Functions) {
+	if (!Api_Functions)
+	{
+		ULONG len     = (API_LAST - API_FIRST - 1) * sizeof(P_Api_Function);
+		Api_Functions = Mem_AllocEx(Driver_Pool, len, TRUE);
 
-        ULONG len = (API_LAST - API_FIRST - 1) * sizeof(P_Api_Function);
-        Api_Functions = Mem_AllocEx(Driver_Pool, len, TRUE);
+		if (Api_Functions)
+		{
+			memzero(Api_Functions, len);
+		}
+		else
+		{
+			Api_Functions = (void*)-1;
+		}
+	}
 
-        if (Api_Functions)
-            memzero(Api_Functions, len);
-        else
-            Api_Functions = (void *)-1;
-    }
-
-    if ((Api_Functions != (void *)-1) &&
-            (func_code > API_FIRST) && (func_code < API_LAST)) {
-
-        Api_Functions[func_code - API_FIRST - 1] = func_ptr;
-    }
+	if ((Api_Functions != (void*)-1) && (func_code > API_FIRST) && (func_code < API_LAST))
+	{
+		Api_Functions[func_code - API_FIRST - 1] = func_ptr;
+	}
 }
 
 
@@ -261,12 +268,12 @@ _FX void Api_SetFunction(ULONG func_code, P_Api_Function func_ptr)
 
 _FX KIRQL Api_EnterCriticalSection(void)
 {
-    KIRQL irql;
+	KIRQL irql;
 
-    KeRaiseIrql(APC_LEVEL, &irql);
-    ExAcquireResourceExclusiveLite(Api_LockResource, TRUE);
+	KeRaiseIrql(APC_LEVEL, &irql);
+	ExAcquireResourceExclusiveLite(Api_LockResource, TRUE);
 
-    return irql;
+	return irql;
 }
 
 
@@ -277,8 +284,8 @@ _FX KIRQL Api_EnterCriticalSection(void)
 
 _FX void Api_LeaveCriticalSection(KIRQL oldirql)
 {
-    ExReleaseResourceLite(Api_LockResource);
-    KeLowerIrql(oldirql);
+	ExReleaseResourceLite(Api_LockResource);
+	KeLowerIrql(oldirql);
 }
 
 
@@ -289,24 +296,26 @@ _FX void Api_LeaveCriticalSection(KIRQL oldirql)
 
 _FX BOOLEAN Api_Disable(void)
 {
-    BOOLEAN CanDisable = FALSE;
+	BOOLEAN CanDisable = FALSE;
 
-    if (Api_DeviceObject) {
+	if (Api_DeviceObject)
+	{
+		//
+		// disable the api device only if it is currently in use by a
+		// single client -- typically that's KmdUtil asking to stop SbieDrv
+		//
 
-        //
-        // disable the api device only if it is currently in use by a
-        // single client -- typically that's KmdUtil asking to stop SbieDrv
-        //
+		KIRQL irql = Api_EnterCriticalSection();
 
-        KIRQL irql = Api_EnterCriticalSection();
+		if (InterlockedCompareExchange(&Api_UseCount, -1, 1) == 1)
+		{
+			CanDisable = TRUE;
+		}
 
-        if (InterlockedCompareExchange(&Api_UseCount, -1, 1) == 1)
-            CanDisable = TRUE;
+		Api_LeaveCriticalSection(irql);
+	}
 
-        Api_LeaveCriticalSection(irql);
-    }
-
-    return CanDisable;
+	return CanDisable;
 }
 
 
@@ -315,13 +324,13 @@ _FX BOOLEAN Api_Disable(void)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_Irp_Finish(IRP *irp, NTSTATUS status)
+_FX NTSTATUS Api_Irp_Finish(IRP* irp, NTSTATUS status)
 {
-    irp->IoStatus.Status = status;
-    irp->IoStatus.Information = 0;
-    IoCompleteRequest(irp, IO_NO_INCREMENT);
+	irp->IoStatus.Status      = status;
+	irp->IoStatus.Information = 0;
+	IoCompleteRequest(irp, IO_NO_INCREMENT);
 
-    return status;
+	return status;
 }
 
 
@@ -330,20 +339,23 @@ _FX NTSTATUS Api_Irp_Finish(IRP *irp, NTSTATUS status)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_Irp_CREATE(DEVICE_OBJECT *device_object, IRP *irp)
+_FX NTSTATUS Api_Irp_CREATE(DEVICE_OBJECT* device_object, IRP* irp)
 {
-    NTSTATUS status;
-    KIRQL irql = Api_EnterCriticalSection();
+	NTSTATUS status;
+	KIRQL irql = Api_EnterCriticalSection();
 
-    if (Api_UseCount == -1)
-        status = Api_Irp_Finish(irp, STATUS_NOT_SUPPORTED);
-    else {
-        InterlockedIncrement(&Api_UseCount);
-        status = Api_Irp_Finish(irp, STATUS_SUCCESS);
-    }
+	if (Api_UseCount == -1)
+	{
+		status = Api_Irp_Finish(irp, STATUS_NOT_SUPPORTED);
+	}
+	else
+	{
+		InterlockedIncrement(&Api_UseCount);
+		status = Api_Irp_Finish(irp, STATUS_SUCCESS);
+	}
 
-    Api_LeaveCriticalSection(irql);
-    return status;
+	Api_LeaveCriticalSection(irql);
+	return status;
 }
 
 
@@ -352,18 +364,19 @@ _FX NTSTATUS Api_Irp_CREATE(DEVICE_OBJECT *device_object, IRP *irp)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_Irp_CLEANUP(DEVICE_OBJECT *device_object, IRP *irp)
+_FX NTSTATUS Api_Irp_CLEANUP(DEVICE_OBJECT* device_object, IRP* irp)
 {
-    NTSTATUS status;
-    KIRQL irql = Api_EnterCriticalSection();
+	NTSTATUS status;
+	KIRQL irql = Api_EnterCriticalSection();
 
-    if (Api_UseCount != -1) {
-        InterlockedDecrement(&Api_UseCount);
-    }
-    status = Api_Irp_Finish(irp, STATUS_SUCCESS);
+	if (Api_UseCount != -1)
+	{
+		InterlockedDecrement(&Api_UseCount);
+	}
+	status = Api_Irp_Finish(irp, STATUS_SUCCESS);
 
-    Api_LeaveCriticalSection(irql);
-    return status;
+	Api_LeaveCriticalSection(irql);
+	return status;
 }
 
 
@@ -372,154 +385,153 @@ _FX NTSTATUS Api_Irp_CLEANUP(DEVICE_OBJECT *device_object, IRP *irp)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Api_FastIo_DEVICE_CONTROL(
-    FILE_OBJECT *FileObject, BOOLEAN Wait,
-    void *InputBuffer, ULONG InputBufferLength,
-    void *OutputBuffer, ULONG OutputBufferLength,
-    ULONG IoControlCode, IO_STATUS_BLOCK *IoStatus,
-    DEVICE_OBJECT *DeviceObject)
+_FX BOOLEAN Api_FastIo_DEVICE_CONTROL(FILE_OBJECT* FileObject, BOOLEAN Wait, void* InputBuffer, ULONG InputBufferLength, void* OutputBuffer, ULONG OutputBufferLength, ULONG IoControlCode, IO_STATUS_BLOCK* IoStatus, DEVICE_OBJECT* DeviceObject)
 {
-    NTSTATUS status;
-    ULONG buf_len, func_code;
-    ULONG64 *buf;
-    ULONG64 user_args[API_NUM_ARGS];
-    PROCESS *proc;
-    P_Api_Function func_ptr;
-    BOOLEAN ApcsDisabled;
+	NTSTATUS status;
+	ULONG buf_len, func_code;
+	ULONG64* buf;
+	ULONG64 user_args[API_NUM_ARGS];
+	PROCESS* proc;
+	P_Api_Function func_ptr;
+	BOOLEAN ApcsDisabled;
 
-    //
-    // SeFilterToken in kernel mode
-    //
+	//
+	// SeFilterToken in kernel mode
+	//
 
-    if (ExGetPreviousMode() == KernelMode && IoControlCode == API_SBIEDRV_FILTERTOKEN_CTLCODE)
-    {
-        Sbie_SeFilterTokenArg* arg = (Sbie_SeFilterTokenArg *)InputBuffer;
+	if (ExGetPreviousMode() == KernelMode && IoControlCode == API_SBIEDRV_FILTERTOKEN_CTLCODE)
+	{
+		Sbie_SeFilterTokenArg* arg = (Sbie_SeFilterTokenArg*)InputBuffer;
 
-        if (InputBufferLength != sizeof(Sbie_SeFilterTokenArg))
-        {
-            IoStatus->Status = STATUS_INFO_LENGTH_MISMATCH;
-            *arg->status = STATUS_INFO_LENGTH_MISMATCH;
-            return TRUE;
-        }
+		if (InputBufferLength != sizeof(Sbie_SeFilterTokenArg))
+		{
+			IoStatus->Status = STATUS_INFO_LENGTH_MISMATCH;
+			*arg->status     = STATUS_INFO_LENGTH_MISMATCH;
+			return TRUE;
+		}
 
-        *arg->status = SeFilterToken(arg->ExistingToken, arg->Flags, arg->SidsToDisable, arg->PrivilegesToDelete, arg->RestrictedSids, arg->NewToken);
+		*arg->status = SeFilterToken(arg->ExistingToken, arg->Flags, arg->SidsToDisable, arg->PrivilegesToDelete, arg->RestrictedSids, arg->NewToken);
 
-        return TRUE;
-    }
-    else if (ExGetPreviousMode() == KernelMode && IoControlCode == API_SBIEDRV_PFILTERTOKEN_CTLCODE)
-    {
-        Sbie_SepFilterTokenArg* arg = (Sbie_SepFilterTokenArg *)InputBuffer;
+		return TRUE;
+	}
+	else if (ExGetPreviousMode() == KernelMode && IoControlCode == API_SBIEDRV_PFILTERTOKEN_CTLCODE)
+	{
+		Sbie_SepFilterTokenArg* arg = (Sbie_SepFilterTokenArg*)InputBuffer;
 
-        if (InputBufferLength != sizeof(Sbie_SepFilterTokenArg))
-        {
-            IoStatus->Status = STATUS_INFO_LENGTH_MISMATCH;
-            *arg->status = STATUS_INFO_LENGTH_MISMATCH;
-            return TRUE;
-        }
+		if (InputBufferLength != sizeof(Sbie_SepFilterTokenArg))
+		{
+			IoStatus->Status = STATUS_INFO_LENGTH_MISMATCH;
+			*arg->status     = STATUS_INFO_LENGTH_MISMATCH;
+			return TRUE;
+		}
 
-        *arg->status = Sbie_SepFilterTokenHandler(arg->TokenObject, arg->SidCount, arg->SidPtr, arg->LengthIncrease, arg->NewToken);
+		*arg->status = Sbie_SepFilterTokenHandler(arg->TokenObject, arg->SidCount, arg->SidPtr, arg->LengthIncrease, arg->NewToken);
 
-        return TRUE;
-    }
+		return TRUE;
+	}
 
 
-    //
-    // we only handle direct invocations by user-mode callers at low irql
-    //
+	//
+	// we only handle direct invocations by user-mode callers at low irql
+	//
 
-    IoStatus->Information = 0;
+	IoStatus->Information = 0;
 
-    if (KeGetCurrentIrql() != PASSIVE_LEVEL
-                                    || ExGetPreviousMode() != UserMode) {
+	if (KeGetCurrentIrql() != PASSIVE_LEVEL || ExGetPreviousMode() != UserMode)
+	{
+		IoStatus->Status = STATUS_INVALID_LEVEL;
+		return TRUE;
+	}
 
-        IoStatus->Status = STATUS_INVALID_LEVEL;
-        return TRUE;
-    }
+	//
+	// get pointer to user buffer and length
+	//
 
-    //
-    // get pointer to user buffer and length
-    //
+	buf = NULL;
 
-    buf = NULL;
+	if (IoControlCode == API_SBIEDRV_CTLCODE)
+	{
+		buf_len = InputBufferLength;
+		if (buf_len >= sizeof(ULONG64) && buf_len <= sizeof(ULONG64) * API_NUM_ARGS)
+		{
+			buf = InputBuffer;
+		}
+	}
 
-    if (IoControlCode == API_SBIEDRV_CTLCODE) {
+	if (!buf)
+	{
+		IoStatus->Status = STATUS_INVALID_DEVICE_REQUEST;
+		return TRUE;
+	}
 
-        buf_len = InputBufferLength;
-        if (buf_len >= sizeof(ULONG64)
-                            && buf_len <= sizeof(ULONG64) * API_NUM_ARGS)
-            buf = InputBuffer;
-    }
+	//
+	// find calling process
+	//
 
-    if (! buf) {
+	ApcsDisabled = KeAreApcsDisabled();
 
-        IoStatus->Status = STATUS_INVALID_DEVICE_REQUEST;
-        return TRUE;
-    }
+	if (PsGetCurrentProcessId() == Api_ServiceProcessId)
+	{
+		proc = NULL;
+	}
+	else
+	{
+		proc = Process_Find(NULL, NULL);
+		if (proc == PROCESS_TERMINATED)
+		{
+			IoStatus->Status = STATUS_PROCESS_IS_TERMINATING;
+			return TRUE;
+		}
+	}
 
-    //
-    // find calling process
-    //
+	//
+	// capture parameter and call function
+	//
 
-    ApcsDisabled = KeAreApcsDisabled();
+	func_code = 0;
+	func_ptr  = NULL;
 
-    if (PsGetCurrentProcessId() == Api_ServiceProcessId)
-        proc = NULL;
-    else {
+	__try
+	{
+		ProbeForRead(buf, sizeof(ULONG64) * API_NUM_ARGS, sizeof(ULONG64));
 
-        proc = Process_Find(NULL, NULL);
-        if (proc == PROCESS_TERMINATED) {
+		memzero(user_args, sizeof(ULONG64) * API_NUM_ARGS);
+		memcpy(user_args, buf, buf_len);
 
-            IoStatus->Status = STATUS_PROCESS_IS_TERMINATING;
-            return TRUE;
-        }
-    }
+		func_code = (ULONG)user_args[0];
 
-    //
-    // capture parameter and call function
-    //
+		if (func_code > API_FIRST && func_code < API_LAST)
+		{
+			func_ptr = Api_Functions[func_code - API_FIRST - 1];
+		}
 
-    func_code = 0;
-    func_ptr = NULL;
+		if (func_ptr)
+		{
+			status = func_ptr(proc, user_args);
+		}
+		else
+		{
+			status = STATUS_INVALID_DEVICE_REQUEST;
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-    __try {
-
-        ProbeForRead(
-            buf, sizeof(ULONG64) * API_NUM_ARGS, sizeof(ULONG64));
-
-        memzero(user_args, sizeof(ULONG64) * API_NUM_ARGS);
-        memcpy(user_args, buf, buf_len);
-
-        func_code = (ULONG)user_args[0];
-
-        if (func_code > API_FIRST && func_code < API_LAST)
-            func_ptr = Api_Functions[func_code - API_FIRST - 1];
-
-        if (func_ptr) {
-
-            status = func_ptr(proc, user_args);
-
-        } else
-            status = STATUS_INVALID_DEVICE_REQUEST;
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    //
-    // make sure IRQL and APCs were restored correctly
-    //
+	//
+	// make sure IRQL and APCs were restored correctly
+	//
 
 #ifdef _DEBUG
-    if (KeGetCurrentIrql() != PASSIVE_LEVEL
-                                || (KeAreApcsDisabled() ^ ApcsDisabled)) {
-
-        KeBugCheckEx(DRIVER_CORRUPTED_MMPOOL,
-                     tzuk, KeGetCurrentIrql(), 0x123400, func_code);
-    }
+	if (KeGetCurrentIrql() != PASSIVE_LEVEL || (KeAreApcsDisabled() ^ ApcsDisabled))
+	{
+		KeBugCheckEx(DRIVER_CORRUPTED_MMPOOL, tzuk, KeGetCurrentIrql(), 0x123400, func_code);
+	}
 #endif
 
-    IoStatus->Status = status;
-    return TRUE;
+	IoStatus->Status = status;
+	return TRUE;
 }
 
 
@@ -528,19 +540,21 @@ _FX BOOLEAN Api_FastIo_DEVICE_CONTROL(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_GetVersion(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Api_GetVersion(PROCESS* proc, ULONG64* parms)
 {
-    API_GET_VERSION_ARGS *args = (API_GET_VERSION_ARGS *)parms;
-    size_t len;
-    WCHAR *pwcResult = args->string.val;
+	API_GET_VERSION_ARGS* args = (API_GET_VERSION_ARGS*)parms;
+	size_t len;
+	WCHAR* pwcResult = args->string.val;
 
-    if (pwcResult == NULL)
-        return STATUS_INVALID_PARAMETER;
-    len = (wcslen(Driver_Version) + 1) * sizeof(WCHAR);
-    ProbeForWrite(pwcResult, len, sizeof(WCHAR));
-    memcpy(pwcResult, Driver_Version, len);
+	if (pwcResult == NULL)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+	len = (wcslen(Driver_Version) + 1) * sizeof(WCHAR);
+	ProbeForWrite(pwcResult, len, sizeof(WCHAR));
+	memcpy(pwcResult, Driver_Version, len);
 
-    return STATUS_SUCCESS;
+	return STATUS_SUCCESS;
 }
 
 
@@ -549,66 +563,92 @@ _FX NTSTATUS Api_GetVersion(PROCESS *proc, ULONG64 *parms)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_LogMessage(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Api_LogMessage(PROCESS* proc, ULONG64* parms)
 {
-    API_LOG_MESSAGE_ARGS *args = (API_LOG_MESSAGE_ARGS *)parms;
-    NTSTATUS status;
-    ULONG msgid;
-    UNICODE_STRING64 *msgtext;
-    ULONG msgtext_length;
-    WCHAR *msgtext_buffer;
-    POOL *pool;
-    WCHAR *text;
+	API_LOG_MESSAGE_ARGS* args = (API_LOG_MESSAGE_ARGS*)parms;
+	NTSTATUS status;
+	ULONG msgid;
+	UNICODE_STRING64* msgtext;
+	ULONG msgtext_length;
+	WCHAR* msgtext_buffer;
+	POOL* pool;
+	WCHAR* text;
 
-    msgid = args->msgid.val;
-    if (msgid >= 2101 && msgid <= 2199)
-        msgid = msgid - 2101 + MSG_2101;
-    else if (msgid >= 2201 && msgid <= 2299)
-        msgid = msgid - 2201 + MSG_2201;
-    else if (msgid >= 2301 && msgid <= 2399)
-        msgid = msgid - 2301 + MSG_2301;
-    else if (msgid == 1314)
-        msgid = MSG_1314;
-    else
-        msgid = MSG_2301;
+	msgid = args->msgid.val;
+	if (msgid >= 2101 && msgid <= 2199)
+	{
+		msgid = msgid - 2101 + MSG_2101;
+	}
+	else if (msgid >= 2201 && msgid <= 2299)
+	{
+		msgid = msgid - 2201 + MSG_2201;
+	}
+	else if (msgid >= 2301 && msgid <= 2399)
+	{
+		msgid = msgid - 2301 + MSG_2301;
+	}
+	else if (msgid == 1314)
+	{
+		msgid = MSG_1314;
+	}
+	else
+	{
+		msgid = MSG_2301;
+	}
 
-    msgtext = args->msgtext.val;
-    if (! msgtext)
-        return STATUS_INVALID_PARAMETER;
-    ProbeForRead(msgtext, sizeof(UNICODE_STRING64), sizeof(ULONG));
+	msgtext = args->msgtext.val;
+	if (!msgtext)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+	ProbeForRead(msgtext, sizeof(UNICODE_STRING64), sizeof(ULONG));
 
-    msgtext_length = msgtext->Length;
-    if (msgtext_length > API_LOG_MESSAGE_MAX_LEN)
-        msgtext_length = API_LOG_MESSAGE_MAX_LEN;
+	msgtext_length = msgtext->Length;
+	if (msgtext_length > API_LOG_MESSAGE_MAX_LEN)
+	{
+		msgtext_length = API_LOG_MESSAGE_MAX_LEN;
+	}
 
-    msgtext_buffer = (WCHAR *)msgtext->Buffer;
-    if (! msgtext_buffer)
-        return STATUS_INVALID_PARAMETER;
-    ProbeForRead(msgtext_buffer, msgtext_length, sizeof(WCHAR));
+	msgtext_buffer = (WCHAR*)msgtext->Buffer;
+	if (!msgtext_buffer)
+	{
+		return STATUS_INVALID_PARAMETER;
+	}
+	ProbeForRead(msgtext_buffer, msgtext_length, sizeof(WCHAR));
 
-    if (proc)
-        pool = proc->pool;
-    else
-        pool = Driver_Pool;
-    text = Mem_Alloc(pool, msgtext_length + 8);
-    if (! text)
-        return STATUS_INSUFFICIENT_RESOURCES;
+	if (proc)
+	{
+		pool = proc->pool;
+	}
+	else
+	{
+		pool = Driver_Pool;
+	}
+	text = Mem_Alloc(pool, msgtext_length + 8);
+	if (!text)
+	{
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
 
-    __try {
-        memcpy(text, msgtext_buffer, msgtext_length);
-        status = STATUS_SUCCESS;
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
+	__try
+	{
+		memcpy(text, msgtext_buffer, msgtext_length);
+		status = STATUS_SUCCESS;
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-    if (status == STATUS_SUCCESS) {
-        text[msgtext_length / sizeof(WCHAR)] = L'\0';
-        Log_Popup_Msg(msgid, text, NULL, args->session_id.val);
-    }
+	if (status == STATUS_SUCCESS)
+	{
+		text[msgtext_length / sizeof(WCHAR)] = L'\0';
+		Log_Popup_Msg(msgid, text, NULL, args->session_id.val);
+	}
 
-    Mem_Free(text, msgtext_length + 8);
+	Mem_Free(text, msgtext_length + 8);
 
-    return status;
+	return status;
 }
 
 
@@ -619,18 +659,18 @@ _FX NTSTATUS Api_LogMessage(PROCESS *proc, ULONG64 *parms)
 
 _FX void Api_ResetServiceProcess(void)
 {
-    if (Api_ServicePortObject) {
+	if (Api_ServicePortObject)
+	{
+		KIRQL irql = Api_EnterCriticalSection();
 
-        KIRQL irql = Api_EnterCriticalSection();
+		void* Old = InterlockedExchangePointer(&Api_ServicePortObject, NULL);
 
-        void *Old = InterlockedExchangePointer(&Api_ServicePortObject, NULL);
+		ObDereferenceObject(Old);
 
-        ObDereferenceObject(Old);
+		Api_LeaveCriticalSection(irql);
+	}
 
-        Api_LeaveCriticalSection(irql);
-    }
-
-    InterlockedExchangePointer(&Api_ServiceProcessId, NULL);
+	InterlockedExchangePointer(&Api_ServiceProcessId, NULL);
 }
 
 
@@ -639,68 +679,80 @@ _FX void Api_ResetServiceProcess(void)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Api_SendServiceMessage(ULONG msgid, ULONG data_len, void *data)
+_FX BOOLEAN Api_SendServiceMessage(ULONG msgid, ULONG data_len, void* data)
 {
-    UCHAR space[MAX_PORTMSG_LENGTH];
-    PORT_MESSAGE *msg = (PORT_MESSAGE *)space;
-    void *PortObject;
-    KIRQL irql;
-    BOOLEAN ok;
+	UCHAR space[MAX_PORTMSG_LENGTH];
+	PORT_MESSAGE* msg = (PORT_MESSAGE*)space;
+	void* PortObject;
+	KIRQL irql;
+	BOOLEAN ok;
 
-    //
-    // abort if we know in advance that we won't have a service port
-    //
+	//
+	// abort if we know in advance that we won't have a service port
+	//
 
-    if (! Api_ServiceProcessId)
-        return FALSE;
+	if (!Api_ServiceProcessId)
+	{
+		return FALSE;
+	}
 
-    //
-    // prepare the request message structure.  the data area of the message
-    // follows the PORT_MESSAGE header.  the first ULONG is the msgid field,
-    // followed by the rest of the caller data
-    //
+	//
+	// prepare the request message structure.  the data area of the message
+	// follows the PORT_MESSAGE header.  the first ULONG is the msgid field,
+	// followed by the rest of the caller data
+	//
 
-    if (data_len > API_MAX_SVC_DATA_LEN)
-        return FALSE;
+	if (data_len > API_MAX_SVC_DATA_LEN)
+	{
+		return FALSE;
+	}
 
-    memzero(msg, sizeof(PORT_MESSAGE));
-    msg->u1.s1.DataLength = (USHORT)(data_len + sizeof(ULONG));
-    msg->u1.s1.TotalLength = msg->u1.s1.DataLength + sizeof(PORT_MESSAGE);
-    msg->u2.s2.Type = LPC_DATAGRAM;
+	memzero(msg, sizeof(PORT_MESSAGE));
+	msg->u1.s1.DataLength  = (USHORT)(data_len + sizeof(ULONG));
+	msg->u1.s1.TotalLength = msg->u1.s1.DataLength + sizeof(PORT_MESSAGE);
+	msg->u2.s2.Type        = LPC_DATAGRAM;
 
-    *(ULONG *)(space + sizeof(PORT_MESSAGE)) = msgid;
-    memcpy(space + sizeof(PORT_MESSAGE) + sizeof(ULONG), data, data_len);
+	*(ULONG*)(space + sizeof(PORT_MESSAGE)) = msgid;
+	memcpy(space + sizeof(PORT_MESSAGE) + sizeof(ULONG), data, data_len);
 
-    //
-    // send the message to SbieSvc on the LPC port
-    //
+	//
+	// send the message to SbieSvc on the LPC port
+	//
 
-    irql = Api_EnterCriticalSection();
+	irql = Api_EnterCriticalSection();
 
-    PortObject = Api_ServicePortObject;
+	PortObject = Api_ServicePortObject;
 
-    if (PortObject)
-        ObReferenceObject(PortObject);
+	if (PortObject)
+	{
+		ObReferenceObject(PortObject);
+	}
 
-    Api_LeaveCriticalSection(irql);
+	Api_LeaveCriticalSection(irql);
 
-    if (PortObject) {
+	if (PortObject)
+	{
+		// port must have a name, or LpcRequestPort will fail
+		// see also core/svc/driverassist.cpp
+		NTSTATUS status = LpcRequestPort(PortObject, msg);
 
-        // port must have a name, or LpcRequestPort will fail
-        // see also core/svc/driverassist.cpp
-        NTSTATUS status = LpcRequestPort(PortObject, msg);
+		ObDereferenceObject(PortObject);
 
-        ObDereferenceObject(PortObject);
+		if (NT_SUCCESS(status))
+		{
+			ok = TRUE;
+		}
+		else
+		{
+			ok = FALSE;
+		}
+	}
+	else
+	{
+		ok = FALSE;
+	}
 
-        if (NT_SUCCESS(status))
-            ok = TRUE;
-        else
-            ok = FALSE;
-
-    } else
-        ok = FALSE;
-
-    return ok;
+	return ok;
 }
 
 
@@ -709,31 +761,35 @@ _FX BOOLEAN Api_SendServiceMessage(ULONG msgid, ULONG data_len, void *data)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Api_AddWork(API_WORK_ITEM *work_item)
+_FX BOOLEAN Api_AddWork(API_WORK_ITEM* work_item)
 {
-    KIRQL irql;
+	KIRQL irql;
 
-    if (! Api_WorkListInitialized)
-        return FALSE;
+	if (!Api_WorkListInitialized)
+	{
+		return FALSE;
+	}
 
-    //
-    // add work at the end of the work list
-    //
+	//
+	// add work at the end of the work list
+	//
 
-    irql = Api_EnterCriticalSection();
+	irql = Api_EnterCriticalSection();
 
-    List_Insert_After(&Api_WorkList, NULL, work_item);
+	List_Insert_After(&Api_WorkList, NULL, work_item);
 
-    Api_LeaveCriticalSection(irql);
+	Api_LeaveCriticalSection(irql);
 
-    //
-    // set the work event so SbieSvc wakes up
-    //
+	//
+	// set the work event so SbieSvc wakes up
+	//
 
-    if (work_item->session_id != -1)
-        return TRUE;
+	if (work_item->session_id != -1)
+	{
+		return TRUE;
+	}
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -742,12 +798,12 @@ _FX BOOLEAN Api_AddWork(API_WORK_ITEM *work_item)
 //---------------------------------------------------------------------------
 
 
-_FX void Api_DelWork(API_WORK_ITEM *work_item)
+_FX void Api_DelWork(API_WORK_ITEM* work_item)
 {
-    // this assumes Api_WorkList is already locked using Api_Lock
+	// this assumes Api_WorkList is already locked using Api_Lock
 
-    List_Remove(&Api_WorkList, work_item);
-    Mem_Free(work_item, work_item->length);
+	List_Remove(&Api_WorkList, work_item);
+	Mem_Free(work_item, work_item->length);
 }
 
 
@@ -756,85 +812,94 @@ _FX void Api_DelWork(API_WORK_ITEM *work_item)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_GetWork(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Api_GetWork(PROCESS* proc, ULONG64* parms)
 {
-    API_GET_WORK_ARGS *args = (API_GET_WORK_ARGS *)parms;
-    NTSTATUS status;
-    void *buffer_ptr;
-    ULONG buffer_len;
-    ULONG *result_len;
-    ULONG length;
-    API_WORK_ITEM *work_item;
-    KIRQL irql;
+	API_GET_WORK_ARGS* args = (API_GET_WORK_ARGS*)parms;
+	NTSTATUS status;
+	void* buffer_ptr;
+	ULONG buffer_len;
+	ULONG* result_len;
+	ULONG length;
+	API_WORK_ITEM* work_item;
+	KIRQL irql;
 
-    //
-    // caller must not be sandboxed, and caller has to be SbieSvc
-    // if session parameter is -1
-    //
+	//
+	// caller must not be sandboxed, and caller has to be SbieSvc
+	// if session parameter is -1
+	//
 
-    if (proc)
-        return STATUS_NOT_IMPLEMENTED;
+	if (proc)
+	{
+		return STATUS_NOT_IMPLEMENTED;
+	}
 
-    if (args->session_id.val == -1 &&
-            PsGetCurrentProcessId() != Api_ServiceProcessId)
-        return STATUS_ACCESS_DENIED;
+	if (args->session_id.val == -1 && PsGetCurrentProcessId() != Api_ServiceProcessId)
+	{
+		return STATUS_ACCESS_DENIED;
+	}
 
-    //
-    // find next work/log item for the session
-    //
+	//
+	// find next work/log item for the session
+	//
 
-    buffer_ptr = args->buffer.val;
-    buffer_len = args->buffer_len.val;
-    result_len = args->result_len_ptr.val;
+	buffer_ptr = args->buffer.val;
+	buffer_len = args->buffer_len.val;
+	result_len = args->result_len_ptr.val;
 
-    irql = Api_EnterCriticalSection();
+	irql = Api_EnterCriticalSection();
 
-    work_item = List_Head(&Api_WorkList);
-    while (work_item) {
-        if (work_item->session_id == args->session_id.val)
-            break;
-        work_item = List_Next(work_item);
-    }
+	work_item = List_Head(&Api_WorkList);
+	while (work_item)
+	{
+		if (work_item->session_id == args->session_id.val)
+		{
+			break;
+		}
+		work_item = List_Next(work_item);
+	}
 
-    __try {
+	__try
+	{
+		if (!work_item)
+		{
+			status = STATUS_NO_MORE_ENTRIES;
+		}
+		else
+		{
+			if (work_item->length <= buffer_len)
+			{
+				length = work_item->length - FIELD_OFFSET(API_WORK_ITEM, type);
+				ProbeForWrite(buffer_ptr, length, sizeof(UCHAR));
+				memcpy(buffer_ptr, &work_item->type, length);
 
-    if (! work_item) {
+				status = STATUS_SUCCESS;
+			}
+			else
+			{
+				length = work_item->length;
+				status = STATUS_BUFFER_TOO_SMALL;
+			}
 
-        status = STATUS_NO_MORE_ENTRIES;
+			if (result_len)
+			{
+				ProbeForWrite(result_len, sizeof(ULONG), sizeof(ULONG));
+				*result_len = length;
+			}
 
-    } else {
+			if (status == STATUS_SUCCESS)
+			{
+				Api_DelWork(work_item);
+			}
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER)
+	{
+		status = GetExceptionCode();
+	}
 
-        if (work_item->length <= buffer_len) {
+	Api_LeaveCriticalSection(irql);
 
-            length = work_item->length
-                   - FIELD_OFFSET(API_WORK_ITEM, type);
-            ProbeForWrite(buffer_ptr, length, sizeof(UCHAR));
-            memcpy(buffer_ptr, &work_item->type, length);
-
-            status = STATUS_SUCCESS;
-
-        } else {
-
-            length = work_item->length;
-            status = STATUS_BUFFER_TOO_SMALL;
-        }
-
-        if (result_len) {
-            ProbeForWrite(result_len, sizeof(ULONG), sizeof(ULONG));
-            *result_len = length;
-        }
-
-        if (status == STATUS_SUCCESS)
-            Api_DelWork(work_item);
-    }
-
-    } __except (EXCEPTION_EXECUTE_HANDLER) {
-        status = GetExceptionCode();
-    }
-
-    Api_LeaveCriticalSection(irql);
-
-    return status;
+	return status;
 }
 
 
@@ -843,32 +908,35 @@ _FX NTSTATUS Api_GetWork(PROCESS *proc, ULONG64 *parms)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_GetHomePath(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Api_GetHomePath(PROCESS* proc, ULONG64* parms)
 {
-    API_GET_HOME_PATH_ARGS *args = (API_GET_HOME_PATH_ARGS *)parms;
-    UNICODE_STRING64 *user_uni;
-    WCHAR *ptr;
-    size_t len;
+	API_GET_HOME_PATH_ARGS* args = (API_GET_HOME_PATH_ARGS*)parms;
+	UNICODE_STRING64* user_uni;
+	WCHAR* ptr;
+	size_t len;
 
-    user_uni = args->nt_path.val;
-    if (user_uni) {
-        ptr = Driver_HomePathNt;
-        len = (wcslen(ptr) + 1) * sizeof(WCHAR);
-        Api_CopyStringToUser(user_uni, ptr, len);
-    }
+	user_uni = args->nt_path.val;
+	if (user_uni)
+	{
+		ptr = Driver_HomePathNt;
+		len = (wcslen(ptr) + 1) * sizeof(WCHAR);
+		Api_CopyStringToUser(user_uni, ptr, len);
+	}
 
-    user_uni = args->dos_path.val;
-    if (user_uni) {
-        ptr = Driver_HomePathDos;
-        if (wcsncmp(ptr, L"\\??\\", 4) == 0)
-            ptr += 4;
-        len = (wcslen(ptr) + 1) * sizeof(WCHAR);
-        Api_CopyStringToUser(user_uni, ptr, len);
-    }
+	user_uni = args->dos_path.val;
+	if (user_uni)
+	{
+		ptr = Driver_HomePathDos;
+		if (wcsncmp(ptr, L"\\??\\", 4) == 0)
+		{
+			ptr += 4;
+		}
+		len = (wcslen(ptr) + 1) * sizeof(WCHAR);
+		Api_CopyStringToUser(user_uni, ptr, len);
+	}
 
-    return STATUS_SUCCESS;
+	return STATUS_SUCCESS;
 }
-
 
 
 //---------------------------------------------------------------------------
@@ -876,63 +944,62 @@ _FX NTSTATUS Api_GetHomePath(PROCESS *proc, ULONG64 *parms)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Api_SetServicePort(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Api_SetServicePort(PROCESS* proc, ULONG64* parms)
 {
-    //
-    // confirm the caller is an unsandboxed system process in
-    // our installation folder, i.e. the Sandboxie service
-    //
+	//
+	// confirm the caller is an unsandboxed system process in
+	// our installation folder, i.e. the Sandboxie service
+	//
 
-    NTSTATUS status = STATUS_ACCESS_DENIED;
+	NTSTATUS status = STATUS_ACCESS_DENIED;
 
-    if ((! proc) && MyIsCallerMyServiceProcess()) {
+	if ((!proc) && MyIsCallerMyServiceProcess())
+	{
+		status = STATUS_SUCCESS;
+	}
 
-        status = STATUS_SUCCESS;
-    }
+	//
+	// take a reference on the specified LPC port object
+	//
 
-    //
-    // take a reference on the specified LPC port object
-    //
+	if (NT_SUCCESS(status))
+	{
+		void *PortObject, *OldObject;
 
-    if (NT_SUCCESS(status)) {
+		HANDLE PortHandle = (HANDLE)(ULONG_PTR)parms[1];
+		if (PortHandle)
+		{
+			status = ObReferenceObjectByHandle(PortHandle, 0, *LpcPortObjectType, KernelMode, &PortObject, NULL);
+		}
+		else
+		{
+			PortObject = NULL;
+			status     = STATUS_SUCCESS;
+		}
 
-        void *PortObject, *OldObject;
+		//
+		// replace the stored port object reference,
+		// release the reference on the old stored port object
+		//
 
-        HANDLE PortHandle = (HANDLE)(ULONG_PTR)parms[1];
-        if (PortHandle) {
+		if (NT_SUCCESS(status))
+		{
+			KIRQL irql = Api_EnterCriticalSection();
 
-            status = ObReferenceObjectByHandle(
-                        PortHandle, 0, *LpcPortObjectType, KernelMode,
-                        &PortObject, NULL);
-        } else {
+			OldObject = InterlockedExchangePointer(&Api_ServicePortObject, PortObject);
 
-            PortObject = NULL;
-            status = STATUS_SUCCESS;
-        }
+			InterlockedExchangePointer(&Api_ServiceProcessId, PsGetCurrentProcessId());
 
-        //
-        // replace the stored port object reference,
-        // release the reference on the old stored port object
-        //
+			Api_LeaveCriticalSection(irql);
 
-        if (NT_SUCCESS(status)) {
+			if (OldObject)
+			{
+				ObDereferenceObject(OldObject);
+			}
+		}
+	}
 
-            KIRQL irql = Api_EnterCriticalSection();
-
-            OldObject = InterlockedExchangePointer(
-                                    &Api_ServicePortObject, PortObject);
-
-            InterlockedExchangePointer(
-                &Api_ServiceProcessId, PsGetCurrentProcessId());
-
-            Api_LeaveCriticalSection(irql);
-
-            if (OldObject)
-                ObDereferenceObject(OldObject);
-        }
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -941,20 +1008,22 @@ _FX NTSTATUS Api_SetServicePort(PROCESS *proc, ULONG64 *parms)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Api_CopyBoxNameFromUser(
-    WCHAR *boxname34, const WCHAR *user_boxname)
+_FX BOOLEAN Api_CopyBoxNameFromUser(WCHAR* boxname34, const WCHAR* user_boxname)
 {
-    wmemzero(boxname34, 34);
-    if (user_boxname) {
-        ProbeForRead((WCHAR *)user_boxname,
-                     sizeof(WCHAR) * 32,
-                     sizeof(UCHAR));
-        if (user_boxname[0])
-            wcsncpy(boxname34, user_boxname, 32);
-    }
-    if (boxname34[0] && Box_IsValidName(boxname34))
-        return TRUE;
-    return FALSE;
+	wmemzero(boxname34, 34);
+	if (user_boxname)
+	{
+		ProbeForRead((WCHAR*)user_boxname, sizeof(WCHAR) * 32, sizeof(UCHAR));
+		if (user_boxname[0])
+		{
+			wcsncpy(boxname34, user_boxname, 32);
+		}
+	}
+	if (boxname34[0] && Box_IsValidName(boxname34))
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 
@@ -963,19 +1032,22 @@ _FX BOOLEAN Api_CopyBoxNameFromUser(
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Api_CopySidStringFromUser(
-    WCHAR *sidstring96, const WCHAR *user_sidstring)
+_FX BOOLEAN Api_CopySidStringFromUser(WCHAR* sidstring96, const WCHAR* user_sidstring)
 {
-    wmemzero(sidstring96, 96);
-    if (user_sidstring) {
-        ProbeForRead(
-            (WCHAR *)user_sidstring, sizeof(WCHAR) * 96, sizeof(UCHAR));
-        if (user_sidstring[0])
-            wcsncpy(sidstring96, user_sidstring, 94);
-    }
-    if (sidstring96[0] == L'S' && sidstring96[1] == L'-')
-        return TRUE;
-    return FALSE;
+	wmemzero(sidstring96, 96);
+	if (user_sidstring)
+	{
+		ProbeForRead((WCHAR*)user_sidstring, sizeof(WCHAR) * 96, sizeof(UCHAR));
+		if (user_sidstring[0])
+		{
+			wcsncpy(sidstring96, user_sidstring, 94);
+		}
+	}
+	if (sidstring96[0] == L'S' && sidstring96[1] == L'-')
+	{
+		return TRUE;
+	}
+	return FALSE;
 }
 
 
@@ -984,22 +1056,29 @@ _FX BOOLEAN Api_CopySidStringFromUser(
 //---------------------------------------------------------------------------
 
 
-_FX void Api_CopyStringToUser(
-    UNICODE_STRING64 *uni, WCHAR *str, size_t len)
+_FX void Api_CopyStringToUser(UNICODE_STRING64* uni, WCHAR* str, size_t len)
 {
-    if (uni) {
-        ProbeForRead(uni, sizeof(UNICODE_STRING64), sizeof(ULONG_PTR));
-        ProbeForWrite(uni, sizeof(UNICODE_STRING64), sizeof(ULONG_PTR));
-        if (len > uni->MaximumLength)
-            ExRaiseStatus(STATUS_BUFFER_TOO_SMALL);
-        else {
-            WCHAR *buf = (WCHAR *)uni->Buffer;
-            ProbeForWrite(buf, len, sizeof(WCHAR));
-            if (len) {
-                memcpy(buf, str, len);
-                uni->Length = (USHORT)len - sizeof(WCHAR);
-            } else
-                uni->Length = 0;
-        }
-    }
+	if (uni)
+	{
+		ProbeForRead(uni, sizeof(UNICODE_STRING64), sizeof(ULONG_PTR));
+		ProbeForWrite(uni, sizeof(UNICODE_STRING64), sizeof(ULONG_PTR));
+		if (len > uni->MaximumLength)
+		{
+			ExRaiseStatus(STATUS_BUFFER_TOO_SMALL);
+		}
+		else
+		{
+			WCHAR* buf = (WCHAR*)uni->Buffer;
+			ProbeForWrite(buf, len, sizeof(WCHAR));
+			if (len)
+			{
+				memcpy(buf, str, len);
+				uni->Length = (USHORT)len - sizeof(WCHAR);
+			}
+			else
+			{
+				uni->Length = 0;
+			}
+		}
+	}
 }

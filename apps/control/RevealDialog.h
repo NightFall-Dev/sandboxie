@@ -26,22 +26,21 @@
 
 class CRevealDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    bool m_modified;
+	bool m_modified;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnCombo();
+	afx_msg void OnCombo();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
+	CRevealDialog(CWnd* pParentWnd);
+	~CRevealDialog();
 
-    CRevealDialog(CWnd *pParentWnd);
-    ~CRevealDialog();
-
-    bool IsModified() const;
+	bool IsModified() const;
 };
 
 

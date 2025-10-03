@@ -29,19 +29,19 @@
 //---------------------------------------------------------------------------
 
 
-enum {
-
-    OBJ_TYPE_UNKNOWN,
-    OBJ_TYPE_DIRECTORY,
-    OBJ_TYPE_FILE,
-    OBJ_TYPE_KEY,
-    OBJ_TYPE_PORT,
-    OBJ_TYPE_EVENT,
-    OBJ_TYPE_MUTANT,
-    OBJ_TYPE_SECTION,
-    OBJ_TYPE_SEMAPHORE,
-    OBJ_TYPE_PROCESS,
-    OBJ_TYPE_LAST
+enum
+{
+	OBJ_TYPE_UNKNOWN,
+	OBJ_TYPE_DIRECTORY,
+	OBJ_TYPE_FILE,
+	OBJ_TYPE_KEY,
+	OBJ_TYPE_PORT,
+	OBJ_TYPE_EVENT,
+	OBJ_TYPE_MUTANT,
+	OBJ_TYPE_SECTION,
+	OBJ_TYPE_SEMAPHORE,
+	OBJ_TYPE_PROCESS,
+	OBJ_TYPE_LAST
 
 } OBJ_TYPE;
 
@@ -55,18 +55,17 @@ BOOLEAN Obj_Init(void);
 
 ULONG Obj_GetObjectType(HANDLE ObjectHandle);
 
-NTSTATUS Obj_GetObjectName(
-    HANDLE ObjectHandle, void *ObjectName, ULONG *Length);
+NTSTATUS Obj_GetObjectName(HANDLE ObjectHandle, void* ObjectName, ULONG* Length);
 
 
 //---------------------------------------------------------------------------
 
 
-ULONG File_NtQueryObjectName(UNICODE_STRING *ObjectName, ULONG MaxLen);
+ULONG File_NtQueryObjectName(UNICODE_STRING* ObjectName, ULONG MaxLen);
 
-ULONG Key_NtQueryObjectName(UNICODE_STRING *ObjectName, ULONG MaxLen);
+ULONG Key_NtQueryObjectName(UNICODE_STRING* ObjectName, ULONG MaxLen);
 
-ULONG Ipc_NtQueryObjectName(UNICODE_STRING *ObjectName, ULONG MaxLen);
+ULONG Ipc_NtQueryObjectName(UNICODE_STRING* ObjectName, ULONG MaxLen);
 
 
 //---------------------------------------------------------------------------

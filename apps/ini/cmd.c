@@ -36,7 +36,7 @@
 //---------------------------------------------------------------------------
 
 
-WCHAR **CmdVerbs;
+WCHAR** CmdVerbs;
 
 
 //---------------------------------------------------------------------------
@@ -44,25 +44,34 @@ WCHAR **CmdVerbs;
 //---------------------------------------------------------------------------
 
 
-WCHAR *CmdEatString(WCHAR *str)
+WCHAR* CmdEatString(WCHAR* str)
 {
-    BOOL quoted = FALSE;
+	BOOL quoted = FALSE;
 
-    while (*str == L' ')
-        ++str;
+	while (*str == L' ')
+	{
+		++str;
+	}
 
-    while (*str) {
-        if (*str == L'\"')
-            quoted = !quoted;
-        else if (*str == L' ' && (! quoted))
-            break;
-        ++str;
-    }
+	while (*str)
+	{
+		if (*str == L'\"')
+		{
+			quoted = !quoted;
+		}
+		else if (*str == L' ' && (!quoted))
+		{
+			break;
+		}
+		++str;
+	}
 
-    while (*str == L' ')
-        ++str;
+	while (*str == L' ')
+	{
+		++str;
+	}
 
-    return str;
+	return str;
 }
 
 
@@ -71,21 +80,26 @@ WCHAR *CmdEatString(WCHAR *str)
 //---------------------------------------------------------------------------
 
 
-WCHAR *CmdCopyString(WCHAR *ptr, WCHAR *ptr2)
+WCHAR* CmdCopyString(WCHAR* ptr, WCHAR* ptr2)
 {
-    WCHAR *copy;
-    ULONG len;
-    while (*ptr == L'\"' || *ptr == L' ')
-        ++ptr;
-    while ((ptr2 > ptr) && (ptr2[-1] == L'\"' || ptr2[-1] == L' '))
-        --ptr2;
-    len = (ULONG)(ULONG_PTR)(ptr2 - ptr);
-    copy = HeapAlloc(GetProcessHeap(), 0, (len + 1) * sizeof(WCHAR));
-    if (copy) {
-        memcpy(copy, ptr, len * sizeof(WCHAR));
-        copy[len] = L'\0';
-    }
-    return copy;
+	WCHAR* copy;
+	ULONG len;
+	while (*ptr == L'\"' || *ptr == L' ')
+	{
+		++ptr;
+	}
+	while ((ptr2 > ptr) && (ptr2[-1] == L'\"' || ptr2[-1] == L' '))
+	{
+		--ptr2;
+	}
+	len  = (ULONG)(ULONG_PTR)(ptr2 - ptr);
+	copy = HeapAlloc(GetProcessHeap(), 0, (len + 1) * sizeof(WCHAR));
+	if (copy)
+	{
+		memcpy(copy, ptr, len * sizeof(WCHAR));
+		copy[len] = L'\0';
+	}
+	return copy;
 }
 
 
@@ -96,63 +110,72 @@ WCHAR *CmdCopyString(WCHAR *ptr, WCHAR *ptr2)
 
 void CmdParse(void)
 {
-    WCHAR **CmdOpts;
-    WCHAR *ptr, *ptr2, *copy;
-    ULONG len;
-    ULONG num_verbs, num_opts;
+	WCHAR** CmdOpts;
+	WCHAR *ptr, *ptr2, *copy;
+	ULONG len;
+	ULONG num_verbs, num_opts;
 
-    len = CMD_MAX_ARGS * 2 * sizeof(ULONG_PTR);
-    CmdVerbs = HeapAlloc(GetProcessHeap(), 0, len);
-    if (! CmdVerbs)
-        return;
-    CmdOpts = CmdVerbs + CMD_MAX_ARGS;
-    num_verbs = num_opts = 0;
+	len      = CMD_MAX_ARGS * 2 * sizeof(ULONG_PTR);
+	CmdVerbs = HeapAlloc(GetProcessHeap(), 0, len);
+	if (!CmdVerbs)
+	{
+		return;
+	}
+	CmdOpts   = CmdVerbs + CMD_MAX_ARGS;
+	num_verbs = num_opts = 0;
 
-    ptr = GetCommandLine();
-    ptr = CmdEatString(ptr);        // skip image name first argument
+	ptr = GetCommandLine();
+	ptr = CmdEatString(ptr); // skip image name first argument
 
-    while (*ptr) {
+	while (*ptr)
+	{
+		ptr2 = CmdEatString(ptr);
+		copy = CmdCopyString(ptr, ptr2);
+		if (!copy)
+		{
+			CmdVerbs = NULL;
+			return;
+		}
 
-        ptr2 = CmdEatString(ptr);
-        copy = CmdCopyString(ptr, ptr2);
-        if (! copy) {
-            CmdVerbs = NULL;
-            return;
-        }
+		if (*copy == L'/')
+		{
+			WCHAR* ptr_co = wcschr(copy, L':');
+			WCHAR* ptr_eq = wcschr(copy, L'=');
+			if (ptr_eq)
+			{
+				if ((!ptr_co) || (ptr_co > ptr_eq))
+				{
+					ptr_co = ptr_eq;
+				}
+			}
+			if (ptr_co)
+			{
+				*ptr_co = L'\0';
+				++ptr_co;
+				ptr_eq = CmdEatString(ptr_co);
+				ptr_co = CmdCopyString(ptr_co, ptr_eq);
+			}
+			if (!ptr_co)
+			{
+				ptr_co = L"";
+			}
 
-        if (*copy == L'/') {
+			CmdOpts[num_opts] = copy + 1;
+			++num_opts;
+			CmdOpts[num_opts] = ptr_co;
+			++num_opts;
+		}
+		else if (*copy)
+		{
+			CmdVerbs[num_verbs] = copy;
+			++num_verbs;
+		}
 
-            WCHAR *ptr_co = wcschr(copy, L':');
-            WCHAR *ptr_eq = wcschr(copy, L'=');
-            if (ptr_eq) {
-                if ((! ptr_co) || (ptr_co > ptr_eq))
-                    ptr_co = ptr_eq;
-            }
-            if (ptr_co) {
-                *ptr_co = L'\0';
-                ++ptr_co;
-                ptr_eq = CmdEatString(ptr_co);
-                ptr_co = CmdCopyString(ptr_co, ptr_eq);
-            }
-            if (! ptr_co)
-                ptr_co = L"";
+		ptr = ptr2;
+	}
 
-            CmdOpts[num_opts] = copy + 1;
-            ++num_opts;
-            CmdOpts[num_opts] = ptr_co;
-            ++num_opts;
-
-        } else if (*copy) {
-
-            CmdVerbs[num_verbs] = copy;
-            ++num_verbs;
-        }
-
-        ptr = ptr2;
-    }
-
-    CmdVerbs[num_verbs] = NULL;
-    CmdOpts[num_opts] = NULL;
+	CmdVerbs[num_verbs] = NULL;
+	CmdOpts[num_opts]   = NULL;
 }
 
 
@@ -161,13 +184,16 @@ void CmdParse(void)
 //---------------------------------------------------------------------------
 
 
-BOOL CmdIs(const WCHAR *val)
+BOOL CmdIs(const WCHAR* val)
 {
-    if (CmdVerbs && CmdVerbs[0]) {
-        if (_wcsicmp(CmdVerbs[0], val) == 0)
-            return TRUE;
-    }
-    return FALSE;
+	if (CmdVerbs && CmdVerbs[0])
+	{
+		if (_wcsicmp(CmdVerbs[0], val) == 0)
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 
@@ -176,17 +202,19 @@ BOOL CmdIs(const WCHAR *val)
 //---------------------------------------------------------------------------
 
 
-WCHAR *CmdVerb(ULONG index)
+WCHAR* CmdVerb(ULONG index)
 {
-    if (CmdVerbs) {
-        ULONG index2 = 0;
-        while (index && CmdVerbs[index2]) {
-            ++index2;
-            --index;
-        }
-        return CmdVerbs[index2];
-    }
-    return NULL;
+	if (CmdVerbs)
+	{
+		ULONG index2 = 0;
+		while (index && CmdVerbs[index2])
+		{
+			++index2;
+			--index;
+		}
+		return CmdVerbs[index2];
+	}
+	return NULL;
 }
 
 
@@ -195,15 +223,19 @@ WCHAR *CmdVerb(ULONG index)
 //---------------------------------------------------------------------------
 
 
-WCHAR *CmdOpt(const WCHAR *name)
+WCHAR* CmdOpt(const WCHAR* name)
 {
-    if (CmdVerbs) {
-        WCHAR **CmdOpts = CmdVerbs + CMD_MAX_ARGS;
-        while (*CmdOpts) {
-            if (_wcsicmp(*CmdOpts, name) == 0)
-                return CmdOpts[1];
-            CmdOpts += 2;
-        }
-    }
-    return NULL;
+	if (CmdVerbs)
+	{
+		WCHAR** CmdOpts = CmdVerbs + CMD_MAX_ARGS;
+		while (*CmdOpts)
+		{
+			if (_wcsicmp(*CmdOpts, name) == 0)
+			{
+				return CmdOpts[1];
+			}
+			CmdOpts += 2;
+		}
+	}
+	return NULL;
 }

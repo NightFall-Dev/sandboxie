@@ -29,40 +29,36 @@
 
 struct CAnimatedBitmap_NM : public NMHDR
 {
-    CDC *dc;
+	CDC* dc;
 };
 
 
 class CAnimatedBitmap : public CStatic
 {
+protected:
+	DECLARE_MESSAGE_MAP()
+
+	void* m_image;
+	GUID m_guid;
+	void* m_property;
+	int m_frame_count;
+
+	int m_frame_index;
+	ULONG m_frame_ticks;
 
 protected:
-
-    DECLARE_MESSAGE_MAP()
-
-    void *m_image;
-    GUID m_guid;
-    void *m_property;
-    int m_frame_count;
-
-    int m_frame_index;
-    ULONG m_frame_ticks;
-
-protected:
-
-    void DrawFrame(CDC *dc);
-    afx_msg void OnPaint();
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
+	void DrawFrame(CDC* dc);
+	afx_msg void OnPaint();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
 public:
+	bool Init(HWND hwndEdit);
+	bool Init(CDialog* dlg, UINT id);
+	bool SetImage(const WCHAR* name);
+	void Animate(bool enable);
 
-    bool Init(HWND hwndEdit);
-    bool Init(CDialog *dlg, UINT id);
-    bool SetImage(const WCHAR *name);
-    void Animate(bool enable);
-
-    CAnimatedBitmap();
-    ~CAnimatedBitmap();
+	CAnimatedBitmap();
+	~CAnimatedBitmap();
 };
 
 

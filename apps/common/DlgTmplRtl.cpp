@@ -28,40 +28,45 @@
 //---------------------------------------------------------------------------
 
 
-extern "C" void *Common_DlgTmplRtl(HINSTANCE hInst, const WCHAR *TmplName)
+extern "C" void* Common_DlgTmplRtl(HINSTANCE hInst, const WCHAR* TmplName)
 {
-    HRSRC hResource = ::FindResource(hInst, TmplName, RT_DIALOG);
-    HGLOBAL hGlobal = LoadResource(hInst, hResource);
-    void  *DataPtr  = LockResource(hGlobal);
+	HRSRC hResource = ::FindResource(hInst, TmplName, RT_DIALOG);
+	HGLOBAL hGlobal = LoadResource(hInst, hResource);
+	void* DataPtr   = LockResource(hGlobal);
 
-    if (DataPtr) {
+	if (DataPtr)
+	{
+		typedef struct
+		{
+			DWORD style;
+			DWORD dwExtendedStyle;
+		} DLGTMPL1;
+		typedef struct
+		{
+			WORD dlgVer;
+			WORD signature;
+			DWORD helpID;
+			DWORD exStyle;
+			DWORD style;
+		} DLGTMPL2;
 
-        typedef struct {
-            DWORD style;
-            DWORD dwExtendedStyle;
-        } DLGTMPL1;
-        typedef struct {
-            WORD dlgVer;
-            WORD signature;
-            DWORD helpID;
-            DWORD exStyle;
-            DWORD style;
-        } DLGTMPL2;
+		ULONG* exStyle;
+		ULONG DataSize = SizeofResource(hInst, hResource);
+		void* NewTmpl  = HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, DataSize);
+		memcpy(NewTmpl, DataPtr, DataSize);
 
-        ULONG *exStyle;
-        ULONG DataSize = SizeofResource(hInst, hResource);
-        void *NewTmpl = HeapAlloc(
-                GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, DataSize);
-        memcpy(NewTmpl, DataPtr, DataSize);
+		if (((DLGTMPL2*)NewTmpl)->signature == 0xFFFF)
+		{
+			exStyle = &((DLGTMPL2*)NewTmpl)->exStyle;
+		}
+		else
+		{
+			exStyle = &((DLGTMPL1*)NewTmpl)->dwExtendedStyle;
+		}
+		(*exStyle) |= WS_EX_LAYOUTRTL;
 
-        if (((DLGTMPL2 *)NewTmpl)->signature == 0xFFFF)
-            exStyle = &((DLGTMPL2 *)NewTmpl)->exStyle;
-        else
-            exStyle = &((DLGTMPL1 *)NewTmpl)->dwExtendedStyle;
-        (*exStyle) |= WS_EX_LAYOUTRTL;
+		return NewTmpl;
+	}
 
-        return NewTmpl;
-    }
-
-    return NULL;
+	return NULL;
 }

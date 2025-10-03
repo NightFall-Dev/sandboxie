@@ -29,70 +29,68 @@
 
 class CThirdPartyDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    void ApplyTemplates();
+	void ApplyTemplates();
 
-    afx_msg void OnAdd();
-    afx_msg void OnRemove();
-    afx_msg void OnToggle();
+	afx_msg void OnAdd();
+	afx_msg void OnRemove();
+	afx_msg void OnToggle();
 
-    afx_msg void OnCheckBox();
+	afx_msg void OnCheckBox();
 
-    virtual void OnOK();
-    virtual void OnCancel();
+	virtual void OnOK();
+	virtual void OnCancel();
 
-    afx_msg void OnRemoveOld();
-    afx_msg void OnKnownConflicts();
-    afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
+	afx_msg void OnRemoveOld();
+	afx_msg void OnKnownConflicts();
+	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 
-    void CollectObjects();
-    void CollectObjects2(CStringList &objdirs);
+	void CollectObjects();
+	void CollectObjects2(CStringList& objdirs);
 
-    void CollectClasses();
-    static BOOL CollectClasses2(HWND hwnd, LPARAM lparam);
+	void CollectClasses();
+	static BOOL CollectClasses2(HWND hwnd, LPARAM lparam);
 
-    void CollectServices();
+	void CollectServices();
 
-    void CollectProducts();
+	void CollectProducts();
 
-    void CollectTemplates();
-    BOOL CheckTemplate(const CString &tmpl_name);
-    BOOL CheckRegistryKey(const WCHAR *keypath);
-    BOOL CheckFile(const WCHAR *filepath);
+	void CollectTemplates();
+	BOOL CheckTemplate(const CString& tmpl_name);
+	BOOL CheckRegistryKey(const WCHAR* keypath);
+	BOOL CheckFile(const WCHAR* filepath);
 
-    void FindConflicts(CStringList &list, int what);
+	void FindConflicts(CStringList& list, int what);
 
-    static ULONG WatchThread(void *lpParameter);
+	static ULONG WatchThread(void* lpParameter);
 
 private:
+	CFlashingButton m_ConflictsButton;
 
-    CFlashingButton m_ConflictsButton;
+	int m_doKnownConflicts;
 
-    int m_doKnownConflicts;
+	CStringList m_objects;
+	CStringList m_classes;
+	CStringList m_services;
+	CStringList m_products;
 
-    CStringList m_objects;
-    CStringList m_classes;
-    CStringList m_services;
-    CStringList m_products;
+	CMapStringToPtr m_templates;
 
-    CMapStringToPtr m_templates;
+	CStringList m_stale_templates;
 
-    CStringList m_stale_templates;
+	BOOL m_checkbox;
+	BOOL m_autorun;
 
-    BOOL m_checkbox;
-    BOOL m_autorun;
-
-    static HANDLE hWatchThread;
+	static HANDLE hWatchThread;
 
 public:
+	CThirdPartyDialog(CWnd* pParentWnd, BOOL AutoRun, WPARAM wParamAlert);
+	~CThirdPartyDialog();
 
-    CThirdPartyDialog(CWnd *pParentWnd, BOOL AutoRun, WPARAM wParamAlert);
-    ~CThirdPartyDialog();
-
-    static BOOL AutoRunSoftCompat(BOOL *NewValue = NULL);
+	static BOOL AutoRunSoftCompat(BOOL* NewValue = NULL);
 };
 
 

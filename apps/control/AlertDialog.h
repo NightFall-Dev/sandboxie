@@ -26,19 +26,18 @@
 
 class CAlertDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    afx_msg void OnAdd();
-    afx_msg void OnRemove();
+	afx_msg void OnAdd();
+	afx_msg void OnRemove();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
-
-    CAlertDialog(CWnd *pParentWnd);
-    ~CAlertDialog();
+	CAlertDialog(CWnd* pParentWnd);
+	~CAlertDialog();
 };
 
 

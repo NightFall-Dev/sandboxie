@@ -34,8 +34,8 @@
 
 struct tagPROCESS_KILL_ONE_REQ
 {
-    MSG_HEADER h;
-    ULONG pid;
+	MSG_HEADER h;
+	ULONG pid;
 };
 
 typedef struct tagPROCESS_KILL_ONE_REQ PROCESS_KILL_ONE_REQ;
@@ -48,9 +48,9 @@ typedef struct tagPROCESS_KILL_ONE_REQ PROCESS_KILL_ONE_REQ;
 
 struct tagPROCESS_KILL_ALL_REQ
 {
-    MSG_HEADER h;
-    ULONG session_id;
-    WCHAR boxname[34];
+	MSG_HEADER h;
+	ULONG session_id;
+	WCHAR boxname[34];
 };
 
 typedef struct tagPROCESS_KILL_ALL_REQ PROCESS_KILL_ALL_REQ;
@@ -63,8 +63,8 @@ typedef struct tagPROCESS_KILL_ALL_REQ PROCESS_KILL_ALL_REQ;
 
 struct tagPROCESS_SET_DEVICE_MAP_REQ
 {
-    MSG_HEADER h;
-    ULONG64 DirectoryHandle;
+	MSG_HEADER h;
+	ULONG64 DirectoryHandle;
 };
 
 typedef struct tagPROCESS_SET_DEVICE_MAP_REQ PROCESS_SET_DEVICE_MAP_REQ;
@@ -77,9 +77,9 @@ typedef struct tagPROCESS_SET_DEVICE_MAP_REQ PROCESS_SET_DEVICE_MAP_REQ;
 
 struct tagPROCESS_OPEN_DEVICE_MAP_REQ
 {
-    MSG_HEADER h;
-    ULONG64 DirectoryHandlePtr;
-    WCHAR DirectoryName[96];
+	MSG_HEADER h;
+	ULONG64 DirectoryHandlePtr;
+	WCHAR DirectoryName[96];
 };
 
 typedef struct tagPROCESS_OPEN_DEVICE_MAP_REQ PROCESS_OPEN_DEVICE_MAP_REQ;
@@ -92,26 +92,26 @@ typedef struct tagPROCESS_OPEN_DEVICE_MAP_REQ PROCESS_OPEN_DEVICE_MAP_REQ;
 
 struct tagPROCESS_RUN_SANDBOXED_REQ
 {
-    MSG_HEADER h;
-    WCHAR boxname[34];
-    ULONG cmd_ofs;
-    ULONG cmd_len;
-    ULONG dir_ofs;
-    ULONG dir_len;
-    ULONG env_ofs;
-    ULONG env_len;
-    ULONG si_flags;
-    ULONG si_show_window;
-    ULONG creation_flags;
+	MSG_HEADER h;
+	WCHAR boxname[34];
+	ULONG cmd_ofs;
+	ULONG cmd_len;
+	ULONG dir_ofs;
+	ULONG dir_len;
+	ULONG env_ofs;
+	ULONG env_len;
+	ULONG si_flags;
+	ULONG si_show_window;
+	ULONG creation_flags;
 };
 
 struct tagPROCESS_RUN_SANDBOXED_RPL
 {
-    MSG_HEADER h;                       // status is win32 error
-    ULONG64 hProcess;
-    ULONG64 hThread;
-    ULONG dwProcessId;
-    ULONG dwThreadId;
+	MSG_HEADER h; // status is win32 error
+	ULONG64 hProcess;
+	ULONG64 hThread;
+	ULONG dwProcessId;
+	ULONG dwThreadId;
 };
 
 typedef struct tagPROCESS_RUN_SANDBOXED_REQ PROCESS_RUN_SANDBOXED_REQ;

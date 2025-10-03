@@ -29,51 +29,45 @@
 
 class QueueServer
 {
-
 public:
-
-    QueueServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    static void CloseCallback(void *context, void *data);
-
-    MSG_HEADER *CreateHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *GetReqHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *PutRplHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *PutReqHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *GetRplHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    void NotifyHandler(HANDLE idProcess);
-
-    LONG OpenProcess(HANDLE idProcess, HANDLE *out_hProcess,
-                     ULONG DesiredAccess = PROCESS_DUP_HANDLE);
-
-    LONG DuplicateEvent(HANDLE hProcess, ULONG64 hEvent, HANDLE *out_hEvent);
-
-    WCHAR *MakeQueueName(
-                    HANDLE idProcess, WCHAR *req_name, ULONG *out_status);
-
-    void *FindQueueObj(const WCHAR *QueueName);
-
-    void DeleteQueueObj(void *_QueueObj);
-
-    void DeleteRequestObj(LIST *RequestsList, void *_RequestObj);
+	QueueServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    HANDLE m_heap;
+	static void CloseCallback(void* context, void* data);
 
-    CRITICAL_SECTION m_lock;
-    LIST m_queues;
+	MSG_HEADER* CreateHandler(MSG_HEADER* msg, HANDLE idProcess);
 
-    volatile LONG m_RequestId;
+	MSG_HEADER* GetReqHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* PutRplHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* PutReqHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* GetRplHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	void NotifyHandler(HANDLE idProcess);
+
+	LONG OpenProcess(HANDLE idProcess, HANDLE* out_hProcess, ULONG DesiredAccess = PROCESS_DUP_HANDLE);
+
+	LONG DuplicateEvent(HANDLE hProcess, ULONG64 hEvent, HANDLE* out_hEvent);
+
+	WCHAR* MakeQueueName(HANDLE idProcess, WCHAR* req_name, ULONG* out_status);
+
+	void* FindQueueObj(const WCHAR* QueueName);
+
+	void DeleteQueueObj(void* _QueueObj);
+
+	void DeleteRequestObj(LIST* RequestsList, void* _RequestObj);
+
+protected:
+	HANDLE m_heap;
+
+	CRITICAL_SECTION m_lock;
+	LIST m_queues;
+
+	volatile LONG m_RequestId;
 };
 
 

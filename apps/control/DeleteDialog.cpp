@@ -19,13 +19,13 @@
 // Delete Sandbox Dialog Box
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "DeleteDialog.h"
 
 #include "Boxes.h"
+#include "MyApp.h"
 #include "UserSettings.h"
 #include "apps/common/MyGdi.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -33,7 +33,7 @@
 //---------------------------------------------------------------------------
 
 
-#define ID_TIMER    1002
+#define ID_TIMER 1002
 
 
 //---------------------------------------------------------------------------
@@ -48,15 +48,15 @@
 
 BEGIN_MESSAGE_MAP(CDeleteDialog, CBaseDialog)
 
-    ON_WM_TIMER()
+ON_WM_TIMER()
 
-    ON_COMMAND(ID_RECOVER_SAME,         OnCmdRecoverSameAny)
-    ON_COMMAND(ID_RECOVER_ANY,          OnCmdRecoverSameAny)
-    ON_COMMAND(ID_RECOVER_ADD,          OnCmdAddFolder)
+ON_COMMAND(ID_RECOVER_SAME, OnCmdRecoverSameAny)
+ON_COMMAND(ID_RECOVER_ANY, OnCmdRecoverSameAny)
+ON_COMMAND(ID_RECOVER_ADD, OnCmdAddFolder)
 
-    ON_COMMAND(ID_RECOVER_SELECT_ALL,   OnSelectAll)
+ON_COMMAND(ID_RECOVER_SELECT_ALL, OnSelectAll)
 
-    ON_WM_CONTEXTMENU()
+ON_WM_CONTEXTMENU()
 
 END_MESSAGE_MAP()
 
@@ -66,68 +66,65 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CDeleteDialog::CDeleteDialog(
-    CWnd *pParentWnd, const WCHAR *BoxName,
-    BOOL WithDelete, BOOL AutoDelete,
-    BOOL *DeleteSpawned)
-    : CBaseDialog(pParentWnd, L"DELETE_DIALOG")
+CDeleteDialog::CDeleteDialog(CWnd* pParentWnd, const WCHAR* BoxName, BOOL WithDelete, BOOL AutoDelete, BOOL* DeleteSpawned) :
+    CBaseDialog(pParentWnd, L"DELETE_DIALOG")
 {
-    m_WithDelete = WithDelete;
-    m_AutoDelete = AutoDelete;
-    m_filelist.SetBoxNameForDialogMode(BoxName);
+	m_WithDelete = WithDelete;
+	m_AutoDelete = AutoDelete;
+	m_filelist.SetBoxNameForDialogMode(BoxName);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    m_empty = TRUE;
-    m_files = 0;
-    m_folders = 0;
-    m_size = 0;
+	m_empty   = TRUE;
+	m_files   = 0;
+	m_folders = 0;
+	m_size    = 0;
 
-    m_spawned = FALSE;
-    *DeleteSpawned = FALSE;
+	m_spawned      = FALSE;
+	*DeleteSpawned = FALSE;
 
-    CBox &box = CBoxes::GetInstance().GetBox(BoxName);
-    CBoxFile &boxfile = box.GetBoxFile();
+	CBox& box         = CBoxes::GetInstance().GetBox(BoxName);
+	CBoxFile& boxfile = box.GetBoxFile();
 
-    if (m_WithDelete) {
+	if (m_WithDelete)
+	{
+		if (box.GetNeverDelete())
+		{
+			CMyMsg msg(MSG_3051, BoxName);
+			CMyApp::MsgBox(pParentWnd, msg, MB_OK);
+			return;
+		}
 
-        if (box.GetNeverDelete()) {
+		boxfile.RebuildSkeletonTree();
 
-            CMyMsg msg(MSG_3051, BoxName);
-            CMyApp::MsgBox(pParentWnd, msg, MB_OK);
-            return;
-        }
+		boxfile.ChangeFolder(L"\\");
 
-        boxfile.RebuildSkeletonTree();
+		POSITION pos = boxfile.GetFolderHeadPosition();
+		BOOL expanded;
+		const WCHAR* folder_name = boxfile.GetNextFolder(pos, expanded);
+		folder_name              = boxfile.GetNextFolder(pos, expanded);
 
-        boxfile.ChangeFolder(L"\\");
+		m_stack.AddHead(CString(L"\\") + folder_name);
+	}
 
-        POSITION pos = boxfile.GetFolderHeadPosition();
-        BOOL expanded;
-        const WCHAR *folder_name = boxfile.GetNextFolder(pos, expanded);
-        folder_name = boxfile.GetNextFolder(pos, expanded);
+	//
+	// display dialog
+	//
 
-        m_stack.AddHead(CString(L"\\") + folder_name);
-    }
+	DoModal();
 
-    //
-    // display dialog
-    //
+	//
+	// if empty box, display message
+	//
 
-    DoModal();
+	if (m_WithDelete && m_empty && !m_AutoDelete)
+	{
+		CMyApp::MsgBox(pParentWnd, MSG_3730, MB_OK);
+	}
 
-    //
-    // if empty box, display message
-    //
-
-    if (m_WithDelete && m_empty && ! m_AutoDelete) {
-
-        CMyApp::MsgBox(pParentWnd, MSG_3730, MB_OK);
-    }
-
-    *DeleteSpawned = m_spawned;
+	*DeleteSpawned = m_spawned;
 }
 
 
@@ -148,150 +145,161 @@ CDeleteDialog::~CDeleteDialog()
 
 BOOL CDeleteDialog::OnInitDialog()
 {
-    //
-    // set title according to dialog mode
-    //
+	//
+	// set title according to dialog mode
+	//
 
-    CString title = CMyMsg(MSG_3711);
-    if (m_WithDelete)
-        title = title.Mid(0, title.Find('|'));
-    else
-        title = title.Mid(title.Find('|') + 1);
-    if (CMyApp::m_LayoutRTL)
-        title = m_filelist.GetBoxNameForDialogMode() + L" - " + title;
-    title += L" - " + m_filelist.GetBoxNameForDialogMode();
-    SetWindowText(title);
+	CString title = CMyMsg(MSG_3711);
+	if (m_WithDelete)
+	{
+		title = title.Mid(0, title.Find('|'));
+	}
+	else
+	{
+		title = title.Mid(title.Find('|') + 1);
+	}
+	if (CMyApp::m_LayoutRTL)
+	{
+		title = m_filelist.GetBoxNameForDialogMode() + L" - " + title;
+	}
+	title += L" - " + m_filelist.GetBoxNameForDialogMode();
+	SetWindowText(title);
 
-    //
-    // set dialog text
-    //
+	//
+	// set dialog text
+	//
 
-    GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3712));
-    GetDlgItem(ID_DELETE_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_3713));
+	GetDlgItem(ID_DELETE_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_3712));
+	GetDlgItem(ID_DELETE_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_3713));
 
-    GetDlgItem(ID_RECOVER_SAME)->SetWindowText(CMyMsg(MSG_3720));
-    GetDlgItem(ID_RECOVER_ANY)->SetWindowText(CMyMsg(MSG_3721));
+	GetDlgItem(ID_RECOVER_SAME)->SetWindowText(CMyMsg(MSG_3720));
+	GetDlgItem(ID_RECOVER_ANY)->SetWindowText(CMyMsg(MSG_3721));
 
-    GetDlgItem(ID_RECOVER_ADD)->SetWindowText(CMyMsg(MSG_3358));
+	GetDlgItem(ID_RECOVER_ADD)->SetWindowText(CMyMsg(MSG_3358));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3714));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
-    GetDlgItem(IDCLOSE)->SetWindowText(CMyMsg(MSG_3004));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3714));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
+	GetDlgItem(IDCLOSE)->SetWindowText(CMyMsg(MSG_3004));
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    CWnd *pCtl = GetDlgItem(ID_RECOVER_TREE);
-    CRect rc;
-    pCtl->GetWindowRect(&rc);
-    ScreenToClient(&rc);
+	CWnd* pCtl = GetDlgItem(ID_RECOVER_TREE);
+	CRect rc;
+	pCtl->GetWindowRect(&rc);
+	ScreenToClient(&rc);
 
-    m_filelist.Create(this);
-    m_filelist.SetWindowPos(NULL, rc.left, rc.top, rc.Width(), rc.Height(),
-                            SWP_NOZORDER | SWP_NOOWNERZORDER);
-    m_filelist.ShowWindow(SW_SHOW);
+	m_filelist.Create(this);
+	m_filelist.SetWindowPos(NULL, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER | SWP_NOOWNERZORDER);
+	m_filelist.ShowWindow(SW_SHOW);
 
-    m_filelist.RefreshContent();
-    m_filelist.SetFocus();
+	m_filelist.RefreshContent();
+	m_filelist.SetFocus();
 
-    //
-    // prepare the select all button
-    //
+	//
+	// prepare the select all button
+	//
 
-    static HBITMAP checkmark_bitmap = NULL;
-    if (! checkmark_bitmap)
-        checkmark_bitmap = MyGdi_CreateFromResource(L"BLUE_CHECKMARK");
+	static HBITMAP checkmark_bitmap = NULL;
+	if (!checkmark_bitmap)
+	{
+		checkmark_bitmap = MyGdi_CreateFromResource(L"BLUE_CHECKMARK");
+	}
 
-    CButton *pButton = (CButton *)GetDlgItem(ID_RECOVER_SELECT_ALL);
-    pButton->ModifyStyle(0, BS_BITMAP | BS_CENTER);
-    pButton->SetBitmap(checkmark_bitmap);
+	CButton* pButton = (CButton*)GetDlgItem(ID_RECOVER_SELECT_ALL);
+	pButton->ModifyStyle(0, BS_BITMAP | BS_CENTER);
+	pButton->SetBitmap(checkmark_bitmap);
 
-    rc.top += 2;
-    rc.bottom = rc.top + GetSystemMetrics(SM_CYVTHUMB) + 10;
+	rc.top += 2;
+	rc.bottom = rc.top + GetSystemMetrics(SM_CYVTHUMB) + 10;
 
-    if (! CMyApp::m_LayoutRTL) {
-        rc.right -= GetSystemMetrics(SM_CXHTHUMB) + 5;
-        rc.left = rc.right - 25;
-    } else {
-        rc.left += GetSystemMetrics(SM_CXHTHUMB) + 5;
-        rc.right = rc.left + 25;
-        pButton->ModifyStyleEx(WS_EX_LAYOUTRTL, 0);
-    }
+	if (!CMyApp::m_LayoutRTL)
+	{
+		rc.right -= GetSystemMetrics(SM_CXHTHUMB) + 5;
+		rc.left = rc.right - 25;
+	}
+	else
+	{
+		rc.left += GetSystemMetrics(SM_CXHTHUMB) + 5;
+		rc.right = rc.left + 25;
+		pButton->ModifyStyleEx(WS_EX_LAYOUTRTL, 0);
+	}
 
-    pButton->SetWindowPos(&wndTop,
-        rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
-        SWP_SHOWWINDOW);
+	pButton->SetWindowPos(&wndTop, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_SHOWWINDOW);
 
-    if (! SelectAllButton.m_hWnd) {
-        CString tip = CMyMsg(MSG_3360);
-        tip.Remove(L'&');
-        SelectAllButton.Init(pButton->m_hWnd, tip);
-    }
+	if (!SelectAllButton.m_hWnd)
+	{
+		CString tip = CMyMsg(MSG_3360);
+		tip.Remove(L'&');
+		SelectAllButton.Init(pButton->m_hWnd, tip);
+	}
 
-    if (! m_filelist.AnyQuickRecoverFiles())
-        pButton->ShowWindow(SW_HIDE);
+	if (!m_filelist.AnyQuickRecoverFiles())
+	{
+		pButton->ShowWindow(SW_HIDE);
+	}
 
-    //
-    // hide buttons accoording to dialog mode
-    //
+	//
+	// hide buttons accoording to dialog mode
+	//
 
-    pCtl = GetDlgItem(IDCLOSE);
+	pCtl = GetDlgItem(IDCLOSE);
 
-    if (m_WithDelete) {
+	if (m_WithDelete)
+	{
+		pCtl->ShowWindow(SW_HIDE);
+	}
+	else
+	{
+		pCtl->SetDlgCtrlID(IDCANCEL);
+		//SetWindowLongPtr(pCtl->m_hWnd, GWLP_ID, IDCANCEL);
 
-        pCtl->ShowWindow(SW_HIDE);
+		pCtl = GetDlgItem(ID_RECOVER_GROUPBOX);
+		pCtl->GetClientRect(&rc);
+		int group_height = rc.Height();
 
-    } else {
+		pCtl->ShowWindow(SW_HIDE);
 
-        pCtl->SetDlgCtrlID(IDCANCEL);
-        //SetWindowLongPtr(pCtl->m_hWnd, GWLP_ID, IDCANCEL);
+		GetWindowRect(&rc);
+		rc.bottom -= group_height;
 
-        pCtl = GetDlgItem(ID_RECOVER_GROUPBOX);
-        pCtl->GetClientRect(&rc);
-        int group_height = rc.Height();
+		SetWindowPos(NULL, 0, 0, rc.Width(), rc.Height(), SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+	}
 
-        pCtl->ShowWindow(SW_HIDE);
+	//
+	// start timer (to count contents) if manual delete mode
+	//
 
-        GetWindowRect(&rc);
-        rc.bottom -= group_height;
+	if (m_WithDelete)
+	{
+		OnTimer(ID_TIMER);
 
-        SetWindowPos(
-            NULL, 0, 0, rc.Width(), rc.Height(),
-            SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
-    }
+		if (m_empty)
+		{
+			EndDialog(0);
+			return FALSE;
+		}
 
-    //
-    // start timer (to count contents) if manual delete mode
-    //
+		if (m_AutoDelete)
+		{
+			if (!m_filelist.AnyQuickRecoverFiles())
+			{
+				OnOK();
+				return FALSE;
+			}
 
-    if (m_WithDelete) {
+			m_DeleteButton.Init(this, IDOK);
 
-        OnTimer(ID_TIMER);
+			FlashTitle();
+		}
 
-        if (m_empty) {
-            EndDialog(0);
-            return FALSE;
-        }
+		SetTimer(ID_TIMER, 10, NULL);
+	}
 
-        if (m_AutoDelete) {
+	AddMinimizeButton();
 
-            if (! m_filelist.AnyQuickRecoverFiles()) {
-                OnOK();
-                return FALSE;
-            }
-
-            m_DeleteButton.Init(this, IDOK);
-
-            FlashTitle();
-        }
-
-        SetTimer(ID_TIMER, 10, NULL);
-    }
-
-    AddMinimizeButton();
-
-    return FALSE;
+	return FALSE;
 }
 
 
@@ -302,90 +310,111 @@ BOOL CDeleteDialog::OnInitDialog()
 
 void CDeleteDialog::OnTimer(UINT_PTR nIDEvent)
 {
-    if (nIDEvent != ID_TIMER)
-        return;
+	if (nIDEvent != ID_TIMER)
+	{
+		return;
+	}
 
-    if (m_stack.IsEmpty())
-        return;
+	if (m_stack.IsEmpty())
+	{
+		return;
+	}
 
-    const CString &BoxName = m_filelist.GetBoxNameForDialogMode();
-    CBox &box = CBoxes::GetInstance().GetBox(BoxName);
-    CBoxFile &boxfile = box.GetBoxFile();
+	const CString& BoxName = m_filelist.GetBoxNameForDialogMode();
+	CBox& box              = CBoxes::GetInstance().GetBox(BoxName);
+	CBoxFile& boxfile      = box.GetBoxFile();
 
-    CString path = m_stack.RemoveHead();
-    boxfile.SetIncludeDeleted(TRUE);
-    if (boxfile.ChangeFolder(path, TRUE) == -1) {
-        boxfile.SetIncludeDeleted(FALSE);
-        return;
-    }
+	CString path = m_stack.RemoveHead();
+	boxfile.SetIncludeDeleted(TRUE);
+	if (boxfile.ChangeFolder(path, TRUE) == -1)
+	{
+		boxfile.SetIncludeDeleted(FALSE);
+		return;
+	}
 
-    if (boxfile.GetFolderNumChildren() <= 0) {
-        boxfile.SetIncludeDeleted(FALSE);
-        return;
-    }
+	if (boxfile.GetFolderNumChildren() <= 0)
+	{
+		boxfile.SetIncludeDeleted(FALSE);
+		return;
+	}
 
-    m_empty = FALSE;
+	m_empty = FALSE;
 
-    if (boxfile.IsPhysicalFolder())
-        ++m_folders;
+	if (boxfile.IsPhysicalFolder())
+	{
+		++m_folders;
+	}
 
-    POSITION pos = boxfile.GetFolderHeadPosition();
-    while (pos) {
-        BOOL expanded;
-        const WCHAR *folder_name = boxfile.GetNextFolder(pos, expanded);
-        if (! folder_name)
-            break;
-        m_stack.AddHead(path + L"\\" + folder_name);
-    }
+	POSITION pos = boxfile.GetFolderHeadPosition();
+	while (pos)
+	{
+		BOOL expanded;
+		const WCHAR* folder_name = boxfile.GetNextFolder(pos, expanded);
+		if (!folder_name)
+		{
+			break;
+		}
+		m_stack.AddHead(path + L"\\" + folder_name);
+	}
 
-    pos = boxfile.GetFolderHeadPosition();
-    while (pos) {
-        ULONG64 size;
-        const WCHAR *file_name = boxfile.GetNextFile(pos, size);
-        if (! file_name)
-            break;
-        m_size += size;
-        ++m_files;
-    }
+	pos = boxfile.GetFolderHeadPosition();
+	while (pos)
+	{
+		ULONG64 size;
+		const WCHAR* file_name = boxfile.GetNextFile(pos, size);
+		if (!file_name)
+		{
+			break;
+		}
+		m_size += size;
+		++m_files;
+	}
 
-    boxfile.SetIncludeDeleted(FALSE);
+	boxfile.SetIncludeDeleted(FALSE);
 
-    //
-    // stringfy number of files.  note that if we have any files at all,
-    // we will assume that the box also contains two RegHive files
-    //
+	//
+	// stringfy number of files.  note that if we have any files at all,
+	// we will assume that the box also contains two RegHive files
+	//
 
-    CString strFiles;
-    strFiles.Format(L"%d", m_files);
+	CString strFiles;
+	strFiles.Format(L"%d", m_files);
 
-    CString strFolders;
-    strFolders.Format(L"%d", m_folders);
+	CString strFolders;
+	strFolders.Format(L"%d", m_folders);
 
-    const WCHAR *units = L"";
-    ULONG64 bytes64 = m_size;
-    if (bytes64 >= 1024) {
-        bytes64 /= 1024;
-        units = L"KB";
-        if (bytes64 >= 1024) {
-            bytes64 /= 1024;
-            units = L"MB";
-            if (bytes64 >= 1024) {
-                bytes64 /= 1024;
-                units = L"GB";
-            }
-        }
-    }
+	const WCHAR* units = L"";
+	ULONG64 bytes64    = m_size;
+	if (bytes64 >= 1024)
+	{
+		bytes64 /= 1024;
+		units = L"KB";
+		if (bytes64 >= 1024)
+		{
+			bytes64 /= 1024;
+			units = L"MB";
+			if (bytes64 >= 1024)
+			{
+				bytes64 /= 1024;
+				units = L"GB";
+			}
+		}
+	}
 
-    CString strBytes;
-    if (CMyApp::m_LayoutRTL) {
-        const ULONG U_LRO = 0x202D;   // Start of left-to-right override
-        const ULONG U_PDF = 0x202C;   // Pop directional formatting
-        strBytes.Format(L"%c%d %s%c", U_LRO, (ULONG)bytes64, units, U_PDF);
-    } else
-        strBytes.Format(L"%d %s", (ULONG)bytes64, units);
+	CString strBytes;
+	if (CMyApp::m_LayoutRTL)
+	{
+		const ULONG U_LRO = 0x202D; // Start of left-to-right override
+		const ULONG U_PDF = 0x202C; // Pop directional formatting
+		strBytes.Format(L"%c%d %s%c", U_LRO, (ULONG)bytes64, units, U_PDF);
+	}
+	else
+	{
+		strBytes.Format(L"%d %s", (ULONG)bytes64, units);
+	}
 
-    CMyMsg str(MSG_3722, strFiles, strFolders, strBytes);
-    SetDlgItemText(ID_DELETE_SIZE, str);
+	CMyMsg str(MSG_3722, strFiles, strFolders, strBytes);
+	SetDlgItemText(ID_DELETE_SIZE, str);
 }
 
 
@@ -396,48 +425,54 @@ void CDeleteDialog::OnTimer(UINT_PTR nIDEvent)
 
 void CDeleteDialog::OnOK()
 {
-    if (! m_WithDelete)
-        return;
+	if (!m_WithDelete)
+	{
+		return;
+	}
 
-    while (! m_stack.IsEmpty())
-        m_stack.RemoveHead();
+	while (!m_stack.IsEmpty())
+	{
+		m_stack.RemoveHead();
+	}
 
-    const CString &BoxName = m_filelist.GetBoxNameForDialogMode();
-    CBox &box = CBoxes::GetInstance().GetBox(BoxName);
-    CBoxProc &boxproc = box.GetBoxProc();
+	const CString& BoxName = m_filelist.GetBoxNameForDialogMode();
+	CBox& box              = CBoxes::GetInstance().GetBox(BoxName);
+	CBoxProc& boxproc      = box.GetBoxProc();
 
-    CWaitCursor waitcursor;
+	CWaitCursor waitcursor;
 
-    SbieDll_KillAll(-1, BoxName);
+	SbieDll_KillAll(-1, BoxName);
 
-    int i = 0;
-    for (i = 0; i < 20; ++i) {
-        boxproc.RefreshProcesses();
-        if (boxproc.GetProcessCount() == 0) {
-            Sleep(500);
-            break;
-        }
-        Sleep(250);
-    }
+	int i = 0;
+	for (i = 0; i < 20; ++i)
+	{
+		boxproc.RefreshProcesses();
+		if (boxproc.GetProcessCount() == 0)
+		{
+			Sleep(500);
+			break;
+		}
+		Sleep(250);
+	}
 
-    if (i == 20) {
+	if (i == 20)
+	{
+		CMyApp::MsgBox(this, MSG_3731, MB_OK);
+	}
+	else
+	{
+		WCHAR cmd[64];
+		wcscpy(cmd, L"delete_sandbox");
+		//if (m_AutoDelete)
+		//wcscat(cmd, L"_silent");
+		CMyApp::RunStartExe(cmd, BoxName, TRUE);
 
-        CMyApp::MsgBox(this, MSG_3731, MB_OK);
+		box.GetBoxFile().RebuildSkeletonTree();
 
-    } else {
+		m_spawned = TRUE;
+	}
 
-        WCHAR cmd[64];
-        wcscpy(cmd, L"delete_sandbox");
-        //if (m_AutoDelete)
-                //wcscat(cmd, L"_silent");
-        CMyApp::RunStartExe(cmd, BoxName, TRUE);
-
-        box.GetBoxFile().RebuildSkeletonTree();
-
-        m_spawned = TRUE;
-    }
-
-    EndDialog(0);
+	EndDialog(0);
 }
 
 
@@ -448,14 +483,20 @@ void CDeleteDialog::OnOK()
 
 void CDeleteDialog::OnCmdRecoverSameAny()
 {
-    int cmd = 0;
-    const MSG *msg = GetCurrentMessage();
-    if (LOWORD(msg->wParam) == ID_RECOVER_SAME)
-        cmd = ID_FILE_RECOVER_SAME;
-    else if (LOWORD(msg->wParam) == ID_RECOVER_ANY)
-        cmd = ID_FILE_RECOVER_ANY;
-    if (cmd)
-        m_filelist.PostMessage(WM_COMMAND, cmd, 0);
+	int cmd        = 0;
+	const MSG* msg = GetCurrentMessage();
+	if (LOWORD(msg->wParam) == ID_RECOVER_SAME)
+	{
+		cmd = ID_FILE_RECOVER_SAME;
+	}
+	else if (LOWORD(msg->wParam) == ID_RECOVER_ANY)
+	{
+		cmd = ID_FILE_RECOVER_ANY;
+	}
+	if (cmd)
+	{
+		m_filelist.PostMessage(WM_COMMAND, cmd, 0);
+	}
 }
 
 
@@ -466,70 +507,80 @@ void CDeleteDialog::OnCmdRecoverSameAny()
 
 void CDeleteDialog::OnCmdAddFolder()
 {
-    WCHAR path[MAX_PATH + 32];
+	WCHAR path[MAX_PATH + 32];
 
-    CMyMsg title(MSG_3726);
+	CMyMsg title(MSG_3726);
 
-    BROWSEINFO bi;
-    memzero(&bi, sizeof(BROWSEINFO));
-    bi.hwndOwner = m_hWnd;
-    bi.pszDisplayName = path;
-    bi.lpszTitle = title;
-    bi.ulFlags = BIF_UAHINT | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
-    if (pidl) {
+	BROWSEINFO bi;
+	memzero(&bi, sizeof(BROWSEINFO));
+	bi.hwndOwner      = m_hWnd;
+	bi.pszDisplayName = path;
+	bi.lpszTitle      = title;
+	bi.ulFlags        = BIF_UAHINT | BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+	LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+	if (pidl)
+	{
+		BOOL ok = SHGetPathFromIDList(pidl, path);
+		CoTaskMemFree(pidl);
+		if (ok)
+		{
+			//
+			// add the new folder
+			//
 
-        BOOL ok = SHGetPathFromIDList(pidl, path);
-        CoTaskMemFree(pidl);
-        if (ok) {
+			const CString& BoxName = m_filelist.GetBoxNameForDialogMode();
+			CBox& box              = CBoxes::GetInstance().GetBox(BoxName);
+			CBoxFile& boxfile      = box.GetBoxFile();
 
-            //
-            // add the new folder
-            //
+			ok = box.AddOrRemoveQuickRecoveryFolder(path, TRUE);
+			if (!ok)
+			{
+				return;
+			}
 
-            const CString &BoxName = m_filelist.GetBoxNameForDialogMode();
-            CBox &box = CBoxes::GetInstance().GetBox(BoxName);
-            CBoxFile &boxfile = box.GetBoxFile();
+			m_filelist.RefreshContent();
 
-            ok = box.AddOrRemoveQuickRecoveryFolder(path, TRUE);
-            if (! ok)
-                return;
+			if (m_filelist.AnyQuickRecoverFiles())
+			{
+				GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow(SW_SHOW);
+			}
 
-            m_filelist.RefreshContent();
+			//
+			// check if the folder is empty
+			//
 
-            if (m_filelist.AnyQuickRecoverFiles())
-                GetDlgItem(ID_RECOVER_SELECT_ALL)->ShowWindow(SW_SHOW);
+			BOOL empty = TRUE;
 
-            //
-            // check if the folder is empty
-            //
+			boxfile.ChangeFolder(L"\\");
+			POSITION pos = boxfile.GetFolderHeadPosition();
+			BOOL expanded;
+			const WCHAR* folder_name = boxfile.GetNextFolder(pos, expanded);
+			if (boxfile.ChangeFolder(folder_name) != -1)
+			{
+				pos = boxfile.GetFolderHeadPosition();
+				while (pos)
+				{
+					folder_name = boxfile.GetNextFolder(pos, expanded);
+					if (boxfile.ChangeFolder(folder_name) != -1)
+					{
+						CString TruePath, CopyPath;
+						boxfile.GetFolderPaths(TruePath, CopyPath);
+						if (TruePath == path)
+						{
+							empty = (boxfile.GetFolderNumChildren() == 0);
+							break;
+						}
+						boxfile.ChangeFolder(L"..");
+					}
+				}
+			}
 
-            BOOL empty = TRUE;
-
-            boxfile.ChangeFolder(L"\\");
-            POSITION pos = boxfile.GetFolderHeadPosition();
-            BOOL expanded;
-            const WCHAR *folder_name = boxfile.GetNextFolder(pos, expanded);
-            if (boxfile.ChangeFolder(folder_name) != -1) {
-                pos = boxfile.GetFolderHeadPosition();
-                while (pos) {
-                    folder_name = boxfile.GetNextFolder(pos, expanded);
-                    if (boxfile.ChangeFolder(folder_name) != -1) {
-                        CString TruePath, CopyPath;
-                        boxfile.GetFolderPaths(TruePath, CopyPath);
-                        if (TruePath == path) {
-                            empty = (boxfile.GetFolderNumChildren() == 0);
-                            break;
-                        }
-                        boxfile.ChangeFolder(L"..");
-                    }
-                }
-            }
-
-            if (empty)
-                CMyApp::MsgBox(this, MSG_3727, MB_OK);
-        }
-    }
+			if (empty)
+			{
+				CMyApp::MsgBox(this, MSG_3727, MB_OK);
+			}
+		}
+	}
 }
 
 
@@ -540,8 +591,8 @@ void CDeleteDialog::OnCmdAddFolder()
 
 void CDeleteDialog::OnSelectAll()
 {
-    m_filelist.SelectAllItems(true);
-    m_filelist.SetFocus();
+	m_filelist.SelectAllItems(true);
+	m_filelist.SetFocus();
 }
 
 
@@ -550,8 +601,10 @@ void CDeleteDialog::OnSelectAll()
 //---------------------------------------------------------------------------
 
 
-void CDeleteDialog::OnContextMenu(CWnd *pWnd, CPoint pt)
+void CDeleteDialog::OnContextMenu(CWnd* pWnd, CPoint pt)
 {
-    if (pWnd == &m_filelist)
-        m_filelist.OnContextMenu(pWnd, pt);
+	if (pWnd == &m_filelist)
+	{
+		m_filelist.OnContextMenu(pWnd, pt);
+	}
 }

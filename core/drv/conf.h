@@ -32,9 +32,9 @@
 //---------------------------------------------------------------------------
 
 
-#define CONF_GET_NO_GLOBAL          0x40000000L
-#define CONF_GET_NO_EXPAND          0x20000000L
-#define CONF_GET_NO_TEMPLS          0x10000000L
+#define CONF_GET_NO_GLOBAL 0x40000000L
+#define CONF_GET_NO_EXPAND 0x20000000L
+#define CONF_GET_NO_TEMPLS 0x10000000L
 
 
 //---------------------------------------------------------------------------
@@ -42,13 +42,12 @@
 //---------------------------------------------------------------------------
 
 
-struct _CONF_EXPAND_ARGS {
-
-    POOL *pool;
-    WCHAR *sandbox;
-    WCHAR *sid;
-    ULONG *session;
-
+struct _CONF_EXPAND_ARGS
+{
+	POOL* pool;
+	WCHAR* sandbox;
+	WCHAR* sid;
+	ULONG* session;
 };
 
 
@@ -72,22 +71,19 @@ void Conf_AdjustUseCount(BOOLEAN increase);
 // Conf_Get:  returns a pointer to string configuration data.  use
 // with Conf_AdjustUseCount to make sure the returned pointer is valid
 
-const WCHAR *Conf_Get(
-    const WCHAR *section, const WCHAR *setting, ULONG index);
+const WCHAR* Conf_Get(const WCHAR* section, const WCHAR* setting, ULONG index);
 
 
 // Conf_Get_Boolean:  parses a y/n setting.  this function does not
 // have to be protected with Conf_AdjustUseCount
 
-BOOLEAN Conf_Get_Boolean(
-    const WCHAR *section, const WCHAR *setting, ULONG index, BOOLEAN def);
+BOOLEAN Conf_Get_Boolean(const WCHAR* section, const WCHAR* setting, ULONG index, BOOLEAN def);
 
 
 // Conf_Get_Boolean:  parses a numeric setting.  this function does
 // not have to be protected with Conf_AdjustUseCount
 
-ULONG Conf_Get_Number(
-    const WCHAR *section, const WCHAR *setting, ULONG index, ULONG def);
+ULONG Conf_Get_Number(const WCHAR* section, const WCHAR* setting, ULONG index, ULONG def);
 
 
 // Conf_IsValidBox:  returns STATUS_SUCCESS for a valid and defined
@@ -95,15 +91,13 @@ ULONG Conf_Get_Number(
 // does not define a box.  returns STATUS_OBJECT_NAME_NOT_FOUD if
 // the section does not exist.
 
-NTSTATUS Conf_IsValidBox(const WCHAR *section_name);
+NTSTATUS Conf_IsValidBox(const WCHAR* section_name);
 
 
 // Conf_Expand:  expands %-variables in a string which was retrieved
 // using Conf_Get or by any other means
 
-WCHAR *Conf_Expand(
-    CONF_EXPAND_ARGS *args, const WCHAR *model_value,
-    const WCHAR *setting_name);
+WCHAR* Conf_Expand(CONF_EXPAND_ARGS* args, const WCHAR* model_value, const WCHAR* setting_name);
 
 
 //---------------------------------------------------------------------------
@@ -115,18 +109,17 @@ BOOLEAN Conf_Init_User(void);
 
 void Conf_Unload_User(void);
 
-BOOLEAN Conf_Expand_UserName(CONF_EXPAND_ARGS *args, WCHAR *varvalue);
+BOOLEAN Conf_Expand_UserName(CONF_EXPAND_ARGS* args, WCHAR* varvalue);
 
-BOOLEAN Conf_IsBoxEnabled(
-    const WCHAR *BoxName, const WCHAR *SidString, ULONG SessionId);
+BOOLEAN Conf_IsBoxEnabled(const WCHAR* BoxName, const WCHAR* SidString, ULONG SessionId);
 
 
 //---------------------------------------------------------------------------
 
 
-NTSTATUS Conf_Api_Reload(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Conf_Api_Reload(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS Conf_Api_Query(PROCESS *proc, ULONG64 *parms);
+NTSTATUS Conf_Api_Query(PROCESS* proc, ULONG64* parms);
 
 
 //---------------------------------------------------------------------------

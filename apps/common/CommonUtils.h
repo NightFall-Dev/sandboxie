@@ -32,11 +32,10 @@
 #ifdef __cplusplus
 
 
-#include <afxcmn.h>
+	#include <afxcmn.h>
 
 
-void Common_RunStartExe(const CString &cmd, const CString &box,
-                        BOOL wait = FALSE, BOOL inherit = FALSE);
+void Common_RunStartExe(const CString& cmd, const CString& box, BOOL wait = FALSE, BOOL inherit = FALSE);
 
 
 #endif __cplusplus
@@ -48,14 +47,14 @@ void Common_RunStartExe(const CString &cmd, const CString &box,
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-void *Common_DlgTmplRtl(HINSTANCE hInst, const WCHAR *TmplName);
+	void* Common_DlgTmplRtl(HINSTANCE hInst, const WCHAR* TmplName);
 
-int Common_SHFileOperation(void *lpSHFileOpStruct, BOOL *pYesToAll,
-                           const WCHAR *ReplaceButtonText);
+	int Common_SHFileOperation(void* lpSHFileOpStruct, BOOL* pYesToAll, const WCHAR* ReplaceButtonText);
 
 
 #ifdef __cplusplus

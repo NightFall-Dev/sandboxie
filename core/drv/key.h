@@ -36,11 +36,11 @@ BOOLEAN Key_Init(void);
 
 void Key_Unload(void);
 
-BOOLEAN Key_MountHive(PROCESS *proc);
+BOOLEAN Key_MountHive(PROCESS* proc);
 
-void Key_UnmountHive(PROCESS *proc);
+void Key_UnmountHive(PROCESS* proc);
 
-BOOLEAN Key_InitProcess(PROCESS *proc);
+BOOLEAN Key_InitProcess(PROCESS* proc);
 
 
 //---------------------------------------------------------------------------

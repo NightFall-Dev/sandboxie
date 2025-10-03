@@ -30,43 +30,38 @@
 
 class NamedPipeServer
 {
-
 public:
-
-    NamedPipeServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    static void CloseCallback(void *context, void *data);
-
-    void NotifyHandler(HANDLE idProcess);
-
-    MSG_HEADER *OpenHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *CloseHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *SetHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *ReadHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *WriteHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *LpcConnectHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *LpcRequestHandler(MSG_HEADER *msg, HANDLE idProcess);
-
-    MSG_HEADER *AlpcRequestHandler(MSG_HEADER *msg, HANDLE idProcess);
+	NamedPipeServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    ProxyHandle *m_ProxyHandle;
+	static void CloseCallback(void* context, void* data);
 
-    void *m_pNtAlpcConnectPort;
-    void *m_pNtAlpcSendWaitReceivePort;
-    VOID *m_pNtAlpcImpersonateClientOfPort;
+	void NotifyHandler(HANDLE idProcess);
 
+	MSG_HEADER* OpenHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* CloseHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* SetHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* ReadHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* WriteHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* LpcConnectHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* LpcRequestHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+	MSG_HEADER* AlpcRequestHandler(MSG_HEADER* msg, HANDLE idProcess);
+
+protected:
+	ProxyHandle* m_ProxyHandle;
+
+	void* m_pNtAlpcConnectPort;
+	void* m_pNtAlpcSendWaitReceivePort;
+	VOID* m_pNtAlpcImpersonateClientOfPort;
 };
 
 

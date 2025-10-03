@@ -36,30 +36,29 @@ BOOLEAN File_Init(void);
 
 void File_Unload(void);
 
-NTSTATUS File_TranslateDosToNt(
-    const WCHAR *dos_path, POOL *pool, WCHAR **out_path, ULONG *out_len);
+NTSTATUS File_TranslateDosToNt(const WCHAR* dos_path, POOL* pool, WCHAR** out_path, ULONG* out_len);
 
-WCHAR *File_TranslateReparsePoints(const WCHAR *path, POOL *pool);
+WCHAR* File_TranslateReparsePoints(const WCHAR* path, POOL* pool);
 
-BOOLEAN File_CreateBoxPath(PROCESS *proc);
+BOOLEAN File_CreateBoxPath(PROCESS* proc);
 
-BOOLEAN File_InitProcess(PROCESS *proc);
+BOOLEAN File_InitProcess(PROCESS* proc);
 
 
 //---------------------------------------------------------------------------
 
 
-NTSTATUS File_Api_Rename(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_Rename(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS File_Api_GetName(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_GetName(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS File_Api_RefreshPathList(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_RefreshPathList(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS File_Api_Open(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_Open(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS File_Api_CheckInternetAccess(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_CheckInternetAccess(PROCESS* proc, ULONG64* parms);
 
-NTSTATUS File_Api_GetBlockedDll(PROCESS *proc, ULONG64 *parms);
+NTSTATUS File_Api_GetBlockedDll(PROCESS* proc, ULONG64* parms);
 
 
 //---------------------------------------------------------------------------

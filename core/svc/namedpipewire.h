@@ -32,16 +32,16 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct tagNAMED_PIPE_IOSB {
+typedef struct tagNAMED_PIPE_IOSB
+{
+	//
+	// if SbieSvc is 64-bit, it returns a 64-bit IO_STATUS_BLOCK even if
+	// the caller is a 32-bit process.  the following structure keeps
+	// everyone on a 64-bit IO_STATUS_BLOCK, always
+	//
 
-    //
-    // if SbieSvc is 64-bit, it returns a 64-bit IO_STATUS_BLOCK even if
-    // the caller is a 32-bit process.  the following structure keeps
-    // everyone on a 64-bit IO_STATUS_BLOCK, always
-    //
-
-    ULONG64 status;
-    ULONG64 information;
+	ULONG64 status;
+	ULONG64 information;
 
 } NAMED_PIPE_IOSB;
 
@@ -53,17 +53,17 @@ typedef struct tagNAMED_PIPE_IOSB {
 
 struct tagNAMED_PIPE_OPEN_REQ
 {
-    MSG_HEADER h;
-    ULONG create_options;
-    WCHAR name[64];
-    WCHAR server[48];
+	MSG_HEADER h;
+	ULONG create_options;
+	WCHAR name[64];
+	WCHAR server[48];
 };
 
 struct tagNAMED_PIPE_OPEN_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG handle;
-    NAMED_PIPE_IOSB iosb;
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG handle;
+	NAMED_PIPE_IOSB iosb;
 };
 
 typedef struct tagNAMED_PIPE_OPEN_REQ NAMED_PIPE_OPEN_REQ;
@@ -77,13 +77,13 @@ typedef struct tagNAMED_PIPE_OPEN_RPL NAMED_PIPE_OPEN_RPL;
 
 struct tagNAMED_PIPE_CLOSE_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
+	MSG_HEADER h;
+	ULONG handle;
 };
 
 struct tagNAMED_PIPE_CLOSE_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
+	MSG_HEADER h; // status is NTSTATUS
 };
 
 typedef struct tagNAMED_PIPE_CLOSE_REQ NAMED_PIPE_CLOSE_REQ;
@@ -97,17 +97,17 @@ typedef struct tagNAMED_PIPE_CLOSE_RPL NAMED_PIPE_CLOSE_RPL;
 
 struct tagNAMED_PIPE_SET_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h;
+	ULONG handle;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 struct tagNAMED_PIPE_SET_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG handle;
-    NAMED_PIPE_IOSB iosb;
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG handle;
+	NAMED_PIPE_IOSB iosb;
 };
 
 typedef struct tagNAMED_PIPE_SET_REQ NAMED_PIPE_SET_REQ;
@@ -121,17 +121,17 @@ typedef struct tagNAMED_PIPE_SET_RPL NAMED_PIPE_SET_RPL;
 
 struct tagNAMED_PIPE_READ_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
-    ULONG read_len;
+	MSG_HEADER h;
+	ULONG handle;
+	ULONG read_len;
 };
 
 struct tagNAMED_PIPE_READ_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    NAMED_PIPE_IOSB iosb;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h; // status is NTSTATUS
+	NAMED_PIPE_IOSB iosb;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 
@@ -146,16 +146,16 @@ typedef struct tagNAMED_PIPE_READ_RPL NAMED_PIPE_READ_RPL;
 
 struct tagNAMED_PIPE_WRITE_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h;
+	ULONG handle;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 struct tagNAMED_PIPE_WRITE_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    NAMED_PIPE_IOSB iosb;
+	MSG_HEADER h; // status is NTSTATUS
+	NAMED_PIPE_IOSB iosb;
 };
 
 
@@ -170,20 +170,20 @@ typedef struct tagNAMED_PIPE_WRITE_RPL NAMED_PIPE_WRITE_RPL;
 
 struct tagNAMED_PIPE_LPC_CONNECT_REQ
 {
-    MSG_HEADER h;
-    WCHAR name[64];
-    ULONG max_msg_len;
-    ULONG info_len;
-    UCHAR info_data[1];
+	MSG_HEADER h;
+	WCHAR name[64];
+	ULONG max_msg_len;
+	ULONG info_len;
+	UCHAR info_data[1];
 };
 
 struct tagNAMED_PIPE_LPC_CONNECT_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG handle;
-    ULONG max_msg_len;
-    ULONG info_len;
-    UCHAR info_data[1];
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG handle;
+	ULONG max_msg_len;
+	ULONG info_len;
+	UCHAR info_data[1];
 };
 
 
@@ -198,17 +198,17 @@ typedef struct tagNAMED_PIPE_LPC_CONNECT_RPL NAMED_PIPE_LPC_CONNECT_RPL;
 
 struct tagNAMED_PIPE_LPC_REQUEST_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
-    UCHAR data[328];                    // MAX_PORTMSG_LENGTH
-    UCHAR info[1];
+	MSG_HEADER h;
+	ULONG handle;
+	UCHAR data[328]; // MAX_PORTMSG_LENGTH
+	UCHAR info[1];
 };
 
 struct tagNAMED_PIPE_LPC_REQUEST_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    UCHAR data[328];                    // MAX_PORTMSG_LENGTH
-    UCHAR info[1];
+	MSG_HEADER h;    // status is NTSTATUS
+	UCHAR data[328]; // MAX_PORTMSG_LENGTH
+	UCHAR info[1];
 };
 
 
@@ -223,19 +223,19 @@ typedef struct tagNAMED_PIPE_LPC_REQUEST_RPL NAMED_PIPE_LPC_REQUEST_RPL;
 
 struct tagNAMED_PIPE_ALPC_REQUEST_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
-    ULONG msg_len;
-    ULONG view[2];                      // some ALPC_MESSAGE_VIEW data
-    UCHAR data[24];                     // at least sizeof(PORT_MESSAGE)
+	MSG_HEADER h;
+	ULONG handle;
+	ULONG msg_len;
+	ULONG view[2];  // some ALPC_MESSAGE_VIEW data
+	UCHAR data[24]; // at least sizeof(PORT_MESSAGE)
 };
 
 struct tagNAMED_PIPE_ALPC_REQUEST_RPL
 {
-    MSG_HEADER h;                       // status is NTSTATUS
-    ULONG msg_len;
-    ULONG view[3];                      // some ALPC_MESSAGE_VIEW data
-    UCHAR data[1];
+	MSG_HEADER h; // status is NTSTATUS
+	ULONG msg_len;
+	ULONG view[3]; // some ALPC_MESSAGE_VIEW data
+	UCHAR data[1];
 };
 
 
@@ -250,10 +250,10 @@ typedef struct tagNAMED_PIPE_ALPC_REQUEST_RPL NAMED_PIPE_ALPC_REQUEST_RPL;
 
 struct tagNAMED_PIPE_IMPERSONATE_REQ
 {
-    MSG_HEADER h;
-    ULONG type;
-    ULONG64 handle;
-    UCHAR data[328];                    // MAX_PORTMSG_LENGTH
+	MSG_HEADER h;
+	ULONG type;
+	ULONG64 handle;
+	UCHAR data[328]; // MAX_PORTMSG_LENGTH
 };
 
 

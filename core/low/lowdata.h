@@ -29,57 +29,53 @@
 //---------------------------------------------------------------------------
 #ifdef _WIN64
 
-typedef struct _SBIELOW_J_TABLE_ENTRY 
+typedef struct _SBIELOW_J_TABLE_ENTRY
 {
-//  unsigned char code[0x18]; //for jtable with hotpatch location for sboxdll hooking
-    unsigned char code[0x10]; //for jtable
+	//  unsigned char code[0x18]; //for jtable with hotpatch location for sboxdll hooking
+	unsigned char code[0x10]; //for jtable
 } SBIELOW_J_TABLE_ENTRY;
 
 typedef struct _SBIELOW_J_TABLE
 {
-   SBIELOW_J_TABLE_ENTRY entry[1024];
+	SBIELOW_J_TABLE_ENTRY entry[1024];
 } SBIELOW_J_TABLE;
 
 #endif
 
-typedef struct _SBIELOW_DATA {
-    ULONG64     ntdll_base;
-    ULONG64     syscall_data;
+typedef struct _SBIELOW_DATA
+{
+	ULONG64 ntdll_base;
+	ULONG64 syscall_data;
 
-    ULONG64     api_device_handle;
-    ULONG       api_sbiedrv_ctlcode;
-    ULONG       api_invoke_syscall;
+	ULONG64 api_device_handle;
+	ULONG api_sbiedrv_ctlcode;
+	ULONG api_invoke_syscall;
 
-    BOOLEAN     is_wow64;
-    BOOLEAN     long_diff;
-    BOOLEAN     bHostInject;
-    BOOLEAN     is_win10;
+	BOOLEAN is_wow64;
+	BOOLEAN long_diff;
+	BOOLEAN bHostInject;
+	BOOLEAN is_win10;
 
-    __declspec(align(16))
-        UCHAR   LdrInitializeThunk_tramp[48];
-    __declspec(align(16))
-        UCHAR   NtDelayExecution_code[32];
-    __declspec(align(16))
-        UCHAR   NtDeviceIoControlFile_code[32];
-    __declspec(align(16))
-        UCHAR   NtFlushInstructionCache_code[32];
-    __declspec(align(16))
-        UCHAR   NtProtectVirtualMemory_code[32];
-     ULONG64 RealNtDeviceIoControlFile;
+	__declspec(align(16)) UCHAR LdrInitializeThunk_tramp[48];
+	__declspec(align(16)) UCHAR NtDelayExecution_code[32];
+	__declspec(align(16)) UCHAR NtDeviceIoControlFile_code[32];
+	__declspec(align(16)) UCHAR NtFlushInstructionCache_code[32];
+	__declspec(align(16)) UCHAR NtProtectVirtualMemory_code[32];
+	ULONG64 RealNtDeviceIoControlFile;
 #ifdef _WIN64
-    SBIELOW_J_TABLE * Sbie64bitJumpTable;
+	SBIELOW_J_TABLE* Sbie64bitJumpTable;
 #endif
 } SBIELOW_DATA;
 
 
 //
-// SBIELOW_DATA symbol is in the "zzzz" section of lowlevel that 
-// points to location in the code section ".text", as defined in 
+// SBIELOW_DATA symbol is in the "zzzz" section of lowlevel that
+// points to location in the code section ".text", as defined in
 // entry.asm label SbieLowData
 //
-// hard coded Data offset dependency removed 
+// hard coded Data offset dependency removed
 #define SBIELOW_INJECTION_SECTION ".text"
-#define SBIELOW_SYMBOL_SECTION     "zzzz"
+#define SBIELOW_SYMBOL_SECTION "zzzz"
 
 //
 // additional strings that are used to inject SbieDll are passed in
@@ -87,18 +83,18 @@ typedef struct _SBIELOW_DATA {
 // specifies the offset to this extra data structure
 //
 
-typedef struct _SBIELOW_EXTRA_DATA {
-
-    ULONG LdrLoadDll_offset;
-    ULONG LdrGetProcAddr_offset;
-    ULONG NtRaiseHardError_offset;
-    ULONG RtlFindActCtx_offset;
-    ULONG KernelDll_offset;
-    ULONG KernelDll_length;
-    ULONG NativeSbieDll_offset;
-    ULONG NativeSbieDll_length;
-    ULONG Wow64SbieDll_offset;
-    ULONG Wow64SbieDll_length;
+typedef struct _SBIELOW_EXTRA_DATA
+{
+	ULONG LdrLoadDll_offset;
+	ULONG LdrGetProcAddr_offset;
+	ULONG NtRaiseHardError_offset;
+	ULONG RtlFindActCtx_offset;
+	ULONG KernelDll_offset;
+	ULONG KernelDll_length;
+	ULONG NativeSbieDll_offset;
+	ULONG NativeSbieDll_length;
+	ULONG Wow64SbieDll_offset;
+	ULONG Wow64SbieDll_length;
 
 } SBIELOW_EXTRA_DATA;
 

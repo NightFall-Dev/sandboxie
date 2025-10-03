@@ -20,8 +20,8 @@
 //---------------------------------------------------------------------------
 
 
-#include <windows.h>
 #include <stdio.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -39,8 +39,8 @@
 
 typedef struct _SECTION_NAME
 {
-    struct _SECTION_NAME *next;
-    WCHAR name[1];
+	struct _SECTION_NAME* next;
+	WCHAR name[1];
 } SECTION_NAME;
 
 
@@ -50,9 +50,9 @@ typedef struct _SECTION_NAME
 
 
 void CmdParse(void);
-BOOL CmdIs(const WCHAR *val);
-WCHAR *CmdVerb(ULONG index);
-WCHAR *CmdOpt(const WCHAR *name);
+BOOL CmdIs(const WCHAR* val);
+WCHAR* CmdVerb(ULONG index);
+WCHAR* CmdOpt(const WCHAR* name);
 
 
 //---------------------------------------------------------------------------
@@ -60,7 +60,7 @@ WCHAR *CmdOpt(const WCHAR *name);
 //---------------------------------------------------------------------------
 
 
-void UsageError(const WCHAR *text);
+void UsageError(const WCHAR* text);
 
 
 //---------------------------------------------------------------------------

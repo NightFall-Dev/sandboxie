@@ -25,8 +25,6 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include <windows.h>
-#include <stdio.h>
 #include <Psapi.h>
-
-
+#include <stdio.h>
+#include <windows.h>

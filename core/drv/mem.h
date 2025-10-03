@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------
 
 
-#undef  DEBUG_MEMORY
+#undef DEBUG_MEMORY
 
 
 //---------------------------------------------------------------------------
@@ -37,17 +37,17 @@
 //---------------------------------------------------------------------------
 
 
-void *Mem_AllocEx(POOL *pool, ULONG size, BOOLEAN InitMsg);
+void* Mem_AllocEx(POOL* pool, ULONG size, BOOLEAN InitMsg);
 
-#define Mem_Alloc(pool,size) Mem_AllocEx((pool),(size),FALSE)
+#define Mem_Alloc(pool, size) Mem_AllocEx((pool), (size), FALSE)
 
 #ifdef DEBUG_MEMORY
 
-void Mem_Free(void *ptr, ULONG size);
+void Mem_Free(void* ptr, ULONG size);
 
-#else ! DEBUG_MEMORY
+#else !DEBUG_MEMORY
 
-#define Mem_Free Pool_Free
+	#define Mem_Free Pool_Free
 
 #endif DEBUG_MEMORY
 
@@ -55,20 +55,19 @@ void Mem_Free(void *ptr, ULONG size);
 //---------------------------------------------------------------------------
 
 
-WCHAR *Mem_AllocStringEx(
-    POOL *pool, const WCHAR *model_string, BOOLEAN InitMsg);
+WCHAR* Mem_AllocStringEx(POOL* pool, const WCHAR* model_string, BOOLEAN InitMsg);
 
-#define Mem_AllocString(pool,model) Mem_AllocStringEx((pool),(model),FALSE)
+#define Mem_AllocString(pool, model) Mem_AllocStringEx((pool), (model), FALSE)
 
-void Mem_FreeString(WCHAR *string);
+void Mem_FreeString(WCHAR* string);
 
 
 //---------------------------------------------------------------------------
 
 
-BOOLEAN Mem_GetLockResource(PERESOURCE *ppResource, BOOLEAN InitMsg);
+BOOLEAN Mem_GetLockResource(PERESOURCE* ppResource, BOOLEAN InitMsg);
 
-void Mem_FreeLockResource(PERESOURCE *ppResource);
+void Mem_FreeLockResource(PERESOURCE* ppResource);
 
 
 //---------------------------------------------------------------------------

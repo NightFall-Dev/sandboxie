@@ -21,6 +21,7 @@
 
 
 #include "common/pattern.h"
+
 #include "common/defines.h"
 #include "common/list.h"
 
@@ -30,40 +31,41 @@
 //---------------------------------------------------------------------------
 
 
-struct _PATTERN {
+struct _PATTERN
+{
+	// unused list_elem can be used by caller
+	LIST_ELEM list_elem;
 
-    // unused list_elem can be used by caller
-    LIST_ELEM list_elem;
+	// length of the entire PATTERN object
+	ULONG length;
 
-    // length of the entire PATTERN object
-    ULONG length;
+	// pattern info
+	union {
+		ULONG v;
+		USHORT num_cons; // number of constant parts
+		struct
+		{
+			int unused : 16;
+			int star_missing : 1;
+			int star_at_head : 1;
+			int star_at_tail : 1;
+			int have_a_qmark : 1;
+		} f;
+	} info;
 
-    // pattern info
-    union {
-        ULONG v;
-        USHORT num_cons;        // number of constant parts
-        struct {
-            int unused : 16;
-            int star_missing : 1;
-            int star_at_head : 1;
-            int star_at_tail : 1;
-            int have_a_qmark : 1;
-        } f;
-    } info;
+	// pointer to source pattern string, allocated as part of
+	// this PATTERN object
+	WCHAR* source;
 
-    // pointer to source pattern string, allocated as part of
-    // this PATTERN object
-    WCHAR *source;
-
-    // array of pointers to constant parts.  the actual number of
-    // elements is indicate by info.num_cons, and the strings are
-    // allocated as part of this PATTERN object
-    struct {
-        BOOLEAN hex;
-        USHORT len;
-        WCHAR *ptr;
-    } cons[0];
-
+	// array of pointers to constant parts.  the actual number of
+	// elements is indicate by info.num_cons, and the strings are
+	// allocated as part of this PATTERN object
+	struct
+	{
+		BOOLEAN hex;
+		USHORT len;
+		WCHAR* ptr;
+	} cons[0];
 };
 
 
@@ -72,31 +74,24 @@ struct _PATTERN {
 //---------------------------------------------------------------------------
 
 
-static BOOLEAN Pattern_Match2(
-    PATTERN *pat,
-    const WCHAR *string, int string_len,
-    int str_index, int con_index);
+static BOOLEAN Pattern_Match2(PATTERN* pat, const WCHAR* string, int string_len, int str_index, int con_index);
 
-static BOOLEAN Pattern_Match3(
-    PATTERN *pat,
-    const WCHAR *string, int string_len,
-    int str_index, int con_index);
+static BOOLEAN Pattern_Match3(PATTERN* pat, const WCHAR* string, int string_len, int str_index, int con_index);
 
 #ifdef KERNEL_MODE
 
-static int Pattern_wcstol(const WCHAR *text, WCHAR **endptr);
+static int Pattern_wcstol(const WCHAR* text, WCHAR** endptr);
 
 #else
 
 //#include <wchar.h>
-_Check_return_ _CRTIMP long   __cdecl wcstol(_In_z_ const wchar_t *_Str, _Out_opt_ _Deref_post_z_ wchar_t ** _EndPtr, int _Radix);
+_Check_return_ _CRTIMP long __cdecl wcstol(_In_z_ const wchar_t* _Str, _Out_opt_ _Deref_post_z_ wchar_t** _EndPtr, int _Radix);
 
-#define Pattern_wcstol(text,endptr) wcstol(text,endptr,10)
+	#define Pattern_wcstol(text, endptr) wcstol(text, endptr, 10)
 
 #endif KERNEL_MODE
 
-static const WCHAR *Pattern_wcsnstr(
-    const WCHAR *hstr, const WCHAR *nstr, int nlen);
+static const WCHAR* Pattern_wcsnstr(const WCHAR* hstr, const WCHAR* nstr, int nlen);
 
 
 //---------------------------------------------------------------------------
@@ -104,7 +99,7 @@ static const WCHAR *Pattern_wcsnstr(
 //---------------------------------------------------------------------------
 
 
-static const WCHAR *Pattern_Hex = L"__hex";
+static const WCHAR* Pattern_Hex = L"__hex";
 
 
 //---------------------------------------------------------------------------
@@ -112,152 +107,181 @@ static const WCHAR *Pattern_Hex = L"__hex";
 //---------------------------------------------------------------------------
 
 
-_FX PATTERN *Pattern_Create(
-    POOL *pool, const WCHAR *string, BOOLEAN lower)
+_FX PATTERN* Pattern_Create(POOL* pool, const WCHAR* string, BOOLEAN lower)
 {
-    ULONG num_cons;
-    const WCHAR *iptr;
-    const WCHAR *iptr2;
-    ULONG len_ptr;
-    ULONG len_pat;
-    PATTERN *pat;
-    WCHAR *optr;
-    BOOLEAN any_hex_cons;
+	ULONG num_cons;
+	const WCHAR* iptr;
+	const WCHAR* iptr2;
+	ULONG len_ptr;
+	ULONG len_pat;
+	PATTERN* pat;
+	WCHAR* optr;
+	BOOLEAN any_hex_cons;
 
-    //
-    // count number of constant parts in the input string, and
-    // also number of bytes used by these parts
-    //
+	//
+	// count number of constant parts in the input string, and
+	// also number of bytes used by these parts
+	//
 
-    num_cons = 0;
-    len_pat = sizeof(PATTERN);
-    if (string)
-        len_pat += wcslen(string) * sizeof(WCHAR);
-    len_pat += sizeof(WCHAR);
+	num_cons = 0;
+	len_pat  = sizeof(PATTERN);
+	if (string)
+	{
+		len_pat += wcslen(string) * sizeof(WCHAR);
+	}
+	len_pat += sizeof(WCHAR);
 
-    iptr = string;
-    while (iptr) {
+	iptr = string;
+	while (iptr)
+	{
+		while (*iptr == L'*')
+		{
+			++iptr;
+		}
+		iptr2 = wcschr(iptr, L'*');
 
-        while (*iptr == L'*')
-            ++iptr;
-        iptr2 = wcschr(iptr, L'*');
+		if (iptr2)
+		{
+			len_ptr = (ULONG)(iptr2 - iptr);
+			++iptr2;
+		}
+		else
+		{
+			len_ptr = wcslen(iptr);
+		}
 
-        if (iptr2) {
-            len_ptr = (ULONG)(iptr2 - iptr);
-            ++iptr2;
-        } else
-            len_ptr = wcslen(iptr);
+		if (len_ptr)
+		{
+			len_pat += (len_ptr + 1) * sizeof(WCHAR)
+			    // plus one entry in cons array:
+			    + sizeof(((PATTERN*)NULL)->cons[0]);
+			++num_cons;
+		}
 
-        if (len_ptr) {
-            len_pat += (len_ptr + 1) * sizeof(WCHAR)
-                        // plus one entry in cons array:
-                    +  sizeof(((PATTERN *)NULL)->cons[0]);
-            ++num_cons;
-        }
+		iptr = iptr2;
+	}
 
-        iptr = iptr2;
-    }
+	//
+	// allocate the PATTERN object with the following length:
+	// - the size of the PATTERN structure
+	// - length of source string, in bytes, including NULL character
+	// - length of constant parts, in bytes, each including a NULL char
+	// - number of constant parts * sizeof(WCHAR *), for pointer array
+	// the length was already computed above.
+	//
 
-    //
-    // allocate the PATTERN object with the following length:
-    // - the size of the PATTERN structure
-    // - length of source string, in bytes, including NULL character
-    // - length of constant parts, in bytes, each including a NULL char
-    // - number of constant parts * sizeof(WCHAR *), for pointer array
-    // the length was already computed above.
-    //
+	pat = (PATTERN*)Pool_Alloc(pool, len_pat);
+	if (!pat)
+	{
+		return NULL;
+	}
 
-    pat = (PATTERN*)Pool_Alloc(pool, len_pat);
-    if (! pat)
-        return NULL;
+	memzero(&pat->list_elem, sizeof(LIST_ELEM));
+	pat->length = len_pat;
 
-    memzero(&pat->list_elem, sizeof(LIST_ELEM));
-    pat->length = len_pat;
+	//
+	// copy constant parts into pattern.  we copy the partial strings
+	// beginning just after the cons array in PATTERN, and point the
+	// elements of that array to each copied string
+	//
 
-    //
-    // copy constant parts into pattern.  we copy the partial strings
-    // beginning just after the cons array in PATTERN, and point the
-    // elements of that array to each copied string
-    //
+	any_hex_cons = FALSE;
 
-    any_hex_cons = FALSE;
+	optr     = (WCHAR*)&pat->cons[num_cons];
+	num_cons = 0;
 
-    optr = (WCHAR *)&pat->cons[num_cons];
-    num_cons = 0;
+	iptr = string;
+	while (iptr)
+	{
+		while (*iptr == L'*')
+		{
+			++iptr;
+		}
+		iptr2 = wcschr(iptr, L'*');
 
-    iptr = string;
-    while (iptr) {
+		if (iptr2)
+		{
+			len_ptr = (ULONG)(iptr2 - iptr);
+			++iptr2;
+		}
+		else
+		{
+			len_ptr = wcslen(iptr);
+		}
 
-        while (*iptr == L'*')
-            ++iptr;
-        iptr2 = wcschr(iptr, L'*');
+		if (len_ptr)
+		{
+			// put the char count of the constant part before the data
 
-        if (iptr2) {
-            len_ptr = (ULONG)(iptr2 - iptr);
-            ++iptr2;
-        } else
-            len_ptr = wcslen(iptr);
+			pat->cons[num_cons].len = (USHORT)len_ptr;
+			pat->cons[num_cons].ptr = optr;
 
-        if (len_ptr) {
+			wmemcpy(optr, iptr, len_ptr);
+			optr[len_ptr] = L'\0';
+			if (lower)
+			{
+				_wcslwr(optr);
+			}
 
-            // put the char count of the constant part before the data
+			if (Pattern_wcsnstr(optr, Pattern_Hex, 5))
+			{
+				any_hex_cons            = TRUE;
+				pat->cons[num_cons].hex = TRUE;
+			}
+			else
+			{
+				pat->cons[num_cons].hex = FALSE;
+			}
 
-            pat->cons[num_cons].len = (USHORT)len_ptr;
-            pat->cons[num_cons].ptr = optr;
+			++num_cons;
+			optr += len_ptr + 1;
+		}
 
-            wmemcpy(optr, iptr, len_ptr);
-            optr[len_ptr] = L'\0';
-            if (lower)
-                _wcslwr(optr);
+		iptr = iptr2;
+	}
 
-            if (Pattern_wcsnstr(optr, Pattern_Hex, 5)) {
-                any_hex_cons = TRUE;
-                pat->cons[num_cons].hex = TRUE;
-            } else
-                pat->cons[num_cons].hex = FALSE;
+	//
+	// place source string in the pattern, past all the constant parts,
+	// and initialize info.
+	//
 
-            ++num_cons;
-            optr += len_ptr + 1;
-        }
+	if (string)
+	{
+		wcscpy(optr, string);
+	}
+	else
+	{
+		*optr = L'\0';
+	}
+	pat->source = optr;
 
-        iptr = iptr2;
-    }
+	pat->info.v        = 0;
+	pat->info.num_cons = (USHORT)num_cons;
 
-    //
-    // place source string in the pattern, past all the constant parts,
-    // and initialize info.
-    //
+	if (string && string[0] == L'*')
+	{
+		pat->info.f.star_at_head = TRUE;
+	}
+	if (string && string[wcslen(string) - 1] == L'*')
+	{
+		pat->info.f.star_at_tail = TRUE;
+	}
 
-    if (string)
-        wcscpy(optr, string);
-    else
-        *optr = L'\0';
-    pat->source = optr;
+	if (num_cons <= 1 && (!pat->info.f.star_at_head) && (!pat->info.f.star_at_tail) && (!any_hex_cons))
+	{
+		pat->info.f.star_missing = TRUE;
 
-    pat->info.v = 0;
-    pat->info.num_cons = (USHORT)num_cons;
+		if (wcschr(string, L'?'))
+		{
+			pat->info.f.have_a_qmark = TRUE;
+		}
+	}
 
-    if (string && string[0] == L'*')
-        pat->info.f.star_at_head = TRUE;
-    if (string && string[wcslen(string) - 1] == L'*')
-        pat->info.f.star_at_tail = TRUE;
+	//
+	// we're done
+	//
 
-    if (num_cons <= 1 &&
-        (! pat->info.f.star_at_head) &&
-        (! pat->info.f.star_at_tail) &&
-        (! any_hex_cons))
-    {
-        pat->info.f.star_missing = TRUE;
-
-        if (wcschr(string, L'?'))
-            pat->info.f.have_a_qmark = TRUE;
-    }
-
-    //
-    // we're done
-    //
-
-    return pat;
+	return pat;
 }
 
 
@@ -266,9 +290,9 @@ _FX PATTERN *Pattern_Create(
 //---------------------------------------------------------------------------
 
 
-_FX void Pattern_Free(PATTERN *pat)
+_FX void Pattern_Free(PATTERN* pat)
 {
-    Pool_Free(pat, pat->length);
+	Pool_Free(pat, pat->length);
 }
 
 
@@ -277,9 +301,9 @@ _FX void Pattern_Free(PATTERN *pat)
 //---------------------------------------------------------------------------
 
 
-_FX const WCHAR *Pattern_Source(PATTERN *pat)
+_FX const WCHAR* Pattern_Source(PATTERN* pat)
 {
-    return pat->source;
+	return pat->source;
 }
 
 
@@ -288,47 +312,55 @@ _FX const WCHAR *Pattern_Source(PATTERN *pat)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Pattern_Match(
-    PATTERN *pat, const WCHAR *string, int string_len)
+_FX BOOLEAN Pattern_Match(PATTERN* pat, const WCHAR* string, int string_len)
 {
-    //
-    // short-circuits:  if string is NULL, or if the pattern is NULL,
-    // return FALSE.  if the pattern has no wildcard stars, use simple
-    // string comparison
-    //
+	//
+	// short-circuits:  if string is NULL, or if the pattern is NULL,
+	// return FALSE.  if the pattern has no wildcard stars, use simple
+	// string comparison
+	//
 
-    if (! string)
-        return FALSE;
+	if (!string)
+	{
+		return FALSE;
+	}
 
-    if (pat->info.f.star_missing) {
+	if (pat->info.f.star_missing)
+	{
+		if (pat->info.num_cons == 0)
+		{
+			return FALSE;
+		}
+		if (string_len != pat->cons[0].len)
+		{
+			return FALSE;
+		}
 
-        if (pat->info.num_cons == 0)
-            return FALSE;
-        if (string_len != pat->cons[0].len)
-            return FALSE;
+		if (pat->info.f.have_a_qmark)
+		{
+			const WCHAR* x = Pattern_wcsnstr(string, pat->cons[0].ptr, pat->cons[0].len);
+			if (x != string)
+			{
+				return FALSE;
+			}
+		}
+		else
+		{
+			ULONG x = wmemcmp(string, pat->cons[0].ptr, pat->cons[0].len);
+			if (x != 0)
+			{
+				return FALSE;
+			}
+		}
 
-        if (pat->info.f.have_a_qmark) {
+		return TRUE;
+	}
 
-            const WCHAR *x = Pattern_wcsnstr(
-                            string, pat->cons[0].ptr, pat->cons[0].len);
-            if (x != string)
-                return FALSE;
+	//
+	// otherwise stars were included and the string is valid
+	//
 
-        } else {
-
-            ULONG x = wmemcmp(string, pat->cons[0].ptr, pat->cons[0].len);
-            if (x != 0)
-                return FALSE;
-        }
-
-        return TRUE;
-    }
-
-    //
-    // otherwise stars were included and the string is valid
-    //
-
-    return Pattern_Match2(pat, string, string_len, 0, 0);
+	return Pattern_Match2(pat, string, string_len, 0, 0);
 }
 
 
@@ -337,60 +369,61 @@ _FX BOOLEAN Pattern_Match(
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Pattern_Match2(
-    PATTERN *pat,
-    const WCHAR *string, int string_len,
-    int str_index, int con_index)
+_FX BOOLEAN Pattern_Match2(PATTERN* pat, const WCHAR* string, int string_len, int str_index, int con_index)
 {
-    BOOLEAN ok = TRUE;
+	BOOLEAN ok = TRUE;
 
-    if (con_index < pat->info.num_cons) {
+	if (con_index < pat->info.num_cons)
+	{
+		//
+		// recursively try to find a match for the constant parts
+		//
 
-        //
-        // recursively try to find a match for the constant parts
-        //
+		while (1)
+		{
+			const WCHAR* ptr = Pattern_wcsnstr(string + str_index, pat->cons[con_index].ptr, pat->cons[con_index].len);
 
-        while (1) {
+			if (!ptr)
+			{
+				if (pat->cons[con_index].hex)
+				{
+					ok = Pattern_Match3(pat, string, string_len, str_index, con_index);
+				}
+				else
+				{
+					ok = FALSE;
+				}
+				break;
+			}
 
-            const WCHAR *ptr = Pattern_wcsnstr(
-                string + str_index,
-                pat->cons[con_index].ptr, pat->cons[con_index].len);
+			if (str_index == 0 && ptr > string && (!pat->info.f.star_at_head))
+			{
+				ok = FALSE;
+				break;
+			}
 
-            if (! ptr) {
+			str_index = (ULONG)(ptr - string) + pat->cons[con_index].len;
+			ok        = Pattern_Match2(pat, string, string_len, str_index, con_index + 1);
+			if (ok)
+			{
+				break;
+			}
+		}
+	}
+	else if (ok)
+	{
+		//
+		// if we think we have a match, just make sure there aren't
+		// any trailing characters that break the pattern
+		//
 
-                if (pat->cons[con_index].hex) {
-                    ok = Pattern_Match3(
-                        pat, string, string_len, str_index, con_index);
-                } else
-                    ok = FALSE;
-                break;
-            }
+		if (str_index != string_len && (!pat->info.f.star_at_tail))
+		{
+			ok = FALSE;
+		}
+	}
 
-            if (str_index == 0 && ptr > string &&
-                    (! pat->info.f.star_at_head)) {
-                ok = FALSE;
-                break;
-            }
-
-            str_index = (ULONG)(ptr - string) + pat->cons[con_index].len;
-            ok = Pattern_Match2(
-                    pat, string, string_len, str_index, con_index + 1);
-            if (ok)
-                break;
-        }
-
-    } else if (ok) {
-
-        //
-        // if we think we have a match, just make sure there aren't
-        // any trailing characters that break the pattern
-        //
-
-        if (str_index != string_len && (! pat->info.f.star_at_tail))
-            ok = FALSE;
-    }
-
-    return ok;
+	return ok;
 }
 
 
@@ -399,129 +432,156 @@ _FX BOOLEAN Pattern_Match2(
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Pattern_Match3(
-    PATTERN *pat,
-    const WCHAR *string, int string_len,
-    int str_index, int con_index)
+_FX BOOLEAN Pattern_Match3(PATTERN* pat, const WCHAR* string, int string_len, int str_index, int con_index)
 {
-    const WCHAR *srcptr, *conptr, *seqptr, *tmpptr;
-    WCHAR *endptr;
-    int con_len, min_len, max_len, count;
+	const WCHAR *srcptr, *conptr, *seqptr, *tmpptr;
+	WCHAR* endptr;
+	int con_len, min_len, max_len, count;
 
-    //
-    // find the __hex__ part within the constant part,
-    // skip any leading characters while making sure they match
-    //
+	//
+	// find the __hex__ part within the constant part,
+	// skip any leading characters while making sure they match
+	//
 
-    srcptr = string + str_index;
+	srcptr = string + str_index;
 
-    conptr = pat->cons[con_index].ptr;
-    seqptr = Pattern_wcsnstr(conptr, Pattern_Hex, 5);
-    if (! seqptr)
-        return FALSE;
+	conptr = pat->cons[con_index].ptr;
+	seqptr = Pattern_wcsnstr(conptr, Pattern_Hex, 5);
+	if (!seqptr)
+	{
+		return FALSE;
+	}
 
 restart1:
 
-    con_len = (int)(ULONG_PTR)(seqptr - conptr);
+	con_len = (int)(ULONG_PTR)(seqptr - conptr);
 
-    if (con_len) {
-        if (string_len - str_index < con_len)
-            return FALSE;
-        if (Pattern_wcsnstr(srcptr, conptr, con_len) != srcptr)
-            return FALSE;
-        srcptr += con_len;
-    }
+	if (con_len)
+	{
+		if (string_len - str_index < con_len)
+		{
+			return FALSE;
+		}
+		if (Pattern_wcsnstr(srcptr, conptr, con_len) != srcptr)
+		{
+			return FALSE;
+		}
+		srcptr += con_len;
+	}
 
-    //
-    // get minimum and maximum lengths of hex sequence, if specified
-    //
+	//
+	// get minimum and maximum lengths of hex sequence, if specified
+	//
 
-    seqptr += 5;        // length of Pattern_Hex
+	seqptr += 5; // length of Pattern_Hex
 
-    min_len = Pattern_wcstol(seqptr, &endptr);
-    if (*endptr && min_len >= 1 && min_len <= 255) {
-        seqptr = endptr;
-        max_len = Pattern_wcstol(seqptr + 1, &endptr);
-        if (*endptr && max_len >= min_len && max_len <= 255)
-            seqptr = endptr;
-        else
-            max_len = min_len;
-    } else {
-        min_len = 1;
-        max_len = 255;
-    }
+	min_len = Pattern_wcstol(seqptr, &endptr);
+	if (*endptr && min_len >= 1 && min_len <= 255)
+	{
+		seqptr  = endptr;
+		max_len = Pattern_wcstol(seqptr + 1, &endptr);
+		if (*endptr && max_len >= min_len && max_len <= 255)
+		{
+			seqptr = endptr;
+		}
+		else
+		{
+			max_len = min_len;
+		}
+	}
+	else
+	{
+		min_len = 1;
+		max_len = 255;
+	}
 
-    if (*seqptr != L'_')
-        return FALSE;
-    ++seqptr;
-    if (*seqptr != L'_')
-        return FALSE;
-    ++seqptr;
+	if (*seqptr != L'_')
+	{
+		return FALSE;
+	}
+	++seqptr;
+	if (*seqptr != L'_')
+	{
+		return FALSE;
+	}
+	++seqptr;
 
-    //
-    // expect between min_len and max_len hex digits
-    //
+	//
+	// expect between min_len and max_len hex digits
+	//
 
 restart2:
 
-    count = 0;
-    while (1) {
-        if ((*srcptr >= L'a' && *srcptr <= L'f') ||
-            (*srcptr >= L'0' && *srcptr <= L'9')) {
-            ++count;
-            ++srcptr;
-            if (count == max_len)
-                break;
-        } else
-            break;
-    }
+	count = 0;
+	while (1)
+	{
+		if ((*srcptr >= L'a' && *srcptr <= L'f') || (*srcptr >= L'0' && *srcptr <= L'9'))
+		{
+			++count;
+			++srcptr;
+			if (count == max_len)
+			{
+				break;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
 
-    if (count < min_len || count > max_len) {
+	if (count < min_len || count > max_len)
+	{
+		//
+		// we did not match the hex string at this string index,
+		// but the constant part follows an asterisk, so check if
+		// we have a match further in the string
+		//
 
-        //
-        // we did not match the hex string at this string index,
-        // but the constant part follows an asterisk, so check if
-        // we have a match further in the string
-        //
+		if (con_index != 0 || pat->info.f.star_at_head)
+		{
+			srcptr = Pattern_wcsnstr(srcptr, conptr, con_len);
+			if (srcptr)
+			{
+				srcptr += con_len;
+				goto restart2;
+			}
+		}
 
-        if (con_index != 0 || pat->info.f.star_at_head) {
-            srcptr = Pattern_wcsnstr(srcptr, conptr, con_len);
-            if (srcptr) {
-                srcptr += con_len;
-                goto restart2;
-            }
-        }
+		return FALSE;
+	}
 
-        return FALSE;
-    }
+	//
+	// if the constant part has another __hex__ part then restart the
+	// process, which will also match all the characters between the
+	// end of the last __hex__ and the beginning of the next __hex__
+	//
 
-    //
-    // if the constant part has another __hex__ part then restart the
-    // process, which will also match all the characters between the
-    // end of the last __hex__ and the beginning of the next __hex__
-    //
+	tmpptr = Pattern_wcsnstr(seqptr, Pattern_Hex, 5);
+	if (tmpptr)
+	{
+		conptr = seqptr;
+		seqptr = tmpptr;
+		goto restart1;
+	}
 
-    tmpptr = Pattern_wcsnstr(seqptr, Pattern_Hex, 5);
-    if (tmpptr) {
-        conptr = seqptr;
-        seqptr = tmpptr;
-        goto restart1;
-    }
+	//
+	// otherwise match the rest of this constant part
+	// and then resume normal processing
+	//
 
-    //
-    // otherwise match the rest of this constant part
-    // and then resume normal processing
-    //
+	con_len = wcslen(seqptr);
 
-    con_len = wcslen(seqptr);
+	if (con_len)
+	{
+		if (Pattern_wcsnstr(srcptr, seqptr, con_len) != srcptr)
+		{
+			return FALSE;
+		}
+	}
 
-    if (con_len) {
-        if (Pattern_wcsnstr(srcptr, seqptr, con_len) != srcptr)
-            return FALSE;
-    }
-
-    str_index = (int)(ULONG_PTR)(srcptr + con_len - string);
-    return Pattern_Match2(pat, string, string_len, str_index, con_index + 1);
+	str_index = (int)(ULONG_PTR)(srcptr + con_len - string);
+	return Pattern_Match2(pat, string, string_len, str_index, con_index + 1);
 }
 
 
@@ -532,15 +592,16 @@ restart2:
 
 #ifdef KERNEL_MODE
 
-_FX int Pattern_wcstol(const WCHAR *text, WCHAR **endptr)
+_FX int Pattern_wcstol(const WCHAR* text, WCHAR** endptr)
 {
-    int result = 0;
-    while (*text >= L'0' && *text <= L'9') {
-        result = (result * 10) + (*text - L'0');
-        ++text;
-    }
-    *endptr = (WCHAR *)text;
-    return result;
+	int result = 0;
+	while (*text >= L'0' && *text <= L'9')
+	{
+		result = (result * 10) + (*text - L'0');
+		++text;
+	}
+	*endptr = (WCHAR*)text;
+	return result;
 }
 
 #endif KERNEL_MODE
@@ -551,21 +612,26 @@ _FX int Pattern_wcstol(const WCHAR *text, WCHAR **endptr)
 //---------------------------------------------------------------------------
 
 
-_FX const WCHAR *Pattern_wcsnstr(
-    const WCHAR *hstr, const WCHAR *nstr, int nlen)
+_FX const WCHAR* Pattern_wcsnstr(const WCHAR* hstr, const WCHAR* nstr, int nlen)
 {
-    int i;
-    while (*hstr) {
-        if (*hstr == *nstr || *nstr == L'?') {
-            for (i = 0; i < nlen; ++i) {
-                if ((hstr[i] != nstr[i]) &&
-                        (hstr[i] == L'\0' || nstr[i] != L'?'))
-                    break;
-            }
-            if (i == nlen)
-                return hstr;
-        }
-        ++hstr;
-    }
-    return NULL;
+	int i;
+	while (*hstr)
+	{
+		if (*hstr == *nstr || *nstr == L'?')
+		{
+			for (i = 0; i < nlen; ++i)
+			{
+				if ((hstr[i] != nstr[i]) && (hstr[i] == L'\0' || nstr[i] != L'?'))
+				{
+					break;
+				}
+			}
+			if (i == nlen)
+			{
+				return hstr;
+			}
+		}
+		++hstr;
+	}
+	return NULL;
 }

@@ -28,16 +28,13 @@
 //---------------------------------------------------------------------------
 
 
-static BOOLEAN Obj_HookAnyProc(
-    const WCHAR *TypeName, ULONG ProcOffset, ULONG NumArgs,
-    ULONG_PTR NewProc, ULONG_PTR *OldProc,
-    ULONG *IncPtr, ULONG_PTR *pHookEntry);
+static BOOLEAN Obj_HookAnyProc(const WCHAR* TypeName, ULONG ProcOffset, ULONG NumArgs, ULONG_PTR NewProc, ULONG_PTR* OldProc, ULONG* IncPtr, ULONG_PTR* pHookEntry);
 
 
 //---------------------------------------------------------------------------
 
 
-void *_AddressOfReturnAddress(void);
+void* _AddressOfReturnAddress(void);
 #pragma intrinsic(_AddressOfReturnAddress)
 
 
@@ -45,8 +42,8 @@ void *_AddressOfReturnAddress(void);
 
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (INIT, Obj_HookParseProc)
-#pragma alloc_text (INIT, Obj_HookAnyProc)
+	#pragma alloc_text(INIT, Obj_HookParseProc)
+	#pragma alloc_text(INIT, Obj_HookAnyProc)
 #endif // ALLOC_PRAGMA
 
 
@@ -55,23 +52,19 @@ void *_AddressOfReturnAddress(void);
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Obj_HookParseProc(
-    const WCHAR *Type, OB_PARSE_METHOD NewFunc, OB_PARSE_METHOD *OldFunc,
-    ULONG_PTR *HookEntry)
+_FX BOOLEAN Obj_HookParseProc(const WCHAR* Type, OB_PARSE_METHOD NewFunc, OB_PARSE_METHOD* OldFunc, ULONG_PTR* HookEntry)
 {
-    ULONG ProcOffset;
+	ULONG ProcOffset;
 
-    ProcOffset = FIELD_OFFSET(OBJECT_TYPE_INITIALIZER, ParseProcedure);
-    /*
+	ProcOffset = FIELD_OFFSET(OBJECT_TYPE_INITIALIZER, ParseProcedure);
+	/*
     if (Driver_OsVersion >= DRIVER_WINDOWS_VISTA && Driver_OsBuild > 6000) {
         // Vista SP1 introduces changes to object type structures
         ProcOffset =
             FIELD_OFFSET(OBJECT_TYPE_INITIALIZER_VISTA_SP1, ParseProcedure);
     }*/
 
-    return Obj_HookAnyProc(
-        Type, ProcOffset, 10,
-        (ULONG_PTR)NewFunc, (ULONG_PTR *)OldFunc, NULL, HookEntry);
+	return Obj_HookAnyProc(Type, ProcOffset, 10, (ULONG_PTR)NewFunc, (ULONG_PTR*)OldFunc, NULL, HookEntry);
 }
 
 
@@ -80,75 +73,72 @@ _FX BOOLEAN Obj_HookParseProc(
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Obj_HookAnyProc(
-    const WCHAR *TypeName, ULONG ProcOffset, ULONG NumArgs,
-    ULONG_PTR NewProc, ULONG_PTR *OldProc,
-    ULONG *IncPtr, ULONG_PTR *pHookEntry)
+_FX BOOLEAN Obj_HookAnyProc(const WCHAR* TypeName, ULONG ProcOffset, ULONG NumArgs, ULONG_PTR NewProc, ULONG_PTR* OldProc, ULONG* IncPtr, ULONG_PTR* pHookEntry)
 {
-    NTSTATUS status;
-    WCHAR ObjectName[64];
-    UNICODE_STRING uni;
-    OBJECT_ATTRIBUTES objattrs;
-    HANDLE handle;
-    OBJECT_TYPE *object;
-    ULONG_PTR HookEntry;
-    ULONG_PTR ProcPtr;
+	NTSTATUS status;
+	WCHAR ObjectName[64];
+	UNICODE_STRING uni;
+	OBJECT_ATTRIBUTES objattrs;
+	HANDLE handle;
+	OBJECT_TYPE* object;
+	ULONG_PTR HookEntry;
+	ULONG_PTR ProcPtr;
 
-    //
-    // hook object type procedure
-    //
+	//
+	// hook object type procedure
+	//
 
-    wcscpy(ObjectName, L"\\ObjectTypes\\");
-    wcscat(ObjectName, TypeName);
-    RtlInitUnicodeString(&uni, ObjectName);
-    InitializeObjectAttributes(&objattrs,
-        &uni, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
+	wcscpy(ObjectName, L"\\ObjectTypes\\");
+	wcscat(ObjectName, TypeName);
+	RtlInitUnicodeString(&uni, ObjectName);
+	InitializeObjectAttributes(&objattrs, &uni, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
 
-    status = ObOpenObjectByName(
-                    &objattrs, NULL, KernelMode, NULL, 0, NULL, &handle);
-    if (! NT_SUCCESS(status)) {
-        Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x11, status, TypeName);
-        return FALSE;
-    }
+	status = ObOpenObjectByName(&objattrs, NULL, KernelMode, NULL, 0, NULL, &handle);
+	if (!NT_SUCCESS(status))
+	{
+		Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x11, status, TypeName);
+		return FALSE;
+	}
 
-    status = ObReferenceObjectByHandle(
-        handle, 0, NULL, KernelMode, &object, NULL);
+	status = ObReferenceObjectByHandle(handle, 0, NULL, KernelMode, &object, NULL);
 
-    if (! NT_SUCCESS(status))
-        Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x22, status, TypeName);
+	if (!NT_SUCCESS(status))
+	{
+		Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x22, status, TypeName);
+	}
 
-    else {
+	else
+	{
+		ProcPtr = (ULONG_PTR)(((UCHAR*)&object->TypeInfo) + ProcOffset);
 
-        ProcPtr = (ULONG_PTR)(((UCHAR *)&object->TypeInfo) + ProcOffset);
+		*OldProc = *(ULONG_PTR*)ProcPtr;
 
-        *OldProc = *(ULONG_PTR *)ProcPtr;
+		//
+		// create a hook entry which will jump to OldProc or NewProc.
+		// if OldProc is null, we pass the number of arguments it would
+		// take, so the hook entry can handle that case
+		//
 
-        //
-        // create a hook entry which will jump to OldProc or NewProc.
-        // if OldProc is null, we pass the number of arguments it would
-        // take, so the hook entry can handle that case
-        //
+		HookEntry = Process_BuildHookEntry(NewProc, (*OldProc ? *OldProc : NumArgs), IncPtr);
 
-        HookEntry = Process_BuildHookEntry(
-            NewProc, (*OldProc ? *OldProc : NumArgs), IncPtr);
+		if (!HookEntry)
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x33, status, TypeName);
+		}
+		else
+		{
+			*pHookEntry = HookEntry;
 
-        if (! HookEntry) {
-            status = STATUS_INSUFFICIENT_RESOURCES;
-            Log_Status_Ex(MSG_OBJ_HOOK_ANY_PROC, 0x33, status, TypeName);
+			KeMemoryBarrier();
 
-        } else {
+			InterlockedExchangePointer((void**)ProcPtr, (void*)HookEntry);
+		}
 
-            *pHookEntry = HookEntry;
+		ObDereferenceObject(object);
+	}
 
-            KeMemoryBarrier();
+	ZwClose(handle);
 
-            InterlockedExchangePointer((void **)ProcPtr, (void *)HookEntry);
-        }
-
-        ObDereferenceObject(object);
-    }
-
-    ZwClose(handle);
-
-    return (NT_SUCCESS(status));
+	return (NT_SUCCESS(status));
 }

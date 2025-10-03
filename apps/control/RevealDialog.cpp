@@ -20,11 +20,11 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "RevealDialog.h"
-#include "UserSettings.h"
 
 #include "Boxes.h"
+#include "UserSettings.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -34,8 +34,8 @@
 
 BEGIN_MESSAGE_MAP(CRevealDialog, CBaseDialog)
 
-    ON_CONTROL(CBN_SELENDOK, ID_REVEAL_COMBO, OnCombo)
-    ON_CONTROL(CBN_CLOSEUP,  ID_REVEAL_COMBO, OnCombo)
+ON_CONTROL(CBN_SELENDOK, ID_REVEAL_COMBO, OnCombo)
+ON_CONTROL(CBN_CLOSEUP, ID_REVEAL_COMBO, OnCombo)
 
 END_MESSAGE_MAP()
 
@@ -45,16 +45,16 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CRevealDialog::CRevealDialog(CWnd *pParentWnd)
-    : CBaseDialog(pParentWnd, L"REVEAL_DIALOG")
+CRevealDialog::CRevealDialog(CWnd* pParentWnd) :
+    CBaseDialog(pParentWnd, L"REVEAL_DIALOG")
 {
-    m_modified = false;
+	m_modified = false;
 
-    //
-    // display dialog
-    //
+	//
+	// display dialog
+	//
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -75,33 +75,35 @@ CRevealDialog::~CRevealDialog()
 
 BOOL CRevealDialog::OnInitDialog()
 {
-    SetWindowText(CMyMsg(MSG_3434));
+	SetWindowText(CMyMsg(MSG_3434));
 
-    GetDlgItem(ID_REVEAL_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_5122));
-    GetDlgItem(ID_REVEAL_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_5123));
-    GetDlgItem(ID_REVEAL_EXPLAIN_3)->SetWindowText(
-        CMyMsg(MSG_5124, CUserSettings::GetInstance().GetUserName()));
+	GetDlgItem(ID_REVEAL_EXPLAIN_1)->SetWindowText(CMyMsg(MSG_5122));
+	GetDlgItem(ID_REVEAL_EXPLAIN_2)->SetWindowText(CMyMsg(MSG_5123));
+	GetDlgItem(ID_REVEAL_EXPLAIN_3)->SetWindowText(CMyMsg(MSG_5124, CUserSettings::GetInstance().GetUserName()));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
 
-    CStringList boxes;
-    CBoxes::GetInstance().GetHiddenBoxes(boxes);
-    if (boxes.IsEmpty()) {
-        EndDialog(0);
-        return FALSE;
-    }
+	CStringList boxes;
+	CBoxes::GetInstance().GetHiddenBoxes(boxes);
+	if (boxes.IsEmpty())
+	{
+		EndDialog(0);
+		return FALSE;
+	}
 
-    MakeLTR(ID_REVEAL_EDIT);
-    MakeLTR(ID_REVEAL_COMBO);
-    CComboBox *pCombo = (CComboBox *)GetDlgItem(ID_REVEAL_COMBO);
+	MakeLTR(ID_REVEAL_EDIT);
+	MakeLTR(ID_REVEAL_COMBO);
+	CComboBox* pCombo = (CComboBox*)GetDlgItem(ID_REVEAL_COMBO);
 
-    while (! boxes.IsEmpty())
-        pCombo->AddString(boxes.RemoveHead());
-    pCombo->SetCurSel(0);
-    OnCombo();
+	while (!boxes.IsEmpty())
+	{
+		pCombo->AddString(boxes.RemoveHead());
+	}
+	pCombo->SetCurSel(0);
+	OnCombo();
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -112,27 +114,32 @@ BOOL CRevealDialog::OnInitDialog()
 
 void CRevealDialog::OnCombo()
 {
-    CComboBox *pCombo = (CComboBox *)GetDlgItem(ID_REVEAL_COMBO);
+	CComboBox* pCombo = (CComboBox*)GetDlgItem(ID_REVEAL_COMBO);
 
-    int index = pCombo->GetCurSel();
-    if (index == LB_ERR)
-        return;
+	int index = pCombo->GetCurSel();
+	if (index == LB_ERR)
+	{
+		return;
+	}
 
-    CString boxname;
-    pCombo->GetLBText(index, boxname);
+	CString boxname;
+	pCombo->GetLBText(index, boxname);
 
-    CStringList users;
-    CBox::GetSetUserAccounts(boxname, FALSE, users);
+	CStringList users;
+	CBox::GetSetUserAccounts(boxname, FALSE, users);
 
-    CString text;
-    while (! users.IsEmpty()) {
-        if (text.GetLength())
-            text += L", ";
-        text += users.RemoveHead();
-    }
+	CString text;
+	while (!users.IsEmpty())
+	{
+		if (text.GetLength())
+		{
+			text += L", ";
+		}
+		text += users.RemoveHead();
+	}
 
-    CEdit *pEdit = (CEdit *)GetDlgItem(ID_REVEAL_EDIT);
-    pEdit->SetWindowText(text);
+	CEdit* pEdit = (CEdit*)GetDlgItem(ID_REVEAL_EDIT);
+	pEdit->SetWindowText(text);
 }
 
 
@@ -143,22 +150,24 @@ void CRevealDialog::OnCombo()
 
 void CRevealDialog::OnOK()
 {
-    CComboBox *pCombo = (CComboBox *)GetDlgItem(ID_REVEAL_COMBO);
+	CComboBox* pCombo = (CComboBox*)GetDlgItem(ID_REVEAL_COMBO);
 
-    int index = pCombo->GetCurSel();
-    if (index == LB_ERR)
-        return;
+	int index = pCombo->GetCurSel();
+	if (index == LB_ERR)
+	{
+		return;
+	}
 
-    CString boxname;
-    pCombo->GetLBText(index, boxname);
+	CString boxname;
+	pCombo->GetLBText(index, boxname);
 
-    CStringList users;
-    CBox::GetSetUserAccounts(boxname, FALSE, users);
-    users.AddTail(CUserSettings::GetInstance().GetUserName());
-    CBox::GetSetUserAccounts(boxname, TRUE, users);
+	CStringList users;
+	CBox::GetSetUserAccounts(boxname, FALSE, users);
+	users.AddTail(CUserSettings::GetInstance().GetUserName());
+	CBox::GetSetUserAccounts(boxname, TRUE, users);
 
-    m_modified = true;
-    EndDialog(0);
+	m_modified = true;
+	EndDialog(0);
 }
 
 
@@ -169,5 +178,5 @@ void CRevealDialog::OnOK()
 
 bool CRevealDialog::IsModified() const
 {
-    return m_modified;
+	return m_modified;
 }

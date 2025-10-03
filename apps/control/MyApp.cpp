@@ -20,23 +20,23 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "MyApp.h"
 
-#include "MyFrame.h"
-#include "Boxes.h"
-#include "WindowTitleMap.h"
-#include "UserSettings.h"
-#include "SbieIni.h"
-#include "InitWait.h"
-#include "ShellDialog.h"
 #include "AutoPlay.h"
-#include "apps/common/MyMsgBox.h"
-#include "apps/common/MyGdi.h"
+#include "Boxes.h"
+#include "InitWait.h"
+#include "MyFrame.h"
+#include "SbieIni.h"
+#include "ShellDialog.h"
+#include "UserSettings.h"
+#include "WindowTitleMap.h"
 #include "apps/common/CommonUtils.h"
-#include "common/win32_ntddk.h"
+#include "apps/common/MyGdi.h"
+#include "apps/common/MyMsgBox.h"
 #include "common/my_version.h"
+#include "common/win32_ntddk.h"
 #include "core/drv/api_defs.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -78,186 +78,208 @@ const CString _ExplorerExe(L"explorer.exe");
 
 BOOL CMyApp::InitInstance()
 {
-    static const WCHAR *WindowClassName = SANDBOXIE_CONTROL L"WndClass";
+	static const WCHAR* WindowClassName = SANDBOXIE_CONTROL L"WndClass";
 
-    BOOL ForceVisible = FALSE;
-    BOOL ForceSync    = FALSE;
-    WCHAR *CommandLine = GetCommandLine();
-    if (CommandLine) {
-        if (wcsstr(CommandLine, L"/open"))
-            ForceVisible = TRUE;
-        if (wcsstr(CommandLine, L"/sync"))
-            ForceSync    = TRUE;
-    }
+	BOOL ForceVisible  = FALSE;
+	BOOL ForceSync     = FALSE;
+	WCHAR* CommandLine = GetCommandLine();
+	if (CommandLine)
+	{
+		if (wcsstr(CommandLine, L"/open"))
+		{
+			ForceVisible = TRUE;
+		}
+		if (wcsstr(CommandLine, L"/sync"))
+		{
+			ForceSync = TRUE;
+		}
+	}
 
-    //
-    // abort early if the application mutex already exists
-    //
+	//
+	// abort early if the application mutex already exists
+	//
 
-    WCHAR *InstanceMutexName = SANDBOXIE L"_SingleInstanceMutex_Control";
-    HANDLE hInstanceMutex =
-        OpenMutex(MUTEX_ALL_ACCESS, FALSE, InstanceMutexName);
-    if (hInstanceMutex) {
-        if (ForceVisible) {
-            HWND hwnd = FindWindow(WindowClassName, NULL);
-            if (hwnd) {
-                ShowWindow(hwnd, SW_SHOWNORMAL);
-                SetForegroundWindow(hwnd);
-            }
-        }
-        return FALSE;
-    }
-    hInstanceMutex = CreateMutex(NULL, FALSE, InstanceMutexName);
-    if (! hInstanceMutex)
-        return FALSE;
+	WCHAR* InstanceMutexName = SANDBOXIE L"_SingleInstanceMutex_Control";
+	HANDLE hInstanceMutex    = OpenMutex(MUTEX_ALL_ACCESS, FALSE, InstanceMutexName);
+	if (hInstanceMutex)
+	{
+		if (ForceVisible)
+		{
+			HWND hwnd = FindWindow(WindowClassName, NULL);
+			if (hwnd)
+			{
+				ShowWindow(hwnd, SW_SHOWNORMAL);
+				SetForegroundWindow(hwnd);
+			}
+		}
+		return FALSE;
+	}
+	hInstanceMutex = CreateMutex(NULL, FALSE, InstanceMutexName);
+	if (!hInstanceMutex)
+	{
+		return FALSE;
+	}
 
-    //
-    // change to Sandboxie home directory
-    //
+	//
+	// change to Sandboxie home directory
+	//
 
-    WCHAR *home_path = (WCHAR *)HeapAlloc(
-        GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, 1024 * sizeof(WCHAR));
-    SbieApi_GetHomePath(NULL, 0, home_path, 1020);
-    SetCurrentDirectory(home_path);
-    HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, home_path);
+	WCHAR* home_path = (WCHAR*)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, 1024 * sizeof(WCHAR));
+	SbieApi_GetHomePath(NULL, 0, home_path, 1020);
+	SetCurrentDirectory(home_path);
+	HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, home_path);
 
-    //
-    // check if Windows XP APIs are available
-    //
+	//
+	// check if Windows XP APIs are available
+	//
 
-    OSVERSIONINFO osvi;
-    memzero(&osvi, sizeof(OSVERSIONINFO));
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx((OSVERSIONINFO *)&osvi);
-    if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0)
-        m_Windows2000 = true;
-    if (osvi.dwMajorVersion >= 6)
-        m_WindowsVista = true;
+	OSVERSIONINFO osvi;
+	memzero(&osvi, sizeof(OSVERSIONINFO));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx((OSVERSIONINFO*)&osvi);
+	if (osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0)
+	{
+		m_Windows2000
+			= true;
+			if (osvi.dwMajorVersion >= 6)
+			{
+				m_WindowsVista = true;
+			}
 
-    //
-    // initialize misc
-    //
+			//
+			// initialize misc
+			//
 
-    CoInitialize(NULL);
+			CoInitialize(NULL);
 
-// these have been deprecated
-//#ifdef _AFXDLL
-//    Enable3dControls();
-//#else
-//    Enable3dControlsStatic();
-//#endif
+			// these have been deprecated
+			//#ifdef _AFXDLL
+			//    Enable3dControls();
+			//#else
+			//    Enable3dControlsStatic();
+			//#endif
 
-    BOOLEAN LayoutRTL;
-    SbieDll_GetLanguage(&LayoutRTL);
-    if (LayoutRTL)
-        m_LayoutRTL = true;
+			BOOLEAN LayoutRTL;
+			SbieDll_GetLanguage(&LayoutRTL);
+			if (LayoutRTL)
+			{
+				m_LayoutRTL = true;
+			}
 
-    m_appTitle = CMyMsg(MSG_3301);
+			m_appTitle = CMyMsg(MSG_3301);
 
-#if _MSC_VER != 1200        // if not Visual C++ 6.0
-    if (! ProcessIdToSessionId(GetCurrentProcessId(), &m_session_id))
-        m_session_id = 0;
+#if _MSC_VER != 1200 // if not Visual C++ 6.0
+			if (!ProcessIdToSessionId(GetCurrentProcessId(), &m_session_id))
+			{
+				m_session_id = 0;
+			}
 #endif
 
-    SbieDll_GetDrivePath(-1);
+			SbieDll_GetDrivePath(-1);
 
-    //
-    // initialize graphical elements
-    //
+			//
+			// initialize graphical elements
+			//
 
-    MyGdi_Init();
+			MyGdi_Init();
 
-    m_background =
-        CreatePatternBrush(MyGdi_CreateFromResource(L"BACKGROUND"));
+			m_background = CreatePatternBrush(MyGdi_CreateFromResource(L"BACKGROUND"));
 
-    if (1) {
+			if (1)
+			{
+				CFont font1;
+				LOGFONT data1;
+				font1.CreateStockObject(ANSI_FIXED_FONT);
+				if (font1.GetLogFont(&data1))
+				{
+					HDC hdc        = GetDC(NULL);
+					LONG NewHeight = -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+					ReleaseDC(NULL, hdc);
+					if (abs(NewHeight) > abs(data1.lfHeight))
+					{
+						data1.lfHeight = NewHeight;
+						data1.lfWidth  = 0;
+					}
 
-        CFont font1;
-        LOGFONT data1;
-        font1.CreateStockObject(ANSI_FIXED_FONT);
-        if (font1.GetLogFont(&data1)) {
+					HDC hDC = ::GetDC(NULL);
+					int dpi = GetDeviceCaps(hDC, LOGPIXELSY);
+					if (dpi > 96)
+					{
+						data1.lfWeight = FW_BOLD;
+					}
+					::ReleaseDC(NULL, hDC);
 
-            HDC hdc = GetDC(NULL);
-            LONG NewHeight =
-                -MulDiv(10, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-            ReleaseDC(NULL, hdc);
-            if (abs(NewHeight) > abs(data1.lfHeight)) {
-                data1.lfHeight = NewHeight;
-                data1.lfWidth = 0;
-            }
+					m_fontFixed.CreateFontIndirect(&data1);
+				}
+				else
+				{
+					m_fontFixed.CreateStockObject(ANSI_FIXED_FONT);
+				}
+			}
 
-            HDC hDC = ::GetDC(NULL);
-            int dpi = GetDeviceCaps(hDC, LOGPIXELSY);
-            if (dpi > 96)
-                data1.lfWeight = FW_BOLD;
-            ::ReleaseDC(NULL, hDC);
+			//
+			// register main window class
+			//
 
-            m_fontFixed.CreateFontIndirect(&data1);
+			WNDCLASSEX wc;
+			wc.cbSize        = sizeof(WNDCLASSEX);
+			wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_GLOBALCLASS;
+			wc.lpfnWndProc   = ::DefWindowProc;
+			wc.cbClsExtra    = 0;
+			wc.cbWndExtra    = 0;
+			wc.hInstance     = AfxGetInstanceHandle();
+			wc.hIcon         = ::LoadIcon(wc.hInstance, L"AAAPPICON");
+			wc.hCursor       = ::LoadCursor(NULL, IDC_ARROW);
+			wc.hbrBackground = (HBRUSH)(COLOR_3DFACE + 1);
+			wc.lpszMenuName  = NULL;
+			wc.lpszClassName = WindowClassName;
+			wc.hIconSm       = NULL;
 
-        } else
-            m_fontFixed.CreateStockObject(ANSI_FIXED_FONT);
-    }
+			m_atom = RegisterClassEx(&wc);
+			if (!m_atom)
+			{
+				return FALSE;
+			}
 
-    //
-    // register main window class
-    //
+			//
+			// register TaskbarCreated message
+			//
 
-    WNDCLASSEX wc;
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_GLOBALCLASS;
-    wc.lpfnWndProc = ::DefWindowProc;
-    wc.cbClsExtra = 0;
-    wc.cbWndExtra = 0;
-    wc.hInstance = AfxGetInstanceHandle();
-    wc.hIcon = ::LoadIcon(wc.hInstance, L"AAAPPICON");
-    wc.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(COLOR_3DFACE + 1);
-    wc.lpszMenuName = NULL;
-    wc.lpszClassName = WindowClassName;
-    wc.hIconSm = NULL;
+			m_TaskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
 
-    m_atom = RegisterClassEx(&wc);
-    if (! m_atom)
-        return FALSE;
+			//
+			// wait for Sandboxie to finish initialization
+			//
 
-    //
-    // register TaskbarCreated message
-    //
+			CInitWait initwait(this);
 
-    m_TaskbarCreated = RegisterWindowMessage(L"TaskbarCreated");
+			//
+			// take over as the Sandboxie session leader
+			//
 
-    //
-    // wait for Sandboxie to finish initialization
-    //
+			SbieApi_SessionLeader(0, NULL);
 
-    CInitWait initwait(this);
+			//
+			// refresh processes
+			//
 
-    //
-    // take over as the Sandboxie session leader
-    //
+			CBoxes::GetInstance().RefreshProcesses();
 
-    SbieApi_SessionLeader(0, NULL);
+			//
+			// setup autoplay cancelation
+			//
 
-    //
-    // refresh processes
-    //
+			CAutoPlay::Install();
 
-    CBoxes::GetInstance().RefreshProcesses();
+			//
+			// create main window
+			//
 
-    //
-    // setup autoplay cancelation
-    //
+			m_pMainWnd = new CMyFrame(ForceVisible, ForceSync);
+			m_pMainWnd->UpdateWindow();
 
-    CAutoPlay::Install();
-
-    //
-    // create main window
-    //
-
-    m_pMainWnd = new CMyFrame(ForceVisible, ForceSync);
-    m_pMainWnd->UpdateWindow();
-
-    return TRUE;
+			return TRUE;
+	}
 }
 
 
@@ -268,13 +290,13 @@ BOOL CMyApp::InitInstance()
 
 int CMyApp::ExitInstance()
 {
-    CAutoPlay::Remove();
-    delete &CBoxes::GetInstance();
-    delete &CWindowTitleMap::GetInstance();
-    delete &CUserSettings::GetInstance();
-    delete &CSbieIni::GetInstance();
+	CAutoPlay::Remove();
+	delete &CBoxes::GetInstance();
+	delete &CWindowTitleMap::GetInstance();
+	delete &CUserSettings::GetInstance();
+	delete &CSbieIni::GetInstance();
 
-    return 0;
+	return 0;
 }
 
 
@@ -283,10 +305,9 @@ int CMyApp::ExitInstance()
 //---------------------------------------------------------------------------
 
 
-void CMyApp::RunStartExe(
-    const CString &cmd, const CString &box, BOOL wait, BOOL inherit)
+void CMyApp::RunStartExe(const CString& cmd, const CString& box, BOOL wait, BOOL inherit)
 {
-    Common_RunStartExe(cmd, box, wait, inherit);
+	Common_RunStartExe(cmd, box, wait, inherit);
 }
 
 
@@ -295,20 +316,28 @@ void CMyApp::RunStartExe(
 //---------------------------------------------------------------------------
 
 
-int CMyApp::MsgBox(CWnd *pWnd, const WCHAR *text, UINT flags)
+int CMyApp::MsgBox(CWnd* pWnd, const WCHAR* text, UINT flags)
 {
-    if (! pWnd)
-        pWnd = CBaseDialog::GetActiveWindow();
-    HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
-    CString caption;
-    if (hwnd)
-        pWnd->GetWindowText(caption);
-    else
-        caption = CMyApp::m_appTitle;
-    if (m_LayoutRTL)
-        flags |= MB_RTLREADING | MB_RIGHT;
+	if (!pWnd)
+	{
+		pWnd = CBaseDialog::GetActiveWindow();
+	}
+	HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
+	CString caption;
+	if (hwnd)
+	{
+		pWnd->GetWindowText(caption);
+	}
+	else
+	{
+		caption = CMyApp::m_appTitle;
+	}
+	if (m_LayoutRTL)
+	{
+		flags |= MB_RTLREADING | MB_RIGHT;
+	}
 
-    return MessageBox(hwnd, text, caption, flags);
+	return MessageBox(hwnd, text, caption, flags);
 }
 
 
@@ -317,9 +346,9 @@ int CMyApp::MsgBox(CWnd *pWnd, const WCHAR *text, UINT flags)
 //---------------------------------------------------------------------------
 
 
-int CMyApp::MsgBox(CWnd *pWnd, ULONG textid, UINT flags)
+int CMyApp::MsgBox(CWnd* pWnd, ULONG textid, UINT flags)
 {
-    return MsgBox(pWnd, CMyMsg(textid), flags);
+	return MsgBox(pWnd, CMyMsg(textid), flags);
 }
 
 
@@ -328,22 +357,29 @@ int CMyApp::MsgBox(CWnd *pWnd, ULONG textid, UINT flags)
 //---------------------------------------------------------------------------
 
 
-int CMyApp::MsgCheckBox(
-    CWnd *pWnd, const CString &text, ULONG checkid, UINT flags)
+int CMyApp::MsgCheckBox(CWnd* pWnd, const CString& text, ULONG checkid, UINT flags)
 {
-    if (! pWnd)
-        pWnd = CBaseDialog::GetActiveWindow();
-    HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
-    CString caption;
-    if (hwnd)
-        pWnd->GetWindowText(caption);
-    else
-        caption = CMyApp::m_appTitle;
-    if (m_LayoutRTL)
-        flags |= MB_RTLREADING | MB_RIGHT;
+	if (!pWnd)
+	{
+		pWnd = CBaseDialog::GetActiveWindow();
+	}
+	HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
+	CString caption;
+	if (hwnd)
+	{
+		pWnd->GetWindowText(caption);
+	}
+	else
+	{
+		caption = CMyApp::m_appTitle;
+	}
+	if (m_LayoutRTL)
+	{
+		flags |= MB_RTLREADING | MB_RIGHT;
+	}
 
-    CMyMsg check(checkid ? checkid : MSG_3306);
-    return MessageCheckBox(hwnd, text, caption, flags, check);
+	CMyMsg check(checkid ? checkid : MSG_3306);
+	return MessageCheckBox(hwnd, text, caption, flags, check);
 }
 
 
@@ -352,11 +388,10 @@ int CMyApp::MsgCheckBox(
 //---------------------------------------------------------------------------
 
 
-int CMyApp::MsgCheckBox(
-    CWnd *pWnd, ULONG textid, ULONG checkid, UINT flags)
+int CMyApp::MsgCheckBox(CWnd* pWnd, ULONG textid, ULONG checkid, UINT flags)
 {
-    CMyMsg textstr(textid);
-    return MsgCheckBox(pWnd, textstr, checkid, flags);
+	CMyMsg textstr(textid);
+	return MsgCheckBox(pWnd, textstr, checkid, flags);
 }
 
 
@@ -365,22 +400,27 @@ int CMyApp::MsgCheckBox(
 //---------------------------------------------------------------------------
 
 
-CString CMyApp::InputBox(CWnd *pWnd, ULONG textid)
+CString CMyApp::InputBox(CWnd* pWnd, ULONG textid)
 {
-    ULONG flags = MB_OKCANCEL;
-    if (m_LayoutRTL)
-        flags |= MB_RTLREADING | MB_RIGHT;
-    if (! pWnd)
-        pWnd = CBaseDialog::GetActiveWindow();
-    HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
-    CMyMsg caption(textid);
-    WCHAR *edit = ::InputBox(hwnd, caption, flags, NULL);
-    CString retval;
-    if (edit) {
-        retval = edit;
-        LocalFree(edit);
-    }
-    return retval;
+	ULONG flags = MB_OKCANCEL;
+	if (m_LayoutRTL)
+	{
+		flags |= MB_RTLREADING | MB_RIGHT;
+	}
+	if (!pWnd)
+	{
+		pWnd = CBaseDialog::GetActiveWindow();
+	}
+	HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
+	CMyMsg caption(textid);
+	WCHAR* edit = ::InputBox(hwnd, caption, flags, NULL);
+	CString retval;
+	if (edit)
+	{
+		retval = edit;
+		LocalFree(edit);
+	}
+	return retval;
 }
 
 
@@ -389,20 +429,25 @@ CString CMyApp::InputBox(CWnd *pWnd, ULONG textid)
 //---------------------------------------------------------------------------
 
 
-void CMyApp::InputBox(CWnd *pWnd, ULONG textid, CString &str)
+void CMyApp::InputBox(CWnd* pWnd, ULONG textid, CString& str)
 {
-    ULONG flags = MB_OKCANCEL;
-    if (m_LayoutRTL)
-        flags |= MB_RTLREADING | MB_RIGHT;
-    if (! pWnd)
-        pWnd = CBaseDialog::GetActiveWindow();
-    HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
-    CMyMsg caption(textid);
-    WCHAR *edit = ::InputBox(hwnd, caption, flags, str);
-    if (edit) {
-        str = edit;
-        LocalFree(edit);
-    }
+	ULONG flags = MB_OKCANCEL;
+	if (m_LayoutRTL)
+	{
+		flags |= MB_RTLREADING | MB_RIGHT;
+	}
+	if (!pWnd)
+	{
+		pWnd = CBaseDialog::GetActiveWindow();
+	}
+	HWND hwnd = pWnd ? pWnd->m_hWnd : NULL;
+	CMyMsg caption(textid);
+	WCHAR* edit = ::InputBox(hwnd, caption, flags, str);
+	if (edit)
+	{
+		str = edit;
+		LocalFree(edit);
+	}
 }
 
 
@@ -411,55 +456,61 @@ void CMyApp::InputBox(CWnd *pWnd, ULONG textid, CString &str)
 //---------------------------------------------------------------------------
 
 
-void CMyApp::GetProgramFileName(
-    CWnd *pParentWnd, CString &pgm1, CString &pgm2)
+void CMyApp::GetProgramFileName(CWnd* pParentWnd, CString& pgm1, CString& pgm2)
 {
-    pgm1 = CString();
-    pgm2 = CString();
+	pgm1 = CString();
+	pgm2 = CString();
 
-    WCHAR buf[MAX_PATH + 8];
-    buf[0] = L'\0';
+	WCHAR buf[MAX_PATH + 8];
+	buf[0] = L'\0';
 
-    WCHAR filter[64];
-    wcscpy(filter, CMyMsg(MSG_3308));
-    while (1) {
-        WCHAR *ptr = wcsrchr(filter, L'#');
-        if (! ptr)
-            break;
-        *ptr = L'\0';
-    }
+	WCHAR filter[64];
+	wcscpy(filter, CMyMsg(MSG_3308));
+	while (1)
+	{
+		WCHAR* ptr = wcsrchr(filter, L'#');
+		if (!ptr)
+		{
+			break;
+		}
+		*ptr = L'\0';
+	}
 
-    OPENFILENAME ofn;
-    memzero(&ofn, sizeof(OPENFILENAME));
-    ofn.lStructSize  = sizeof(OPENFILENAME);
-    ofn.hwndOwner    = pParentWnd->m_hWnd;
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFilter  = filter;
-    ofn.lpstrFile    = buf;
-    ofn.nMaxFile     = MAX_PATH;
-    ofn.Flags        = OFN_DONTADDTORECENT
-                     | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
-    if (GetOpenFileName(&ofn)) {
+	OPENFILENAME ofn;
+	memzero(&ofn, sizeof(OPENFILENAME));
+	ofn.lStructSize  = sizeof(OPENFILENAME);
+	ofn.hwndOwner    = pParentWnd->m_hWnd;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFilter  = filter;
+	ofn.lpstrFile    = buf;
+	ofn.nMaxFile     = MAX_PATH;
+	ofn.Flags        = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST;
+	if (GetOpenFileName(&ofn))
+	{
+		pgm1      = buf;
+		int index = pgm1.ReverseFind(L'\\');
+		if (index != -1)
+		{
+			pgm1 = pgm1.Mid(index + 1);
+		}
+		pgm1.MakeLower();
 
-        pgm1 = buf;
-        int index = pgm1.ReverseFind(L'\\');
-        if (index != -1)
-            pgm1 = pgm1.Mid(index + 1);
-        pgm1.MakeLower();
-
-        DWORD retval = GetShortPathName(buf, buf, MAX_PATH + 4);
-        if (retval && retval <= MAX_PATH) {
-
-            pgm2 = buf;
-            index = pgm2.ReverseFind(L'\\');
-            if (index != -1) {
-                pgm2 = pgm2.Mid(index + 1);
-                pgm2.MakeLower();
-            }
-            if (index == -1 || pgm1 == pgm2)
-                pgm2 = CString();
-        }
-    }
+		DWORD retval = GetShortPathName(buf, buf, MAX_PATH + 4);
+		if (retval && retval <= MAX_PATH)
+		{
+			pgm2  = buf;
+			index = pgm2.ReverseFind(L'\\');
+			if (index != -1)
+			{
+				pgm2 = pgm2.Mid(index + 1);
+				pgm2.MakeLower();
+			}
+			if (index == -1 || pgm1 == pgm2)
+			{
+				pgm2 = CString();
+			}
+		}
+	}
 }
 
 
@@ -468,90 +519,90 @@ void CMyApp::GetProgramFileName(
 //---------------------------------------------------------------------------
 
 
-CMenu *CMyApp::MyLoadMenu(const WCHAR *MenuResName)
+CMenu* CMyApp::MyLoadMenu(const WCHAR* MenuResName)
 {
-    CMenu *pMenu1;
-    MENUITEMINFO mii;
-    WCHAR text[128];
-    int i, j, k;
-    UINT id;
+	CMenu* pMenu1;
+	MENUITEMINFO mii;
+	WCHAR text[128];
+	int i, j, k;
+	UINT id;
 
-    //
-    // create and load menu
-    //
+	//
+	// create and load menu
+	//
 
-    pMenu1 = new CMenu();
-    pMenu1->LoadMenu(MenuResName);
+	pMenu1 = new CMenu();
+	pMenu1->LoadMenu(MenuResName);
 
-    //
-    // convert message IDs to localized text
-    //
+	//
+	// convert message IDs to localized text
+	//
 
-    for (i = 0; i < (int)pMenu1->GetMenuItemCount(); ++i) {
+	for (i = 0; i < (int)pMenu1->GetMenuItemCount(); ++i)
+	{
+		memzero(&mii, sizeof(MENUITEMINFO));
+		mii.cbSize     = sizeof(MENUITEMINFO);
+		mii.fMask      = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
+		mii.dwTypeData = text;
+		mii.cch        = 120;
 
-        memzero(&mii, sizeof(MENUITEMINFO));
-        mii.cbSize = sizeof(MENUITEMINFO);
-        mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
-        mii.dwTypeData = text;
-        mii.cch = 120;
+		::GetMenuItemInfo(*pMenu1, i, TRUE, &mii);
+		id = _wtoi(text);
+		if (id)
+		{
+			CMyMsg msg(id);
+			mii.dwTypeData = (WCHAR*)(const WCHAR*)msg;
+			::SetMenuItemInfo(*pMenu1, i, TRUE, &mii);
+		}
 
-        ::GetMenuItemInfo(*pMenu1, i, TRUE, &mii);
-        id = _wtoi(text);
-        if (id) {
+		if (mii.hSubMenu)
+		{
+			CMenu* pMenu2 = pMenu1->GetSubMenu(i);
 
-            CMyMsg msg(id);
-            mii.dwTypeData = (WCHAR *)(const WCHAR *)msg;
-            ::SetMenuItemInfo(*pMenu1, i, TRUE, &mii);
-        }
+			for (j = 0; j < (int)pMenu2->GetMenuItemCount(); ++j)
+			{
+				memzero(&mii, sizeof(MENUITEMINFO));
+				mii.cbSize     = sizeof(MENUITEMINFO);
+				mii.fMask      = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
+				mii.dwTypeData = text;
+				mii.cch        = 120;
 
-        if (mii.hSubMenu) {
+				::GetMenuItemInfo(*pMenu2, j, TRUE, &mii);
+				id = _wtoi(text);
+				if (id)
+				{
+					CMyMsg msg(id, L"\t");
+					mii.dwTypeData = (WCHAR*)(const WCHAR*)msg;
+					::SetMenuItemInfo(*pMenu2, j, TRUE, &mii);
+				}
 
-            CMenu *pMenu2 = pMenu1->GetSubMenu(i);
+				if (mii.hSubMenu)
+				{
+					CMenu* pMenu3 = pMenu2->GetSubMenu(j);
 
-            for (j = 0; j < (int)pMenu2->GetMenuItemCount(); ++j) {
+					for (k = 0; k < (int)pMenu3->GetMenuItemCount(); ++k)
+					{
+						memzero(&mii, sizeof(MENUITEMINFO));
+						mii.cbSize     = sizeof(MENUITEMINFO);
+						mii.fMask      = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
+						mii.dwTypeData = text;
+						mii.cch        = 120;
 
-                memzero(&mii, sizeof(MENUITEMINFO));
-                mii.cbSize = sizeof(MENUITEMINFO);
-                mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
-                mii.dwTypeData = text;
-                mii.cch = 120;
+						::GetMenuItemInfo(*pMenu3, k, TRUE, &mii);
+						id = _wtoi(text);
+						if (id)
+						{
+							CMyMsg msg(id, L"\t");
+							mii.dwTypeData = (WCHAR*)(const WCHAR*)msg;
+							::SetMenuItemInfo(*pMenu3, k, TRUE, &mii);
+						}
+					}
+				}
+			}
+		}
+	}
 
-                ::GetMenuItemInfo(*pMenu2, j, TRUE, &mii);
-                id = _wtoi(text);
-                if (id) {
-
-                    CMyMsg msg(id, L"\t");
-                    mii.dwTypeData = (WCHAR *)(const WCHAR *)msg;
-                    ::SetMenuItemInfo(*pMenu2, j, TRUE, &mii);
-                }
-
-                if (mii.hSubMenu) {
-
-                    CMenu *pMenu3 = pMenu2->GetSubMenu(j);
-
-                    for (k = 0; k < (int)pMenu3->GetMenuItemCount(); ++k) {
-
-                        memzero(&mii, sizeof(MENUITEMINFO));
-                        mii.cbSize = sizeof(MENUITEMINFO);
-                        mii.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
-                        mii.dwTypeData = text;
-                        mii.cch = 120;
-
-                        ::GetMenuItemInfo(*pMenu3, k, TRUE, &mii);
-                        id = _wtoi(text);
-                        if (id) {
-
-                            CMyMsg msg(id, L"\t");
-                            mii.dwTypeData = (WCHAR *)(const WCHAR *)msg;
-                            ::SetMenuItemInfo(*pMenu3, k, TRUE, &mii);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return pMenu1;
+	return pMenu1;
 }
 
 
@@ -560,48 +611,52 @@ CMenu *CMyApp::MyLoadMenu(const WCHAR *MenuResName)
 //---------------------------------------------------------------------------
 
 
-void CMyApp::CopyListBoxToClipboard(CWnd *wnd, int idListBox)
+void CMyApp::CopyListBoxToClipboard(CWnd* wnd, int idListBox)
 {
-    CListBox *listbox = (CListBox *)(wnd->GetDlgItem(idListBox));
-    ULONG count = listbox->GetCount();
+	CListBox* listbox = (CListBox*)(wnd->GetDlgItem(idListBox));
+	ULONG count       = listbox->GetCount();
 
-    ULONG len = 0;
-    ULONG i;
+	ULONG len = 0;
+	ULONG i;
 
-    for (i = 0; i < count; ++i)
-        len += listbox->GetTextLen(i) + 2;
+	for (i = 0; i < count; ++i)
+	{
+		len += listbox->GetTextLen(i) + 2;
+	}
 
-    if (len) {
+	if (len)
+	{
+		HANDLE hGlobal = GlobalAlloc(GMEM_MOVEABLE, (len + 4) * sizeof(WCHAR));
+		if (hGlobal)
+		{
+			WCHAR* mem_ptr = (WCHAR*)GlobalLock(hGlobal);
 
-        HANDLE hGlobal =
-                    GlobalAlloc(GMEM_MOVEABLE, (len + 4) * sizeof(WCHAR));
-        if (hGlobal) {
+			for (i = 0; i < count; ++i)
+			{
+				len = listbox->GetTextLen(i);
+				listbox->GetText(i, mem_ptr);
+				mem_ptr += len;
+				*mem_ptr = L'\r';
+				++mem_ptr;
+				*mem_ptr = L'\n';
+				++mem_ptr;
+			}
 
-            WCHAR *mem_ptr = (WCHAR *)GlobalLock(hGlobal);
+			*mem_ptr = L'\0';
+			GlobalUnlock(hGlobal);
 
-            for (i = 0; i < count; ++i) {
-                len = listbox->GetTextLen(i);
-                listbox->GetText(i, mem_ptr);
-                mem_ptr += len;
-                *mem_ptr = L'\r';
-                ++mem_ptr;
-                *mem_ptr = L'\n';
-                ++mem_ptr;
-            }
-
-            *mem_ptr = L'\0';
-            GlobalUnlock(hGlobal);
-
-            if (wnd->OpenClipboard()) {
-
-                EmptyClipboard();
-                SetClipboardData(CF_UNICODETEXT, hGlobal);
-                CloseClipboard();
-
-            } else
-                GlobalFree(hGlobal);
-        }
-    }
+			if (wnd->OpenClipboard())
+			{
+				EmptyClipboard();
+				SetClipboardData(CF_UNICODETEXT, hGlobal);
+				CloseClipboard();
+			}
+			else
+			{
+				GlobalFree(hGlobal);
+			}
+		}
+	}
 }
 
 
@@ -610,29 +665,31 @@ void CMyApp::CopyListBoxToClipboard(CWnd *wnd, int idListBox)
 //---------------------------------------------------------------------------
 
 
-void CMyApp::CreateTrayIcon(CWnd *pParentWnd, HICON hIcon, CString info)
+void CMyApp::CreateTrayIcon(CWnd* pParentWnd, HICON hIcon, CString info)
 {
-    m_hwndTray = pParentWnd->m_hWnd;
+	m_hwndTray = pParentWnd->m_hWnd;
 
-    for (int retry = 0; retry < 60; ++retry) {
+	for (int retry = 0; retry < 60; ++retry)
+	{
+		NOTIFYICONDATA nid;
+		memzero(&nid, sizeof(NOTIFYICONDATA));
+		nid.cbSize           = sizeof(NOTIFYICONDATA);
+		nid.hWnd             = m_hwndTray;
+		nid.uID              = 1;
+		nid.uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+		nid.uCallbackMessage = WM_TRAYICON;
+		nid.hIcon            = hIcon;
+		wcscpy(nid.szTip, CMyApp::m_appTitle);
+		wcscat(nid.szTip, info);
 
-        NOTIFYICONDATA nid;
-        memzero(&nid, sizeof(NOTIFYICONDATA));
-        nid.cbSize = sizeof(NOTIFYICONDATA);
-        nid.hWnd = m_hwndTray;
-        nid.uID = 1;
-        nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-        nid.uCallbackMessage = WM_TRAYICON;
-        nid.hIcon = hIcon;
-        wcscpy(nid.szTip, CMyApp::m_appTitle);
-        wcscat(nid.szTip, info);
+		BOOL ok = Shell_NotifyIcon(NIM_ADD, &nid);
+		if (ok)
+		{
+			return;
+		}
 
-        BOOL ok = Shell_NotifyIcon(NIM_ADD, &nid);
-        if (ok)
-            return;
-
-        Sleep(500);
-    }
+		Sleep(500);
+	}
 }
 
 
@@ -643,19 +700,19 @@ void CMyApp::CreateTrayIcon(CWnd *pParentWnd, HICON hIcon, CString info)
 
 void CMyApp::ChangeTrayIcon(HICON hIcon, CString info)
 {
-    if (m_hwndTray) {
-
-        NOTIFYICONDATA nid;
-        memzero(&nid, sizeof(NOTIFYICONDATA));
-        nid.cbSize = sizeof(NOTIFYICONDATA);
-        nid.hWnd = m_hwndTray;
-        nid.uID = 1;
-        nid.uFlags = NIF_ICON | NIF_TIP;
-        nid.hIcon = hIcon;
-        wcscpy(nid.szTip, CMyApp::m_appTitle);
-        wcscat(nid.szTip, info);
-        Shell_NotifyIcon(NIM_MODIFY, &nid);
-    }
+	if (m_hwndTray)
+	{
+		NOTIFYICONDATA nid;
+		memzero(&nid, sizeof(NOTIFYICONDATA));
+		nid.cbSize = sizeof(NOTIFYICONDATA);
+		nid.hWnd   = m_hwndTray;
+		nid.uID    = 1;
+		nid.uFlags = NIF_ICON | NIF_TIP;
+		nid.hIcon  = hIcon;
+		wcscpy(nid.szTip, CMyApp::m_appTitle);
+		wcscat(nid.szTip, info);
+		Shell_NotifyIcon(NIM_MODIFY, &nid);
+	}
 }
 
 
@@ -666,20 +723,20 @@ void CMyApp::ChangeTrayIcon(HICON hIcon, CString info)
 
 void CMyApp::BalloonTrayIcon(CString text, ULONG timeout)
 {
-    if (m_hwndTray) {
-
-        NOTIFYICONDATA nid;
-        memzero(&nid, sizeof(NOTIFYICONDATA));
-        nid.cbSize = sizeof(NOTIFYICONDATA);
-        nid.hWnd = m_hwndTray;
-        nid.uID = 1;
-        nid.uFlags = NIF_INFO;
-        wcscpy(nid.szInfoTitle, CMyApp::m_appTitle);
-        wcscpy(nid.szInfo, text);
-        nid.dwInfoFlags = NIIF_NOSOUND;
-        nid.uTimeout = timeout * 1000;
-        Shell_NotifyIcon(NIM_MODIFY, &nid);
-    }
+	if (m_hwndTray)
+	{
+		NOTIFYICONDATA nid;
+		memzero(&nid, sizeof(NOTIFYICONDATA));
+		nid.cbSize = sizeof(NOTIFYICONDATA);
+		nid.hWnd   = m_hwndTray;
+		nid.uID    = 1;
+		nid.uFlags = NIF_INFO;
+		wcscpy(nid.szInfoTitle, CMyApp::m_appTitle);
+		wcscpy(nid.szInfo, text);
+		nid.dwInfoFlags = NIIF_NOSOUND;
+		nid.uTimeout    = timeout * 1000;
+		Shell_NotifyIcon(NIM_MODIFY, &nid);
+	}
 }
 
 
@@ -690,16 +747,16 @@ void CMyApp::BalloonTrayIcon(CString text, ULONG timeout)
 
 void CMyApp::DeleteTrayIcon()
 {
-    if (m_hwndTray) {
+	if (m_hwndTray)
+	{
+		NOTIFYICONDATA nid;
+		memzero(&nid, sizeof(NOTIFYICONDATA));
+		nid.cbSize = sizeof(NOTIFYICONDATA);
+		nid.hWnd   = m_hwndTray;
+		nid.uID    = 1;
+		nid.uFlags = 0;
+		Shell_NotifyIcon(NIM_DELETE, &nid);
 
-        NOTIFYICONDATA nid;
-        memzero(&nid, sizeof(NOTIFYICONDATA));
-        nid.cbSize = sizeof(NOTIFYICONDATA);
-        nid.hWnd = m_hwndTray;
-        nid.uID = 1;
-        nid.uFlags = 0;
-        Shell_NotifyIcon(NIM_DELETE, &nid);
-
-        m_hwndTray = NULL;
-    }
+		m_hwndTray = NULL;
+	}
 }

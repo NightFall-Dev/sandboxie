@@ -29,34 +29,32 @@
 
 class CInitWait : public CWnd
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CString m_app_ver;
-    CString m_svc_ver;
-    CString m_drv_ver;
+	CString m_app_ver;
+	CString m_svc_ver;
+	CString m_drv_ver;
 
-    HICON m_hIcon1;
-    HICON m_hIcon2;
-    HICON m_hIconPtr;
-    CMenu *m_pMenu;
+	HICON m_hIcon1;
+	HICON m_hIcon2;
+	HICON m_hIconPtr;
+	CMenu* m_pMenu;
 
-    BOOL m_try_elevate;
+	BOOL m_try_elevate;
 
-    CMessageDialog *m_pMessageDialog;
+	CMessageDialog* m_pMessageDialog;
 
-    void GetVersions();
+	void GetVersions();
 
-    afx_msg void OnDestroy();
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
-    afx_msg LRESULT OnTaskbarCreated(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnTrayIcon(WPARAM wParam, LPARAM lParam);
-    afx_msg void OnShowErrors();
+	afx_msg void OnDestroy();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg LRESULT OnTaskbarCreated(WPARAM wParam, LPARAM lParam);
+	afx_msg LRESULT OnTrayIcon(WPARAM wParam, LPARAM lParam);
+	afx_msg void OnShowErrors();
 
 public:
-
-    CInitWait(CWinApp *myApp);
-    ~CInitWait();
-
+	CInitWait(CWinApp* myApp);
+	~CInitWait();
 };
 
 

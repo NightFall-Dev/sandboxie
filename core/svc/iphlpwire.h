@@ -25,8 +25,9 @@
 
 
 #include "msgids.h"
-#include <ipexport.h>
+
 #include <icmpapi.h>
+#include <ipexport.h>
 
 
 //---------------------------------------------------------------------------
@@ -36,14 +37,14 @@
 
 struct tagIPHLP_CREATE_FILE_REQ
 {
-    MSG_HEADER h;
-    BOOLEAN ip6;
+	MSG_HEADER h;
+	BOOLEAN ip6;
 };
 
 struct tagIPHLP_CREATE_FILE_RPL
 {
-    MSG_HEADER h;                       // status is Win32 error code
-    ULONG handle;
+	MSG_HEADER h; // status is Win32 error code
+	ULONG handle;
 };
 
 typedef struct tagIPHLP_CREATE_FILE_REQ IPHLP_CREATE_FILE_REQ;
@@ -57,8 +58,8 @@ typedef struct tagIPHLP_CREATE_FILE_RPL IPHLP_CREATE_FILE_RPL;
 
 struct tagIPHLP_CLOSE_HANDLE_REQ
 {
-    MSG_HEADER h;
-    ULONG handle;
+	MSG_HEADER h;
+	ULONG handle;
 };
 
 typedef struct tagIPHLP_CLOSE_HANDLE_REQ IPHLP_CLOSE_HANDLE_REQ;
@@ -71,39 +72,37 @@ typedef struct tagIPHLP_CLOSE_HANDLE_REQ IPHLP_CLOSE_HANDLE_REQ;
 
 struct tagIPHLP_SEND_ECHO_REQ
 {
-    MSG_HEADER h;
+	MSG_HEADER h;
 
-    BOOLEAN iswow64;                    // TRUE if caller is a Wow64 process
+	BOOLEAN iswow64; // TRUE if caller is a Wow64 process
 
-    BOOLEAN ip6;                        // TRUE for Icmp6SendEcho2, else:
-    BOOLEAN ex2;                        // TRUE for IcmpSendEcho2Ex, else:
-                                        //          IcmpSendEcho2
+	BOOLEAN ip6; // TRUE for Icmp6SendEcho2, else:
+	BOOLEAN ex2; // TRUE for IcmpSendEcho2Ex, else:
+	             //          IcmpSendEcho2
 
-    BOOLEAN ipopt_valid;
-    UCHAR ipopt_ttl;
-    UCHAR ipopt_tos;
-    UCHAR ipopt_flags;
+	BOOLEAN ipopt_valid;
+	UCHAR ipopt_ttl;
+	UCHAR ipopt_tos;
+	UCHAR ipopt_flags;
 
-    ULONG handle;
+	ULONG handle;
 
-    ULONG timeout;
+	ULONG timeout;
 
-    UCHAR src_addr[32];                 // IPAddr or struct sockaddr_in6
-    UCHAR dst_addr[32];                 // IPAddr or struct sockaddr_in6
+	UCHAR src_addr[32]; // IPAddr or struct sockaddr_in6
+	UCHAR dst_addr[32]; // IPAddr or struct sockaddr_in6
 
-    ULONG reply_size;
-    ULONG request_size;
-    UCHAR request_data[1];
-
+	ULONG reply_size;
+	ULONG request_size;
+	UCHAR request_data[1];
 };
 
 struct tagIPHLP_SEND_ECHO_RPL
 {
-    MSG_HEADER h;                       // status is Win32 error code
-    ULONG num_replies;
-    ULONG reply_size;
-    UCHAR reply_data[1];
-
+	MSG_HEADER h; // status is Win32 error code
+	ULONG num_replies;
+	ULONG reply_size;
+	UCHAR reply_data[1];
 };
 
 typedef struct tagIPHLP_SEND_ECHO_REQ IPHLP_SEND_ECHO_REQ;

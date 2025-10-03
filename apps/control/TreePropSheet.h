@@ -36,20 +36,21 @@
 
 
 #if !defined(AFX_TREEPROPSHEET_H__50695CFB_FCE4_4188_ADB4_BF05A5488E41__INCLUDED_)
-#define AFX_TREEPROPSHEET_H__50695CFB_FCE4_4188_ADB4_BF05A5488E41__INCLUDED_
+	#define AFX_TREEPROPSHEET_H__50695CFB_FCE4_4188_ADB4_BF05A5488E41__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+	#if _MSC_VER > 1000
+		#pragma once
+	#endif // _MSC_VER > 1000
 
-#include "PropPageFrame.h"
-#include "BaseDialog.h"
-#include <afxtempl.h>
+	#include "BaseDialog.h"
+	#include "PropPageFrame.h"
+
+	#include <afxtempl.h>
 
 namespace TreePropSheet
 {
 
-/**
+	/**
 A property sheet, which can use a tree control instead of a tab
 control, to give the user access to the different pages.
 
@@ -92,20 +93,20 @@ via SetEmptyPageText().
 
 @author Sven Wiegand
 */
-class /*AFX_EXT_CLASS*/ CTreePropSheet : public CPropertySheet
-{
-    DECLARE_DYNAMIC(CTreePropSheet)
+	class /*AFX_EXT_CLASS*/ CTreePropSheet : public CPropertySheet
+	{
+		DECLARE_DYNAMIC(CTreePropSheet)
 
-// Construction/Destruction
-public:
-    CTreePropSheet();
-    CTreePropSheet(UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
-    CTreePropSheet(LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
-    virtual ~CTreePropSheet();
+		// Construction/Destruction
+	public:
+		CTreePropSheet();
+		CTreePropSheet(UINT nIDCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
+		CTreePropSheet(LPCTSTR pszCaption, CWnd* pParentWnd = NULL, UINT iSelectPage = 0);
+		virtual ~CTreePropSheet();
 
-// Operations
-public:
-    /**
+		// Operations
+	public:
+		/**
     Call this method, if you would like to use a tree control to browse
     the pages, instead of the tab control.
 
@@ -130,9 +131,9 @@ public:
     @return
         TRUE on success or FALSE, if the window has already been created.
     */
-    BOOL SetTreeViewMode(BOOL bTreeViewMode = TRUE, BOOL bPageCaption = FALSE, BOOL bTreeImages = FALSE);
+		BOOL SetTreeViewMode(BOOL bTreeViewMode = TRUE, BOOL bPageCaption = FALSE, BOOL bTreeImages = FALSE);
 
-    /**
+		/**
     Specifies the width of the tree control, when the sheet is in tree
     view mode. The default value (if this method is not called) is 150
     pixels.
@@ -147,9 +148,9 @@ public:
         TRUE on success, FALSE otherwise (if the window has already been
         created).
     */
-    BOOL SetTreeWidth(int nWidth);
+		BOOL SetTreeWidth(int nWidth);
 
-    /**
+		/**
     Specifies the text to be drawn on empty pages (pages for tree view
     items, that are not related to a page, because they are only
     parents for other items). This is only needed in tree view mode.
@@ -157,9 +158,9 @@ public:
     The specified text can contains a single "%s" placeholder which
     will be replaced with the title of the empty page.
     */
-    void SetEmptyPageText(LPCTSTR lpszEmptyPageText);
+		void SetEmptyPageText(LPCTSTR lpszEmptyPageText);
 
-    /**
+		/**
     Allows you to specify, how the empty page message (see
     SetEmptyPageText()) should be drawn.
 
@@ -174,10 +175,10 @@ public:
     @return
         The previous format.
     */
-    DWORD SetEmptyPageTextFormat(DWORD dwFormat);
+		DWORD SetEmptyPageTextFormat(DWORD dwFormat);
 
-    //@{
-    /**
+		//@{
+		/**
     Defines the images, that should be used for pages without icons and
     for empty parent nodes. The list contains exactly to images:
     1. An image that should be used for parent tree nodes, without a
@@ -204,37 +205,37 @@ public:
     @return
         TRUE on success, FALSE otherwise.
     */
-    BOOL SetTreeDefaultImages(CImageList *pImages);
-    BOOL SetTreeDefaultImages(UINT unBitmapID, int cx, COLORREF crMask);
-    //@}
+		BOOL SetTreeDefaultImages(CImageList* pImages);
+		BOOL SetTreeDefaultImages(UINT unBitmapID, int cx, COLORREF crMask);
+		//@}
 
-    /**
+		/**
     Returns a pointer to the tree control, when the sheet is in
     tree view mode, NULL otherwise.
     */
-    CTreeCtrl* GetPageTreeControl();
+		CTreeCtrl* GetPageTreeControl();
 
-    /* Set text for checkbox */
-    void SetAutoApply(const CString &text, BOOL def);
+		/* Set text for checkbox */
+		void SetAutoApply(const CString& text, BOOL def);
 
-    /* TRUE if page is changing.  This can be used to tell if KillActive
+		/* TRUE if page is changing.  This can be used to tell if KillActive
        is called during page switch or for Apply or OK */
-    BOOL IsSelChanging() const;
+		BOOL IsSelChanging() const;
 
-    /* TRUE if the checkbox is set, FALSE otherwise */
-    BOOL IsAutoApplyChecked() const;
+		/* TRUE if the checkbox is set, FALSE otherwise */
+		BOOL IsAutoApplyChecked() const;
 
-    /* Set RTL mode. */
-    void SetLayoutRTL();
+		/* Set RTL mode. */
+		void SetLayoutRTL();
 
-    /* Add minimize button */
-    void AddMinimizeButton();
+		/* Add minimize button */
+		void AddMinimizeButton();
 
 
-// Public helpers
-public:
-    //@{
-    /**
+		// Public helpers
+	public:
+		//@{
+		/**
     This helper allows you to easily set the icon of a property page.
 
     This static method does nothing more, than extracting the specified
@@ -268,12 +269,12 @@ public:
     @return
         TRUE on success, FALSE if an error occured.
     */
-    static BOOL SetPageIcon(CPropertyPage *pPage, HICON hIcon);
-    static BOOL SetPageIcon(CPropertyPage *pPage, UINT unIconId);
-    static BOOL SetPageIcon(CPropertyPage *pPage, CImageList &Images, int nImage);
-    //@}
+		static BOOL SetPageIcon(CPropertyPage* pPage, HICON hIcon);
+		static BOOL SetPageIcon(CPropertyPage* pPage, UINT unIconId);
+		static BOOL SetPageIcon(CPropertyPage* pPage, CImageList& Images, int nImage);
+		//@}
 
-    /**
+		/**
     Checks, if the PSP_USEHICON flag is set in the PROPSHEETPAGE struct;
     If this is the case, the flag will be removed and the icon
     specified by the hIcon attribute of the PROPSHEETPAGE struct will
@@ -288,11 +289,11 @@ public:
         TRUE on success, FALSE if the PSP_USEHICON flag was not set or
         if the icon handle was NULL.
     */
-    static BOOL DestroyPageIcon(CPropertyPage *pPage);
+		static BOOL DestroyPageIcon(CPropertyPage* pPage);
 
-// Overridable implementation helpers
-protected:
-    /**
+		// Overridable implementation helpers
+	protected:
+		/**
     Will be called to generate the message, that should be displayed on
     an empty page, when the sheet is in tree view mode
 
@@ -305,9 +306,9 @@ protected:
     @param lpszCaption
         The title of the empty page.
     */
-    virtual CString GenerateEmptyPageMessage(LPCTSTR lpszEmptyPageMessage, LPCTSTR lpszCaption);
+		virtual CString GenerateEmptyPageMessage(LPCTSTR lpszEmptyPageMessage, LPCTSTR lpszCaption);
 
-    /**
+		/**
     Will be called during creation process, to create the CTreeCtrl
     object (the object, not the window!).
 
@@ -316,9 +317,9 @@ protected:
     This default implementation simply creates a CTreeCtrl with new
     and returns it.
     */
-    virtual CTreeCtrl* CreatePageTreeObject();
+		virtual CTreeCtrl* CreatePageTreeObject();
 
-    /**
+		/**
     Will be called during creation process, to create the object, that
     is responsible for drawing the frame around the pages, drawing the
     empty page message and the caption.
@@ -328,16 +329,16 @@ protected:
     This default implementation simply creates a CPropPageFrameTab with
     new and returns it.
     */
-    virtual CPropPageFrame* CreatePageFrame();
+		virtual CPropPageFrame* CreatePageFrame();
 
-// Implementation helpers
-protected:
-    /**
+		// Implementation helpers
+	protected:
+		/**
     Aligns the OK,Cancel,Apply buttons against the right edge
     */
-    int AlignButtonsToRight();
+		int AlignButtonsToRight();
 
-    /**
+		/**
     Moves all childs by the specified amount of pixels.
 
     @param nDx
@@ -347,14 +348,14 @@ protected:
         Pixels to move the childs in vertical direction (can be
         negative).
     */
-    void MoveChildWindows(int nDx, int nDy);
+		void MoveChildWindows(int nDx, int nDy);
 
-    /**
+		/**
     Refills the tree that contains the entries for the several pages.
     */
-    void RefillPageTree();
+		void RefillPageTree();
 
-    /**
+		/**
     Creates the specified path in the page tree and returns the handle
     of the most child item created.
 
@@ -364,9 +365,9 @@ protected:
         Handle of the item under which the path should be created or
         TVI_ROOT to start from the root.
     */
-    HTREEITEM CreatePageTreeItem(LPCTSTR lpszPath, HTREEITEM hParent = TVI_ROOT);
+		HTREEITEM CreatePageTreeItem(LPCTSTR lpszPath, HTREEITEM hParent = TVI_ROOT);
 
-    /**
+		/**
     Splits the given path into the topmost item and the rest. See
     description of this class for detailed path information.
 
@@ -374,9 +375,9 @@ protected:
     method will return "Appearance" and after the call strRest will
     be "Toolbars::Customize".
     */
-    CString SplitPageTreePath(CString &strRest);
+		CString SplitPageTreePath(CString& strRest);
 
-    /**
+		/**
     Tries to deactivate the current page, and hides it if successfull,
     so that an empty page becomes visible.
 
@@ -384,9 +385,9 @@ protected:
         TRUE if the current page has been deactivated successfully,
         FALSE if the currently active page prevents a page change.
     */
-    BOOL KillActiveCurrentPage();
+		BOOL KillActiveCurrentPage();
 
-    /**
+		/**
     Returns the page tree item, that representates the specified page
     or NULL, if no such icon exists.
 
@@ -396,9 +397,9 @@ protected:
         Item to start the search at or TVI_ROOT to search the whole
         tree.
     */
-    HTREEITEM GetPageTreeItem(int nPage, HTREEITEM hRoot = TVI_ROOT);
+		HTREEITEM GetPageTreeItem(int nPage, HTREEITEM hRoot = TVI_ROOT);
 
-    /**
+		/**
     Selects and shows the item, representing the specified page.
 
     @param nPage
@@ -408,9 +409,9 @@ protected:
         TRUE on success, FALSE if no item does exist for the specified
         page.
     */
-    BOOL SelectPageTreeItem(int nPage);
+		BOOL SelectPageTreeItem(int nPage);
 
-    /**
+		/**
     Selects and shows the tree item for the currently active page.
 
     @return
@@ -418,117 +419,117 @@ protected:
         page or if it was not possible to get information about the
         currently active page.
     */
-    BOOL SelectCurrentPageTreeItem();
+		BOOL SelectCurrentPageTreeItem();
 
-    /**
+		/**
     Updates the caption for the currently selected page (if the caption
     is enabled).
     */
-    void UpdateCaption();
+		void UpdateCaption();
 
-    /**
+		/**
     Activates the previous page in the page order or the last one, if
     the current one is the first.
 
     This method does never fail.
     */
-    void ActivatePreviousPage();
+		void ActivatePreviousPage();
 
-    /**
+		/**
     Activates the next page in the page order or the first one, if the
     current one is the last.
 
     This method does never fail.
     */
-    void ActivateNextPage();
+		void ActivateNextPage();
 
-    /**
+		/**
     Collapses all sub-trees except the one containing the newly selected
     item.
     */
-    void CollapseAllTreeItems(HTREEITEM hTreeItemNew);
+		void CollapseAllTreeItems(HTREEITEM hTreeItemNew);
 
 
-// Overridings
-protected:
-    //{{AFX_VIRTUAL(CTreePropSheet)
-    public:
-    virtual BOOL OnInitDialog();
-    //}}AFX_VIRTUAL
+		// Overridings
+	protected:
+		//{{AFX_VIRTUAL(CTreePropSheet)
+	public:
+		virtual BOOL OnInitDialog();
+		//}}AFX_VIRTUAL
 
-// Message handlers
-protected:
-    //{{AFX_MSG(CTreePropSheet)
-    afx_msg void OnDestroy();
-    //}}AFX_MSG
-    afx_msg void OnSize(UINT nType, int cx, int cy);
-    afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
-    //
-    afx_msg LRESULT OnAddPage(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnRemovePage(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnSetCurSel(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnSetCurSelId(WPARAM wParam, LPARAM lParam);
-    afx_msg LRESULT OnIsDialogMessage(WPARAM wParam, LPARAM lParam);
+		// Message handlers
+	protected:
+		//{{AFX_MSG(CTreePropSheet)
+		afx_msg void OnDestroy();
+		//}}AFX_MSG
+		afx_msg void OnSize(UINT nType, int cx, int cy);
+		afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
+		//
+		afx_msg LRESULT OnAddPage(WPARAM wParam, LPARAM lParam);
+		afx_msg LRESULT OnRemovePage(WPARAM wParam, LPARAM lParam);
+		afx_msg LRESULT OnSetCurSel(WPARAM wParam, LPARAM lParam);
+		afx_msg LRESULT OnSetCurSelId(WPARAM wParam, LPARAM lParam);
+		afx_msg LRESULT OnIsDialogMessage(WPARAM wParam, LPARAM lParam);
 
-    afx_msg void OnPageTreeSelChanging(NMHDR *pNotifyStruct, LRESULT *plResult);
-    afx_msg void OnPageTreeSelChanged(NMHDR *pNotifyStruct, LRESULT *plResult);
-    DECLARE_MESSAGE_MAP()
+		afx_msg void OnPageTreeSelChanging(NMHDR* pNotifyStruct, LRESULT* plResult);
+		afx_msg void OnPageTreeSelChanged(NMHDR* pNotifyStruct, LRESULT* plResult);
+		DECLARE_MESSAGE_MAP()
 
-// Properties
-private:
-    /** TRUE if we should use the tree control instead of the tab ctrl. */
-    BOOL m_bTreeViewMode;
+		// Properties
+	private:
+		/** TRUE if we should use the tree control instead of the tab ctrl. */
+		BOOL m_bTreeViewMode;
 
-    /** The tree control */
-    CTreeCtrl *m_pwndPageTree;
+		/** The tree control */
+		CTreeCtrl* m_pwndPageTree;
 
-    /** The frame around the pages */
-    CPropPageFrame *m_pFrame;
+		/** The frame around the pages */
+		CPropPageFrame* m_pFrame;
 
-    /**
+		/**
     TRUE, if a tree item selection by OnPageTreeSelChanged() is
     performed currently.
     */
-    BOOL m_bPageTreeSelChangedActive;
+		BOOL m_bPageTreeSelChangedActive;
 
-    /** TRUE if a page caption should be displayed, FALSE otherwise. */
-    BOOL m_bPageCaption;
+		/** TRUE if a page caption should be displayed, FALSE otherwise. */
+		BOOL m_bPageCaption;
 
-    /** TRUE if images should be displayed in the tree. */
-    BOOL m_bTreeImages;
+		/** TRUE if images should be displayed in the tree. */
+		BOOL m_bTreeImages;
 
-    /** Images to be displayed in the tree control. */
-    CImageList m_Images;
+		/** Images to be displayed in the tree control. */
+		CImageList m_Images;
 
-    /** Default images. */
-    CImageList m_DefaultImages;
+		/** Default images. */
+		CImageList m_DefaultImages;
 
-    /**
+		/**
     Message to be displayed on empty pages. May contain a "%s"
     placeholder which will be replaced by the caption of the empty
     page.
     */
-    CString m_strEmptyPageMessage;
+		CString m_strEmptyPageMessage;
 
-    /** The width of the page tree control in pixels. */
-    int m_nPageTreeWidth;
+		/** The width of the page tree control in pixels. */
+		int m_nPageTreeWidth;
 
-    /** Checkbox control **/
-    CButton m_checkbox;
-    CString m_checkbox_text;
-    BOOL m_checkbox_default;
+		/** Checkbox control **/
+		CButton m_checkbox;
+		CString m_checkbox_text;
+		BOOL m_checkbox_default;
 
-    /** Layout direction **/
-    BOOL m_bLayoutRTL;
+		/** Layout direction **/
+		BOOL m_bLayoutRTL;
 
-    /** Base dialog for minimize buttons **/
-    CBaseDialog *m_pBaseDialog;
+		/** Base dialog for minimize buttons **/
+		CBaseDialog* m_pBaseDialog;
 
-// Static Properties
-private:
-    /** The id of the tree view control, that shows the pages. */
-    static const UINT s_unPageTreeId;
-};
+		// Static Properties
+	private:
+		/** The id of the tree view control, that shows the pages. */
+		static const UINT s_unPageTreeId;
+	};
 
 
 } //namespace TreePropSheet

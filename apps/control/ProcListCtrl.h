@@ -29,65 +29,61 @@
 
 class CProcListCtrl : public CMyListCtrl
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    int m_pid;
-    void *m_box_order;
-    void *m_box_order_selected;
+	int m_pid;
+	void* m_box_order;
+	void* m_box_order_selected;
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    virtual afx_msg void OnSize(UINT nType, int cx, int cy);
+	virtual afx_msg void OnSize(UINT nType, int cx, int cy);
 
-    virtual afx_msg void OnRefreshPosted();
+	virtual afx_msg void OnRefreshPosted();
 
-    int RefreshOneBox(CBoxProc &boxproc, int ListIndex);
+	int RefreshOneBox(CBoxProc& boxproc, int ListIndex);
 
-    int InsertProcessRow(
-            int ListIndex, int ProcessId, const CString &ImageName,
-            const CString &WindowTitle, int IconIndex);
-    int InsertBoxRow(
-            int ListIndex, const CString &BoxName, int IconIndex);
+	int InsertProcessRow(int ListIndex, int ProcessId, const CString& ImageName, const CString& WindowTitle, int IconIndex);
+	int InsertBoxRow(int ListIndex, const CString& BoxName, int IconIndex);
 
-    afx_msg void OnCmdTerminate();
-    afx_msg void OnCmdSettings();
-    afx_msg void OnCmdResources();
+	afx_msg void OnCmdTerminate();
+	afx_msg void OnCmdSettings();
+	afx_msg void OnCmdResources();
 
-    virtual afx_msg void OnClick(NMHDR *pNMHDR, LRESULT *pResult);
+	virtual afx_msg void OnClick(NMHDR* pNMHDR, LRESULT* pResult);
 
-    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 
-    void OnArrowKeyDown(UINT nChar);
+	void OnArrowKeyDown(UINT nChar);
 
-    afx_msg void OnDestroy();
+	afx_msg void OnDestroy();
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    void RebuildCombo2(void *_order_entry, const CString &prefix);
+	void RebuildCombo2(void* _order_entry, const CString& prefix);
 
-    virtual afx_msg void OnComboSelect();
+	virtual afx_msg void OnComboSelect();
 
-    //
-    //
-    //
+	//
+	//
+	//
 
 public:
+	BOOL Create(CWnd* pParentWnd);
 
-    BOOL Create(CWnd *pParentWnd);
+	virtual void RefreshContent();
 
-    virtual void RefreshContent();
+	void SelectByProcessId(int pid);
+	int GetRightClickPid() const;
 
-    void SelectByProcessId(int pid);
-    int GetRightClickPid() const;
+	virtual CBox& GetSelectedBox(CWnd* pWnd, CPoint pt) const;
+	virtual void OnContextMenu(CWnd* pWnd, CPoint pt);
 
-    virtual CBox &GetSelectedBox(CWnd *pWnd, CPoint pt) const;
-    virtual void OnContextMenu(CWnd *pWnd, CPoint pt);
-
-    void RebuildCombo();
+	void RebuildCombo();
 };
 
 

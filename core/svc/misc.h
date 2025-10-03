@@ -16,16 +16,16 @@
  */
 
 #ifndef MISC_H_WITHOUT_WIN32_NTDDK_H
-#include "common/win32_ntddk.h"
+	#include "common/win32_ntddk.h"
 #endif
 #include "msgs/msgs.h"
 
 void LogEvent(ULONG msgid, ULONG level, ULONG detail);
 void AbortServer(void);
 bool RestrictToken(void);
-bool CheckDropRights(const WCHAR *BoxName);
+bool CheckDropRights(const WCHAR* BoxName);
 
-SECURITY_ATTRIBUTES *GetSecurityAttributes(ACCESS_MASK EveryoneAccess);
+SECURITY_ATTRIBUTES* GetSecurityAttributes(ACCESS_MASK EveryoneAccess);
 
 extern HMODULE _Ntdll;
 extern HMODULE _Kernel32;
@@ -33,10 +33,9 @@ extern HMODULE _Kernel32;
 extern SYSTEM_INFO _SystemInfo;
 #define NUMBER_OF_PROCESSORS (_SystemInfo.dwNumberOfProcessors)
 #ifdef _WIN64
-#define MINIMUM_NUMBER_OF_THREADS 8
+	#define MINIMUM_NUMBER_OF_THREADS 8
 #else
-#define MINIMUM_NUMBER_OF_THREADS 4
+	#define MINIMUM_NUMBER_OF_THREADS 4
 #endif
-#define NUMBER_OF_THREADS   \
-            ((NUMBER_OF_PROCESSORS * 2) <= MINIMUM_NUMBER_OF_THREADS \
-                    ? MINIMUM_NUMBER_OF_THREADS : (NUMBER_OF_PROCESSORS * 2))
+#define NUMBER_OF_THREADS \
+	((NUMBER_OF_PROCESSORS * 2) <= MINIMUM_NUMBER_OF_THREADS ? MINIMUM_NUMBER_OF_THREADS : (NUMBER_OF_PROCESSORS * 2))

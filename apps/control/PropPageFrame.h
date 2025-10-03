@@ -36,18 +36,18 @@
 
 
 #if !defined(AFX_PROPPAGEFRAME_H__B968548B_F0B4_4C35_85DD_C44242A9D368__INCLUDED_)
-#define AFX_PROPPAGEFRAME_H__B968548B_F0B4_4C35_85DD_C44242A9D368__INCLUDED_
+	#define AFX_PROPPAGEFRAME_H__B968548B_F0B4_4C35_85DD_C44242A9D368__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+	#if _MSC_VER > 1000
+		#pragma once
+	#endif // _MSC_VER > 1000
 
 
 namespace TreePropSheet
 {
 
 
-/**
+	/**
 An object of an CPropertyPageFrame-derived class is used by 
 CTreePropSheet to display a frame for the property pages.
 
@@ -67,16 +67,16 @@ DrawMsg() methods, to provide custom drawing functionality.
 
 @author Sven Wiegand
 */
-class /*AFX_EXT_CLASS*/ CPropPageFrame
-{
-// Construction/Destruction
-public:
-	CPropPageFrame();
-	virtual ~CPropPageFrame();
+	class /*AFX_EXT_CLASS*/ CPropPageFrame
+	{
+		// Construction/Destruction
+	public:
+		CPropPageFrame();
+		virtual ~CPropPageFrame();
 
-// Operations
-public:
-	/**
+		// Operations
+	public:
+		/**
 	Has to create a window with the specified properties.
 
 	@param dwWindowStyle
@@ -91,42 +91,42 @@ public:
 	@return
 		TRUE on success, FALSE otherwise.
 	*/
-	virtual BOOL Create(DWORD dwWindowStyle, const RECT &rect, CWnd *pwndParent, UINT nID) = 0;
+		virtual BOOL Create(DWORD dwWindowStyle, const RECT& rect, CWnd* pwndParent, UINT nID) = 0;
 
-	/**
+		/**
 	Returns a pointer to the window object, that represents the frame.
 	*/
-	virtual CWnd* GetWnd() = 0;
+		virtual CWnd* GetWnd() = 0;
 
-	/**
+		/**
 	Enables or disables page caption.
 
 	This default implementation calls the SafeUpdateWindow() method
 	with the caption rectangle, to force it to be redrawn.
 	*/
-	virtual void ShowCaption(BOOL bEnable);
+		virtual void ShowCaption(BOOL bEnable);
 
-	/**
+		/**
 	Returns TRUE if captions are enabled, FALSE otherwise.
 	*/
-	BOOL GetShowCaption() const;
+		BOOL GetShowCaption() const;
 
-	/**
+		/**
 	Sets the height of the caption in pixels. This value is ignored 
 	until the caption is enabled by ShowCaption(TRUE).
 
 	This default implementation calls the SafeUpdateWindow() method
 	with the caption rectangle, to force it to be redrawn.
 	*/
-	virtual void SetCaptionHeight(int nCaptionHeight);
+		virtual void SetCaptionHeight(int nCaptionHeight);
 
-	/**
+		/**
 	Returns the caption height, that has been most recently set by a
 	call to the SetCaptionHeight() method.
 	*/
-	int GetCaptionHeight() const;
+		int GetCaptionHeight() const;
 
-	/**
+		/**
 	Sets caption text an icon.
 
 	This default implementation calls the SafeUpdateWindow() method
@@ -137,9 +137,9 @@ public:
 	@param hIcon
 		Icon to display for the caption.
 	*/
-	virtual void SetCaption(LPCTSTR lpszCaption, HICON hIcon = NULL);
+		virtual void SetCaption(LPCTSTR lpszCaption, HICON hIcon = NULL);
 
-	/**
+		/**
 	Returns the caption, that has been set most recently using the
 	SetCaption() method.
 
@@ -152,22 +152,22 @@ public:
 		The text that has been set most recently using the SetCaption()
 		method.
 	*/
-	CString GetCaption(HICON *pIcon = NULL) const;
+		CString GetCaption(HICON* pIcon = NULL) const;
 
-	/**
+		/**
 	Sets the text to display.
 
 	This default implementation calls the SafeUpdateWindow() method
 	with the message rectangle, to force it to be redrawn.
 	*/
-	virtual void SetMsgText(LPCTSTR lpszMsg);
+		virtual void SetMsgText(LPCTSTR lpszMsg);
 
-	/**
+		/**
 	Returns the text currently displayed.
 	*/
-	CString GetMsgText() const;
+		CString GetMsgText() const;
 
-	/**
+		/**
 	Specifies the format to draw the text with, set by SetMsgText().
 
 	This default implementation calls the SafeUpdateWindow() method
@@ -177,18 +177,18 @@ public:
 		Combination of the DT_* flags, specified by the Win32 function
 		DrawText().
 	*/
-	virtual void SetMsgFormat(DWORD dwFormat);
+		virtual void SetMsgFormat(DWORD dwFormat);
 
-	/**
+		/**
 	Returns the format to draw the text with, set by SetMsgText().
 
 	@see SetMsgFormat()
 	*/
-	DWORD GetMsgFormat() const;
+		DWORD GetMsgFormat() const;
 
-// Overridable implementation helpers
-protected:
-	/**
+		// Overridable implementation helpers
+	protected:
+		/**
 	Draws the whole frame including caption (if enabled) and message.
 
 	This method calculates the rectangles for the message area and
@@ -203,9 +203,9 @@ protected:
 	@param pDc
 		Device context to draw in.
 	*/
-	virtual void Draw(CDC *pDc);
+		virtual void Draw(CDC* pDc);
 
-	/**
+		/**
 	Calculates the area, the message, set by SetMsgText() should be
 	displayed in. The returned rectangle (client coordinates) will be
 	passed to DrawMsg().
@@ -214,9 +214,9 @@ protected:
 	substracts the returned rectangle from the client area and returns
 	the result.
 	*/
-	virtual CRect CalcMsgArea();
+		virtual CRect CalcMsgArea();
 
-	/**
+		/**
 	Draws the message with the specified format.
 
 	This default implementation draws the given msg using the specified
@@ -232,9 +232,9 @@ protected:
 		Combination of the DT_* flags, specified by the Win32 function
 		DrawText() to draw the message with.
 	*/
-	virtual void DrawMsg(CDC *pDc, CRect rect, LPCTSTR lpszMsg, DWORD dwFormat);
+		virtual void DrawMsg(CDC* pDc, CRect rect, LPCTSTR lpszMsg, DWORD dwFormat);
 
-	/**
+		/**
 	Calculates the caption area. The caption area is the rectangular
 	range, the current page's caption should be drawn in.
 
@@ -254,9 +254,9 @@ protected:
 	moment, this method returns an empty rectangle with the width of 
 	the client area.
 	*/
-	virtual CRect CalcCaptionArea();
+		virtual CRect CalcCaptionArea();
 
-	/**
+		/**
 	Draws the caption.
 
 	This default implementation draws nothing.
@@ -270,11 +270,11 @@ protected:
 	@param hIcon
 		Icon to display in the caption.
 	*/
-	virtual void DrawCaption(CDC *pDc, CRect rect, LPCTSTR lpszCaption, HICON hIcon);
+		virtual void DrawCaption(CDC* pDc, CRect rect, LPCTSTR lpszCaption, HICON hIcon);
 
-// Implementation helpers
-protected:
-	/**
+		// Implementation helpers
+	protected:
+		/**
 	If the m_hWnd property of the CWnd-object returend by GetWnd() 
 	specifies a valid window, this method will invalidate the specified
 	rectangle, to schedule it for repaint, otherwise the method will
@@ -285,31 +285,31 @@ protected:
 		repainting or NULL, if the whole client area should be marked
 		for repainting.
 	*/
-	void SafeUpdateWindow(LPCRECT lpRect = NULL);
+		void SafeUpdateWindow(LPCRECT lpRect = NULL);
 
-// Properties
-private:
-	/** TRUE if the caption should be drawn, FALSE otherwise. */
-	BOOL m_bShowCaption;
-		
-	/** Height of the caption in pixels, if it is enabled. */
-	int m_nCaptionHeight;
+		// Properties
+	private:
+		/** TRUE if the caption should be drawn, FALSE otherwise. */
+		BOOL m_bShowCaption;
 
-	/** Text to display in the caption. */
-	CString m_strCaption;
+		/** Height of the caption in pixels, if it is enabled. */
+		int m_nCaptionHeight;
 
-	/** 
+		/** Text to display in the caption. */
+		CString m_strCaption;
+
+		/** 
 	Icon to display in the caption or NULL if no icon should be 
 	displayed.
 	*/
-	HICON m_hCaptionIcon;
+		HICON m_hCaptionIcon;
 
-	/** Message text to display. */
-	CString m_strMsg;
+		/** Message text to display. */
+		CString m_strMsg;
 
-	/** Style to use when drawing the message text m_strMsg. */
-	DWORD m_dwMsgFormat;
-};
+		/** Style to use when drawing the message text m_strMsg. */
+		DWORD m_dwMsgFormat;
+	};
 
 
 } //namespace TreePropSheet

@@ -28,30 +28,26 @@
 //---------------------------------------------------------------------------
 
 
-static BOOLEAN Lsa_Init_Common(const WCHAR *DllName);
+static BOOLEAN Lsa_Init_Common(const WCHAR* DllName);
 
-static NTSTATUS Lsa_LsaRegisterLogonProcess(
-    void *LogonProcessName, HANDLE *LsaHandle, void *SecurityMode);
-
-
-//---------------------------------------------------------------------------
-
-
-typedef ULONG (*P_LsaConnectUntrusted)(HANDLE *LsaHandle);
-
-typedef NTSTATUS (*P_LsaRegisterLogonProcess)(
-    void *LogonProcessName, HANDLE *LsaHandle, void *SecurityMode);
-
-typedef NTSTATUS (*P_LsaOpenPolicy)(
-    void *SystemName, void *ObjectAttributes, ACCESS_MASK DesiredAccess,
-    HANDLE *PolicyHandle);
+static NTSTATUS Lsa_LsaRegisterLogonProcess(void* LogonProcessName, HANDLE* LsaHandle, void* SecurityMode);
 
 
 //---------------------------------------------------------------------------
 
 
-static P_LsaConnectUntrusted        __sys_LsaConnectUntrusted       = NULL;
-static P_LsaRegisterLogonProcess    __sys_LsaRegisterLogonProcess   = NULL;
+typedef ULONG (*P_LsaConnectUntrusted)(HANDLE* LsaHandle);
+
+typedef NTSTATUS (*P_LsaRegisterLogonProcess)(void* LogonProcessName, HANDLE* LsaHandle, void* SecurityMode);
+
+typedef NTSTATUS (*P_LsaOpenPolicy)(void* SystemName, void* ObjectAttributes, ACCESS_MASK DesiredAccess, HANDLE* PolicyHandle);
+
+
+//---------------------------------------------------------------------------
+
+
+static P_LsaConnectUntrusted __sys_LsaConnectUntrusted         = NULL;
+static P_LsaRegisterLogonProcess __sys_LsaRegisterLogonProcess = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -59,22 +55,20 @@ static P_LsaRegisterLogonProcess    __sys_LsaRegisterLogonProcess   = NULL;
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Lsa_Init_Common(const WCHAR *DllName)
+_FX BOOLEAN Lsa_Init_Common(const WCHAR* DllName)
 {
-    void *LsaRegisterLogonProcess;
+	void* LsaRegisterLogonProcess;
 
-    //
-    // intercept SECUR32/SSPICLI entry points
-    //
+	//
+	// intercept SECUR32/SSPICLI entry points
+	//
 
-    __sys_LsaConnectUntrusted = (P_LsaConnectUntrusted)
-        Ldr_GetProcAddrNew(DllName, L"LsaConnectUntrusted","LsaConnectUntrusted");
-    LsaRegisterLogonProcess = (P_LsaRegisterLogonProcess)
-        Ldr_GetProcAddrNew(DllName, L"LsaRegisterLogonProcess","LsaRegisterLogonProcess");
+	__sys_LsaConnectUntrusted = (P_LsaConnectUntrusted)Ldr_GetProcAddrNew(DllName, L"LsaConnectUntrusted", "LsaConnectUntrusted");
+	LsaRegisterLogonProcess = (P_LsaRegisterLogonProcess)Ldr_GetProcAddrNew(DllName, L"LsaRegisterLogonProcess", "LsaRegisterLogonProcess");
 
-    SBIEDLL_HOOK(Lsa_,LsaRegisterLogonProcess);
+	SBIEDLL_HOOK(Lsa_, LsaRegisterLogonProcess);
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -83,14 +77,14 @@ _FX BOOLEAN Lsa_Init_Common(const WCHAR *DllName)
 //---------------------------------------------------------------------------
 
 
-static NTSTATUS Lsa_LsaRegisterLogonProcess(
-    void *LogonProcessName, HANDLE *LsaHandle, void *SecurityMode)
+static NTSTATUS Lsa_LsaRegisterLogonProcess(void* LogonProcessName, HANDLE* LsaHandle, void* SecurityMode)
 {
-    NTSTATUS status = __sys_LsaRegisterLogonProcess(
-        LogonProcessName, LsaHandle, SecurityMode);
-    if (! NT_SUCCESS(status))
-        status = __sys_LsaConnectUntrusted(LsaHandle);
-    return status;
+	NTSTATUS status = __sys_LsaRegisterLogonProcess(LogonProcessName, LsaHandle, SecurityMode);
+	if (!NT_SUCCESS(status))
+	{
+		status = __sys_LsaConnectUntrusted(LsaHandle);
+	}
+	return status;
 }
 
 
@@ -101,17 +95,17 @@ static NTSTATUS Lsa_LsaRegisterLogonProcess(
 
 _FX BOOLEAN Lsa_Init_Secur32(HMODULE module)
 {
-    if (Dll_KernelBase) {
+	if (Dll_KernelBase)
+	{
+		//
+		// On Windows 7, LsaRegisterLogonProcess and LsaConnectUntrusted
+		// are implemented by SspiCli.dll
+		//
 
-        //
-        // On Windows 7, LsaRegisterLogonProcess and LsaConnectUntrusted
-        // are implemented by SspiCli.dll
-        //
+		return TRUE;
+	}
 
-        return TRUE;
-    }
-
-    return Lsa_Init_Common(DllName_secur32);
+	return Lsa_Init_Common(DllName_secur32);
 }
 
 
@@ -122,15 +116,15 @@ _FX BOOLEAN Lsa_Init_Secur32(HMODULE module)
 
 _FX BOOLEAN Lsa_Init_SspiCli(HMODULE module)
 {
-    if (! Dll_KernelBase) {
+	if (!Dll_KernelBase)
+	{
+		//
+		// On Windows earlier than 7, LsaRegisterLogonProcess and
+		// LsaConnectUntrusted are implemented by Secur32.dll
+		//
 
-        //
-        // On Windows earlier than 7, LsaRegisterLogonProcess and
-        // LsaConnectUntrusted are implemented by Secur32.dll
-        //
+		return TRUE;
+	}
 
-        return TRUE;
-    }
-
-    return Lsa_Init_Common(DllName_sspicli);
+	return Lsa_Init_Common(DllName_sspicli);
 }

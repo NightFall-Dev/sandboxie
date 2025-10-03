@@ -32,7 +32,7 @@
 //---------------------------------------------------------------------------
 
 
-typedef ULONG *BIGNUM;
+typedef ULONG* BIGNUM;
 
 
 //---------------------------------------------------------------------------
@@ -41,43 +41,40 @@ typedef ULONG *BIGNUM;
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-BIGNUM BigNum_CreateFromInteger(POOL *pool, ULONG Value);
+	BIGNUM BigNum_CreateFromInteger(POOL* pool, ULONG Value);
 
-BIGNUM BigNum_CreateFromBigNum(POOL *pool, BIGNUM Value);
+	BIGNUM BigNum_CreateFromBigNum(POOL* pool, BIGNUM Value);
 
-void BigNum_Free(BIGNUM BigNum);
+	void BigNum_Free(BIGNUM BigNum);
 
-int BigNum_Compare(BIGNUM BigNumA, BIGNUM BigNumB);
+	int BigNum_Compare(BIGNUM BigNumA, BIGNUM BigNumB);
 
-BIGNUM BigNum_ShiftRight(POOL *pool, BIGNUM BigNumA, ULONG Bits);
+	BIGNUM BigNum_ShiftRight(POOL* pool, BIGNUM BigNumA, ULONG Bits);
 
-BIGNUM BigNum_ShiftLeft(
-            POOL *pool, BIGNUM BigNumA, ULONG Bits, ULONG OrValue);
+	BIGNUM BigNum_ShiftLeft(POOL* pool, BIGNUM BigNumA, ULONG Bits, ULONG OrValue);
 
-BIGNUM BigNum_Add(POOL *pool, BIGNUM BigNumA, BIGNUM BigNumB);
+	BIGNUM BigNum_Add(POOL* pool, BIGNUM BigNumA, BIGNUM BigNumB);
 
-BIGNUM BigNum_Subtract(POOL *pool, BIGNUM BigNumA, BIGNUM BigNumB);
+	BIGNUM BigNum_Subtract(POOL* pool, BIGNUM BigNumA, BIGNUM BigNumB);
 
-BIGNUM BigNum_Multiply(POOL *pool, BIGNUM BigNumA, BIGNUM BigNumB);
+	BIGNUM BigNum_Multiply(POOL* pool, BIGNUM BigNumA, BIGNUM BigNumB);
 
-BIGNUM BigNum_DivideByInteger(
-            POOL *pool, BIGNUM BigNumA, ULONG Divisor, ULONG *pReminder);
+	BIGNUM BigNum_DivideByInteger(POOL* pool, BIGNUM BigNumA, ULONG Divisor, ULONG* pReminder);
 
-BIGNUM BigNum_Divide(
-            POOL *pool, BIGNUM Dividend, BIGNUM Divisor, BIGNUM *pReminder);
+	BIGNUM BigNum_Divide(POOL* pool, BIGNUM Dividend, BIGNUM Divisor, BIGNUM* pReminder);
 
-BIGNUM BigNum_ModPow(
-            POOL *pool, BIGNUM Base, BIGNUM Exponent, BIGNUM Modulus);
+	BIGNUM BigNum_ModPow(POOL* pool, BIGNUM Base, BIGNUM Exponent, BIGNUM Modulus);
 
-BIGNUM BigNum_CreateFromString(POOL *pool, const WCHAR *Value, int Base);
+	BIGNUM BigNum_CreateFromString(POOL* pool, const WCHAR* Value, int Base);
 
-WCHAR *BigNum_ConvertToString(POOL *pool, BIGNUM BigNum, int Base);
+	WCHAR* BigNum_ConvertToString(POOL* pool, BIGNUM BigNum, int Base);
 
-BIGNUM BigNum_CreateRandom(POOL *pool, int Digits, int Base);
+	BIGNUM BigNum_CreateRandom(POOL* pool, int Digits, int Base);
 
 
 #ifdef __cplusplus

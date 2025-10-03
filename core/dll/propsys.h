@@ -33,55 +33,37 @@
 //---------------------------------------------------------------------------
 
 
-
-typedef const PROPERTYKEY *REFPROPERTYKEY;
+typedef const PROPERTYKEY* REFPROPERTYKEY;
 
 typedef interface IPropertyStore IPropertyStore;
 
 
 typedef struct IPropertyStoreVtbl
 {
-    BEGIN_INTERFACE
+	BEGIN_INTERFACE
 
-    HRESULT ( STDMETHODCALLTYPE *QueryInterface )(
-        IPropertyStore * This,
-        REFIID riid,
-        void **ppvObject);
+	HRESULT(STDMETHODCALLTYPE* QueryInterface)(IPropertyStore* This, REFIID riid, void** ppvObject);
 
-    ULONG ( STDMETHODCALLTYPE *AddRef )(
-        IPropertyStore * This);
+	ULONG(STDMETHODCALLTYPE* AddRef)(IPropertyStore* This);
 
-    ULONG ( STDMETHODCALLTYPE *Release )(
-        IPropertyStore * This);
+	ULONG(STDMETHODCALLTYPE* Release)(IPropertyStore* This);
 
-    HRESULT ( STDMETHODCALLTYPE *GetCount )(
-        IPropertyStore * This,
-        DWORD *cProps);
+	HRESULT(STDMETHODCALLTYPE* GetCount)(IPropertyStore* This, DWORD* cProps);
 
-    HRESULT ( STDMETHODCALLTYPE *GetAt )(
-        IPropertyStore * This,
-        DWORD iProp,
-        PROPERTYKEY *pkey);
+	HRESULT(STDMETHODCALLTYPE* GetAt)(IPropertyStore* This, DWORD iProp, PROPERTYKEY* pkey);
 
-    HRESULT ( STDMETHODCALLTYPE *GetValue )(
-        IPropertyStore * This,
-        REFPROPERTYKEY key,
-        PROPVARIANT *pv);
+	HRESULT(STDMETHODCALLTYPE* GetValue)(IPropertyStore* This, REFPROPERTYKEY key, PROPVARIANT* pv);
 
-    HRESULT ( STDMETHODCALLTYPE *SetValue )(
-        IPropertyStore * This,
-        REFPROPERTYKEY key,
-        REFPROPVARIANT propvar);
+	HRESULT(STDMETHODCALLTYPE* SetValue)(IPropertyStore* This, REFPROPERTYKEY key, REFPROPVARIANT propvar);
 
-    HRESULT ( STDMETHODCALLTYPE *Commit )(
-        IPropertyStore * This);
+	HRESULT(STDMETHODCALLTYPE* Commit)(IPropertyStore* This);
 
-    END_INTERFACE
+	END_INTERFACE
 } IPropertyStoreVtbl;
 
 interface IPropertyStore
 {
-    CONST_VTBL struct IPropertyStoreVtbl *lpVtbl;
+	CONST_VTBL struct IPropertyStoreVtbl* lpVtbl;
 };
 
 
@@ -91,9 +73,10 @@ interface IPropertyStore
 
 
 #ifdef PROPSYS_INITGUID
-#define DEFINE_PROPERTYKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const PROPERTYKEY name = { { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }, pid }
+	#define DEFINE_PROPERTYKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) \
+		EXTERN_C const PROPERTYKEY name = {{l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}, pid}
 #else
-#define DEFINE_PROPERTYKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const PROPERTYKEY name
+	#define DEFINE_PROPERTYKEY(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8, pid) EXTERN_C const PROPERTYKEY name
 #endif // PROPSYS_INITGUID
 
 

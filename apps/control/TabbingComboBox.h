@@ -29,21 +29,18 @@
 
 class CTabbingComboBox : public CComboBox
 {
-
 private:
+	DECLARE_MESSAGE_MAP()
 
-    DECLARE_MESSAGE_MAP()
+	void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
 
-    void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
-
-    CWnd *m_pWndPrev;
-    CWnd *m_pWndNext;
+	CWnd* m_pWndPrev;
+	CWnd* m_pWndNext;
 
 public:
+	CTabbingComboBox();
 
-    CTabbingComboBox();
-
-    void SetTabbingWindows(CWnd *pWndNext, CWnd *pWndPrev);
+	void SetTabbingWindows(CWnd* pWndNext, CWnd* pWndPrev);
 };
 
 

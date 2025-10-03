@@ -28,16 +28,13 @@
 //---------------------------------------------------------------------------
 
 
-static BOOLEAN Event_EvtIntAssertConfig(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3);
+static BOOLEAN Event_EvtIntAssertConfig(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3);
 
 
 //---------------------------------------------------------------------------
 
 
-typedef BOOL (*P_EvtIntAssertConfig)(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3);
-
+typedef BOOL (*P_EvtIntAssertConfig)(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3);
 
 
 //---------------------------------------------------------------------------
@@ -45,11 +42,10 @@ typedef BOOL (*P_EvtIntAssertConfig)(
 //---------------------------------------------------------------------------
 
 
-ALIGNED BOOLEAN Event_EvtIntAssertConfig(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3)
+ALIGNED BOOLEAN Event_EvtIntAssertConfig(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3)
 {
-    SetLastError(0);
-    return TRUE;
+	SetLastError(0);
+	return TRUE;
 }
 
 
@@ -60,13 +56,12 @@ ALIGNED BOOLEAN Event_EvtIntAssertConfig(
 
 ALIGNED BOOLEAN EvtApi_Init(HMODULE module)
 {
-    P_EvtIntAssertConfig EvtIntAssertConfig;
-    ULONG_PTR __sys_EvtIntAssertConfig = 0;
+	P_EvtIntAssertConfig EvtIntAssertConfig;
+	ULONG_PTR __sys_EvtIntAssertConfig = 0;
 
-    EvtIntAssertConfig = (P_EvtIntAssertConfig)
-        GetProcAddress(module, "EvtIntAssertConfig");
+	EvtIntAssertConfig = (P_EvtIntAssertConfig)GetProcAddress(module, "EvtIntAssertConfig");
 
-    SBIEDLL_HOOK(Event_,EvtIntAssertConfig);
+	SBIEDLL_HOOK(Event_, EvtIntAssertConfig);
 
-    return TRUE;
+	return TRUE;
 }

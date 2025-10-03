@@ -26,22 +26,20 @@
 
 class CMonitorDialog : public CBaseDialog
 {
-    // DECLARE_MESSAGE_MAP()
+	// DECLARE_MESSAGE_MAP()
 
-    WCHAR m_username[256];
-    ULONG m_username_len;
+	WCHAR m_username[256];
+	ULONG m_username_len;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
+	CMonitorDialog(CWnd* pParentWnd);
+	~CMonitorDialog();
 
-    CMonitorDialog(CWnd *pParentWnd);
-    ~CMonitorDialog();
-
-    void OnIdle();
-
+	void OnIdle();
 };
 
 

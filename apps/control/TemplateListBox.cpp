@@ -20,10 +20,10 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
 #include "TemplateListBox.h"
 
 #include "SbieIni.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -41,10 +41,9 @@ CString CTemplateListBox::Prefix0(L"[  ]  ");
 //---------------------------------------------------------------------------
 
 
-CString CTemplateListBox::GetTemplateClass(const CString &TemplateName)
+CString CTemplateListBox::GetTemplateClass(const CString& TemplateName)
 {
-    return CSbieIni::GetInstance().GetTemplateMetaData(
-                                                    TemplateName, L"Class");
+	return CSbieIni::GetInstance().GetTemplateMetaData(TemplateName, L"Class");
 }
 
 
@@ -53,25 +52,28 @@ CString CTemplateListBox::GetTemplateClass(const CString &TemplateName)
 //---------------------------------------------------------------------------
 
 
-CString CTemplateListBox::GetTemplateTitle(const CString &TemplateName)
+CString CTemplateListBox::GetTemplateTitle(const CString& TemplateName)
 {
-    CString descr =
-        CSbieIni::GetInstance().GetTemplateMetaData(TemplateName, L"Title");
+	CString descr = CSbieIni::GetInstance().GetTemplateMetaData(TemplateName, L"Title");
 
-    if (descr.GetAt(0) == L'#') {
-        CString detail;
-        int index = descr.Find(L',');
-        if (index != -1) {
-            detail = descr.Mid(index + 1);
-            descr = descr.Left(index);
-        }
-        descr = CMyMsg(_wtoi(descr.Mid(1)), detail);
-    }
+	if (descr.GetAt(0) == L'#')
+	{
+		CString detail;
+		int index = descr.Find(L',');
+		if (index != -1)
+		{
+			detail = descr.Mid(index + 1);
+			descr  = descr.Left(index);
+		}
+		descr = CMyMsg(_wtoi(descr.Mid(1)), detail);
+	}
 
-    if (descr.IsEmpty())
-        descr = L"-";
+	if (descr.IsEmpty())
+	{
+		descr = L"-";
+	}
 
-    return descr;
+	return descr;
 }
 
 
@@ -80,16 +82,21 @@ CString CTemplateListBox::GetTemplateTitle(const CString &TemplateName)
 //---------------------------------------------------------------------------
 
 
-void CTemplateListBox::Decorate(CString &text, BOOL enable, BOOL force)
+void CTemplateListBox::Decorate(CString& text, BOOL enable, BOOL force)
 {
-    if (! force) {
-        int index = text.Find(L']');
-        text = text.Mid(index + 3);
-    }
-    if (enable)
-        text = Prefix1 + text;
-    else
-        text = Prefix0 + text;
+	if (!force)
+	{
+		int index = text.Find(L']');
+		text      = text.Mid(index + 3);
+	}
+	if (enable)
+	{
+		text = Prefix1 + text;
+	}
+	else
+	{
+		text = Prefix0 + text;
+	}
 }
 
 
@@ -98,9 +105,9 @@ void CTemplateListBox::Decorate(CString &text, BOOL enable, BOOL force)
 //---------------------------------------------------------------------------
 
 
-void CTemplateListBox::DecorateAster(CString &text)
+void CTemplateListBox::DecorateAster(CString& text)
 {
-    text = Prefix2 + text;
+	text = Prefix2 + text;
 }
 
 
@@ -109,9 +116,9 @@ void CTemplateListBox::DecorateAster(CString &text)
 //---------------------------------------------------------------------------
 
 
-BOOL CTemplateListBox::IsAster(const CString &text)
+BOOL CTemplateListBox::IsAster(const CString& text)
 {
-    return (text.Left(Prefix2.GetLength()) == Prefix2);
+	return (text.Left(Prefix2.GetLength()) == Prefix2);
 }
 
 
@@ -120,9 +127,9 @@ BOOL CTemplateListBox::IsAster(const CString &text)
 //---------------------------------------------------------------------------
 
 
-BOOL CTemplateListBox::IsCheck(const CString &text)
+BOOL CTemplateListBox::IsCheck(const CString& text)
 {
-    return (text.Left(Prefix1.GetLength()) == Prefix1);
+	return (text.Left(Prefix1.GetLength()) == Prefix1);
 }
 
 
@@ -131,9 +138,9 @@ BOOL CTemplateListBox::IsCheck(const CString &text)
 //---------------------------------------------------------------------------
 
 
-BOOL CTemplateListBox::IsClear(const CString &text)
+BOOL CTemplateListBox::IsClear(const CString& text)
 {
-    return (text.Left(Prefix0.GetLength()) == Prefix0);
+	return (text.Left(Prefix0.GetLength()) == Prefix0);
 }
 
 
@@ -142,40 +149,51 @@ BOOL CTemplateListBox::IsClear(const CString &text)
 //---------------------------------------------------------------------------
 
 
-BOOL CTemplateListBox::OnAddRemove(CWnd *wnd, BOOL enable, BOOL toggle)
+BOOL CTemplateListBox::OnAddRemove(CWnd* wnd, BOOL enable, BOOL toggle)
 {
-    CListBox *pListBox = (CListBox *)wnd->GetDlgItem(ID_APP_TEMPLATE_LIST);
-    int index = pListBox->GetCurSel();
-    if (index != LB_ERR) {
-        CString text;
-        pListBox->GetText(index, text);
-        if (! text.IsEmpty()) {
+	CListBox* pListBox = (CListBox*)wnd->GetDlgItem(ID_APP_TEMPLATE_LIST);
+	int index          = pListBox->GetCurSel();
+	if (index != LB_ERR)
+	{
+		CString text;
+		pListBox->GetText(index, text);
+		if (!text.IsEmpty())
+		{
+			if (IsAster(text))
+			{
+				CMyApp::MsgBox(wnd->GetParent(), MSG_4256, MB_OK);
+				return FALSE;
+			}
 
-            if (IsAster(text)) {
-                CMyApp::MsgBox(wnd->GetParent(), MSG_4256, MB_OK);
-                return FALSE;
-            }
+			if (toggle)
+			{
+				if (IsCheck(text))
+				{
+					enable = FALSE;
+				}
+				else if (IsClear(text))
+				{
+					enable = TRUE;
+				}
+				else
+				{
+					return FALSE;
+				}
+			}
 
-            if (toggle) {
-                if (IsCheck(text))
-                    enable = FALSE;
-                else if (IsClear(text))
-                    enable = TRUE;
-                else
-                    return FALSE;
-            }
+			Decorate(text, enable, FALSE);
+			void* data = pListBox->GetItemDataPtr(index);
+			pListBox->DeleteString(index);
+			pListBox->InsertString(index, text);
+			if (data)
+			{
+				pListBox->SetItemDataPtr(index, data);
+			}
+			pListBox->SetCurSel(index);
 
-            Decorate(text, enable, FALSE);
-            void *data = pListBox->GetItemDataPtr(index);
-            pListBox->DeleteString(index);
-            pListBox->InsertString(index, text);
-            if (data)
-                pListBox->SetItemDataPtr(index, data);
-            pListBox->SetCurSel(index);
+			return TRUE;
+		}
+	}
 
-            return TRUE;
-        }
-    }
-
-    return FALSE;
+	return FALSE;
 }

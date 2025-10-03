@@ -24,28 +24,26 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-//
-// MessageCheckBox
-//
-// The check parameter specifies the text for the additional checkbox.
-//
+	//
+	// MessageCheckBox
+	//
+	// The check parameter specifies the text for the additional checkbox.
+	//
 
-int MessageCheckBox(
-    HWND hwnd, const WCHAR *text, const WCHAR *caption, UINT flags,
-    const WCHAR *check);
+	int MessageCheckBox(HWND hwnd, const WCHAR* text, const WCHAR* caption, UINT flags, const WCHAR* check);
 
-//
-// InputBox
-//
-// For a password input box, pass INPUTBOX_PASSWORD in the flags parameter.
-//
+	//
+	// InputBox
+	//
+	// For a password input box, pass INPUTBOX_PASSWORD in the flags parameter.
+	//
 
-WCHAR *InputBox(HWND hwnd, const WCHAR *caption, UINT flags,
-                const WCHAR *def);
+	WCHAR* InputBox(HWND hwnd, const WCHAR* caption, UINT flags, const WCHAR* def);
 
 #define INPUTBOX_PASSWORD MB_SERVICE_NOTIFICATION
 #define INPUTBOX_READONLY MB_DEFAULT_DESKTOP_ONLY

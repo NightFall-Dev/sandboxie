@@ -20,9 +20,11 @@
 //---------------------------------------------------------------------------
 
 
-#include <windows.h>
 #include "MyPool.h"
+
 #include "common/pool.h"
+
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -40,7 +42,7 @@
 
 CMyPool::CMyPool()
 {
-    m_pool = Pool_Create();
+	m_pool = Pool_Create();
 }
 
 
@@ -51,8 +53,10 @@ CMyPool::CMyPool()
 
 CMyPool::~CMyPool()
 {
-    if (m_pool)
-        Pool_Delete((POOL *)m_pool);
+	if (m_pool)
+	{
+		Pool_Delete((POOL*)m_pool);
+	}
 }
 
 
@@ -61,28 +65,30 @@ CMyPool::~CMyPool()
 //---------------------------------------------------------------------------
 
 
-void *CMyPool::Alloc(int size)
+void* CMyPool::Alloc(int size)
 {
-    UCHAR *ptr;
+	UCHAR* ptr;
 
 #ifdef DEBUG_MEMORY
-    size += 64 * 2;
+	size += 64 * 2;
 #endif // DEBUG_MEMORY
 
-    size += sizeof(ULONG_PTR);
-    ptr = (UCHAR *)Pool_Alloc((POOL *)m_pool, size);
-    if (! ptr)
-        __debugbreak();
+	size += sizeof(ULONG_PTR);
+	ptr = (UCHAR*)Pool_Alloc((POOL*)m_pool, size);
+	if (!ptr)
+	{
+		__debugbreak();
+	}
 
 #ifdef DEBUG_MEMORY
-    memset(ptr,             0xCC, 64);
-    memset(ptr + size - 64, 0xCC, 64);
-    ptr += 64;
+	memset(ptr, 0xCC, 64);
+	memset(ptr + size - 64, 0xCC, 64);
+	ptr += 64;
 #endif // DEBUG_MEMORY
 
-    *(ULONG_PTR *)ptr = size;
-    ptr += sizeof(ULONG_PTR);
-    return ptr;
+	*(ULONG_PTR*)ptr = size;
+	ptr += sizeof(ULONG_PTR);
+	return ptr;
 }
 
 
@@ -91,28 +97,31 @@ void *CMyPool::Alloc(int size)
 //---------------------------------------------------------------------------
 
 
-void CMyPool::Free(void *ptr)
+void CMyPool::Free(void* ptr)
 {
-    UCHAR *ptr2 = ((UCHAR *)ptr) - sizeof(ULONG_PTR);
-    ULONG size = (ULONG)(*(ULONG_PTR *)ptr2);
+	UCHAR* ptr2 = ((UCHAR*)ptr) - sizeof(ULONG_PTR);
+	ULONG size  = (ULONG)(*(ULONG_PTR*)ptr2);
 
 #ifdef DEBUG_MEMORY
-    {
-    //WCHAR txt[64];
-    int i;
-    UCHAR *pre  = ptr2 - 64;
-    UCHAR *post = ptr2 + size - 64 * 2;
-    for (i = 0; i < 64; ++i)
-        if (pre[i] != 0xCC || post[i] != 0xCC) {
-            WCHAR txt[64];
-            wsprintf(txt, L"Memory corrupted, ptr=%p\n", ptr);
-            OutputDebugString(txt);
-            __debugbreak();
-        }
+	{
+		//WCHAR txt[64];
+		int i;
+		UCHAR* pre  = ptr2 - 64;
+		UCHAR* post = ptr2 + size - 64 * 2;
+		for (i = 0; i < 64; ++i)
+		{
+			if (pre[i] != 0xCC || post[i] != 0xCC)
+			{
+				WCHAR txt[64];
+				wsprintf(txt, L"Memory corrupted, ptr=%p\n", ptr);
+				OutputDebugString(txt);
+				__debugbreak();
+			}
+		}
 
-    ptr2 -= 64;
-    }
+		ptr2 -= 64;
+	}
 #endif // DEBUG_MEMORY
 
-    Pool_Free(ptr2, size);
+	Pool_Free(ptr2, size);
 }

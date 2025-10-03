@@ -21,12 +21,13 @@
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-void MyGdi_Init(void);
-void *MyGdi_CreateResourceStream(const WCHAR *rsrcName);
-HBITMAP MyGdi_CreateFromResource(const WCHAR *rsrcName);
+	void MyGdi_Init(void);
+	void* MyGdi_CreateResourceStream(const WCHAR* rsrcName);
+	HBITMAP MyGdi_CreateFromResource(const WCHAR* rsrcName);
 
 
 #ifdef __cplusplus

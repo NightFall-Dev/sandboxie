@@ -26,42 +26,41 @@
 
 class CBoxProc
 {
-    static const CString _unknown;
+	static const CString _unknown;
 
-    const CString &m_name;
+	const CString& m_name;
 
-    ULONG m_pids[512];
-    CString *m_images;
-    CString *m_titles;
-    HICON   *m_icons;
-    int m_num, m_max;
-    int m_old_num;
+	ULONG m_pids[512];
+	CString* m_images;
+	CString* m_titles;
+	HICON* m_icons;
+	int m_num, m_max;
+	int m_old_num;
 
-    static CStringList m_RecentExes;
+	static CStringList m_RecentExes;
 
-    //
-    //
-    //
+	//
+	//
+	//
 
 public:
+	CBoxProc(const CString& name);
+	~CBoxProc();
 
-    CBoxProc(const CString &name);
-    ~CBoxProc();
+	void RefreshProcesses();
 
-    void RefreshProcesses();
+	int GetOldProcessCount() const;
+	int GetProcessCount() const;
 
-    int GetOldProcessCount() const;
-    int GetProcessCount() const;
+	int GetIndexForProcessId(ULONG pid) const;
 
-    int GetIndexForProcessId(ULONG pid) const;
+	int GetProcessId(int index) const;
+	const CString& GetProcessImageName(int index) const;
+	const CString& GetProcessWindowTitle(int index) const;
+	HICON GetProcessWindowIcon(int index) const;
 
-    int GetProcessId(int index) const;
-    const CString &GetProcessImageName(int index) const;
-    const CString &GetProcessWindowTitle(int index) const;
-    HICON GetProcessWindowIcon(int index) const;
-
-    static void AddToRecentExes(const CString &exe1);
-    static void AddRecentExesToList(CStringList &list1);
+	static void AddToRecentExes(const CString& exe1);
+	static void AddRecentExesToList(CStringList& list1);
 };
 
 

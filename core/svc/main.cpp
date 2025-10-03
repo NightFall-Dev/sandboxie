@@ -19,28 +19,28 @@
 // Sandboxie User-Mode Server Service
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-
-#include <Sddl.h>
 #include "DriverAssist.h"
-#include "PipeServer.h"
+#include "EpMapperServer.h"
 #include "GuiServer.h"
+#include "PipeServer.h"
 #include "ProcessServer.h"
+#include "common/defines.h"
+#include "common/my_version.h"
+#include "comserver.h"
+#include "core/dll/sbiedll.h"
+#include "fileserver.h"
+#include "iphlpserver.h"
+#include "misc.h"
+#include "namedpipeserver.h"
+#include "netapiserver.h"
+#include "pstoreserver.h"
+#include "queueserver.h"
 #include "sbieiniserver.h"
 #include "serviceserver.h"
-#include "pstoreserver.h"
+#include "stdafx.h"
 #include "terminalserver.h"
-#include "namedpipeserver.h"
-#include "fileserver.h"
-#include "comserver.h"
-#include "iphlpserver.h"
-#include "netapiserver.h"
-#include "queueserver.h"
-#include "EpMapperServer.h"
-#include "misc.h"
-#include "core/dll/sbiedll.h"
-#include "common/my_version.h"
-#include "common/defines.h"
+
+#include <Sddl.h>
 
 
 //---------------------------------------------------------------------------
@@ -48,11 +48,10 @@
 //---------------------------------------------------------------------------
 
 
-void WINAPI ServiceMain(DWORD argc, WCHAR *argv[]);
+void WINAPI ServiceMain(DWORD argc, WCHAR* argv[]);
 DWORD InitializeEventLog(void);
 DWORD InitializePipe(void);
-DWORD WINAPI ServiceHandlerEx(
-    DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
+DWORD WINAPI ServiceHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext);
 
 
 //---------------------------------------------------------------------------
@@ -60,22 +59,23 @@ DWORD WINAPI ServiceHandlerEx(
 //---------------------------------------------------------------------------
 
 
-static WCHAR                *ServiceName = SBIESVC;
-static SERVICE_STATUS        ServiceStatus;
+static WCHAR* ServiceName = SBIESVC;
+static SERVICE_STATUS ServiceStatus;
 static SERVICE_STATUS_HANDLE ServiceStatusHandle = NULL;
 
-static HANDLE                EventLog = NULL;
+static HANDLE EventLog = NULL;
 
-static ComServer            *pComServer = NULL;
+static ComServer* pComServer = NULL;
 
-extern "C" {
-const  ULONG                 tzuk = 'xobs';
+extern "C"
+{
+	const ULONG tzuk = 'xobs';
 }
 
-       HMODULE               _Ntdll = NULL;
-       HMODULE               _Kernel32 = NULL;
+HMODULE _Ntdll    = NULL;
+HMODULE _Kernel32 = NULL;
 
-       SYSTEM_INFO           _SystemInfo;
+SYSTEM_INFO _SystemInfo;
 
 
 //---------------------------------------------------------------------------
@@ -83,56 +83,55 @@ const  ULONG                 tzuk = 'xobs';
 //---------------------------------------------------------------------------
 
 ULONG Dll_Windows = 0;
-int WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine, int nCmdShow)
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    SERVICE_TABLE_ENTRY myServiceTable[] = {
-        { ServiceName, ServiceMain },
-        { NULL, NULL }
-    };
+	SERVICE_TABLE_ENTRY myServiceTable[] = {{ServiceName, ServiceMain}, {NULL, NULL}};
 
-    _Ntdll      = GetModuleHandle(L"ntdll.dll");
-    _Kernel32   = GetModuleHandle(L"kernel32.dll");
-    GetSystemInfo(&_SystemInfo);
-    if (GetProcAddress(_Ntdll, "LdrFastFailInLoaderCallout")) {
-        Dll_Windows = 10;
-    }
-    WCHAR *cmdline = GetCommandLine();
-    if (cmdline) {
+	_Ntdll    = GetModuleHandle(L"ntdll.dll");
+	_Kernel32 = GetModuleHandle(L"kernel32.dll");
+	GetSystemInfo(&_SystemInfo);
+	if (GetProcAddress(_Ntdll, "LdrFastFailInLoaderCallout"))
+	{
+		Dll_Windows = 10;
+	}
+	WCHAR* cmdline = GetCommandLine();
+	if (cmdline)
+	{
+		WCHAR* cmdline2 = wcsstr(cmdline, SANDBOXIE L"_ComProxy");
+		if (cmdline2)
+		{
+			ComServer::RunSlave(cmdline2);
+			return NO_ERROR;
+		}
 
-        WCHAR *cmdline2 = wcsstr(cmdline, SANDBOXIE L"_ComProxy");
-        if (cmdline2) {
-            ComServer::RunSlave(cmdline2);
-            return NO_ERROR;
-        }
+		WCHAR* cmdline3 = wcsstr(cmdline, SANDBOXIE L"_UacProxy");
+		if (cmdline3)
+		{
+			ServiceServer::RunUacSlave(cmdline3);
+			return NO_ERROR;
+		}
 
-        WCHAR *cmdline3 = wcsstr(cmdline, SANDBOXIE L"_UacProxy");
-        if (cmdline3) {
-            ServiceServer::RunUacSlave(cmdline3);
-            return NO_ERROR;
-        }
+		WCHAR* cmdline4 = wcsstr(cmdline, SANDBOXIE L"_NetProxy");
+		if (cmdline4)
+		{
+			NetApiServer::RunSlave(cmdline4);
+			return NO_ERROR;
+		}
 
-        WCHAR *cmdline4 = wcsstr(cmdline, SANDBOXIE L"_NetProxy");
-        if (cmdline4) {
-            NetApiServer::RunSlave(cmdline4);
-            return NO_ERROR;
-        }
+		WCHAR* cmdline5 = wcsstr(cmdline, SANDBOXIE L"_GuiProxy");
+		if (cmdline5)
+		{
+			GuiServer::RunSlave(cmdline5);
+			return NO_ERROR;
+		}
+	}
 
-        WCHAR *cmdline5 = wcsstr(cmdline, SANDBOXIE L"_GuiProxy");
-        if (cmdline5) {
-            GuiServer::RunSlave(cmdline5);
-            return NO_ERROR;
-        }
+	if (!StartServiceCtrlDispatcher(myServiceTable))
+	{
+		return GetLastError();
+	}
 
-
-    }
-
-    if (! StartServiceCtrlDispatcher(myServiceTable))
-        return GetLastError();
-
-    return NO_ERROR;
+	return NO_ERROR;
 }
 
 
@@ -141,53 +140,62 @@ int WinMain(
 //---------------------------------------------------------------------------
 
 
-void WINAPI ServiceMain(DWORD argc, WCHAR *argv[])
+void WINAPI ServiceMain(DWORD argc, WCHAR* argv[])
 {
-    ServiceStatusHandle = RegisterServiceCtrlHandlerEx(
-        ServiceName, ServiceHandlerEx, NULL);
-    if (! ServiceStatusHandle)
-        return;
+	ServiceStatusHandle = RegisterServiceCtrlHandlerEx(ServiceName, ServiceHandlerEx, NULL);
+	if (!ServiceStatusHandle)
+	{
+		return;
+	}
 
-    ServiceStatus.dwServiceType                 = SERVICE_WIN32;
-    ServiceStatus.dwCurrentState                = SERVICE_START_PENDING;
-    ServiceStatus.dwControlsAccepted            = SERVICE_ACCEPT_STOP
-                                                | SERVICE_ACCEPT_SHUTDOWN;
-    ServiceStatus.dwWin32ExitCode               = 0;
-    ServiceStatus.dwServiceSpecificExitCode     = 0;
-    ServiceStatus.dwCheckPoint                  = 1;
-    ServiceStatus.dwWaitHint                    = 6000;
+	ServiceStatus.dwServiceType             = SERVICE_WIN32;
+	ServiceStatus.dwCurrentState            = SERVICE_START_PENDING;
+	ServiceStatus.dwControlsAccepted        = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+	ServiceStatus.dwWin32ExitCode           = 0;
+	ServiceStatus.dwServiceSpecificExitCode = 0;
+	ServiceStatus.dwCheckPoint              = 1;
+	ServiceStatus.dwWaitHint                = 6000;
 
-    ULONG status = 0;
+	ULONG status = 0;
 
-    if (! SetServiceStatus(ServiceStatusHandle, &ServiceStatus))
-        status = GetLastError();
+	if (!SetServiceStatus(ServiceStatusHandle, &ServiceStatus))
+	{
+		status = GetLastError();
+	}
 
-    if (status == 0)
-        status = InitializeEventLog();
+	if (status == 0)
+	{
+		status = InitializeEventLog();
+	}
 
-    if (status == 0) {
-        bool ok = DriverAssist::Initialize();
-        if (! ok)
-            status = 0x1234;
-    }
+	if (status == 0)
+	{
+		bool ok = DriverAssist::Initialize();
+		if (!ok)
+		{
+			status = 0x1234;
+		}
+	}
 
-    if (status == 0)
-        status = InitializePipe();
+	if (status == 0)
+	{
+		status = InitializePipe();
+	}
 
-    if (status == 0) {
+	if (status == 0)
+	{
+		ServiceStatus.dwCurrentState = SERVICE_RUNNING;
+		ServiceStatus.dwCheckPoint   = 0;
+		ServiceStatus.dwWaitHint     = 0;
+	}
+	else
+	{
+		ServiceStatus.dwCurrentState            = SERVICE_STOPPED;
+		ServiceStatus.dwWin32ExitCode           = ERROR_SERVICE_SPECIFIC_ERROR;
+		ServiceStatus.dwServiceSpecificExitCode = status;
+	}
 
-        ServiceStatus.dwCurrentState        = SERVICE_RUNNING;
-        ServiceStatus.dwCheckPoint          = 0;
-        ServiceStatus.dwWaitHint            = 0;
-
-    } else {
-
-        ServiceStatus.dwCurrentState        = SERVICE_STOPPED;
-        ServiceStatus.dwWin32ExitCode       = ERROR_SERVICE_SPECIFIC_ERROR;
-        ServiceStatus.dwServiceSpecificExitCode = status;
-    }
-
-    SetServiceStatus(ServiceStatusHandle, &ServiceStatus);
+	SetServiceStatus(ServiceStatusHandle, &ServiceStatus);
 }
 
 
@@ -198,8 +206,8 @@ void WINAPI ServiceMain(DWORD argc, WCHAR *argv[])
 
 DWORD InitializeEventLog(void)
 {
-    EventLog = OpenEventLog(NULL, ServiceName);
-    return 0;
+	EventLog = OpenEventLog(NULL, ServiceName);
+	return 0;
 }
 
 
@@ -210,27 +218,31 @@ DWORD InitializeEventLog(void)
 
 DWORD InitializePipe(void)
 {
-    // get a pipe server running and start sub servers
-    PipeServer *pipeServer = PipeServer::GetPipeServer();
-    if (! pipeServer)
-        return (0x00300000 + GetLastError());
+	// get a pipe server running and start sub servers
+	PipeServer* pipeServer = PipeServer::GetPipeServer();
+	if (!pipeServer)
+	{
+		return (0x00300000 + GetLastError());
+	}
 
-    new ProcessServer(pipeServer);
-    new SbieIniServer(pipeServer);
-    new ServiceServer(pipeServer);
-    new PStoreServer(pipeServer);
-    new TerminalServer(pipeServer);
-    new NamedPipeServer(pipeServer);
-    new FileServer(pipeServer);
-    pComServer = new ComServer(pipeServer);
-    new IpHlpServer(pipeServer);
-    new NetApiServer(pipeServer);
-    new QueueServer(pipeServer);
-    new EpMapperServer(pipeServer);
+	new ProcessServer(pipeServer);
+	new SbieIniServer(pipeServer);
+	new ServiceServer(pipeServer);
+	new PStoreServer(pipeServer);
+	new TerminalServer(pipeServer);
+	new NamedPipeServer(pipeServer);
+	new FileServer(pipeServer);
+	pComServer = new ComServer(pipeServer);
+	new IpHlpServer(pipeServer);
+	new NetApiServer(pipeServer);
+	new QueueServer(pipeServer);
+	new EpMapperServer(pipeServer);
 
-    if (! pipeServer->Start())
-        return (0x00200000 + GetLastError());
-    return 0;
+	if (!pipeServer->Start())
+	{
+		return (0x00200000 + GetLastError());
+	}
+	return 0;
 }
 
 
@@ -239,31 +251,35 @@ DWORD InitializePipe(void)
 //---------------------------------------------------------------------------
 
 
-DWORD WINAPI ServiceHandlerEx(
-    DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
+DWORD WINAPI ServiceHandlerEx(DWORD dwControl, DWORD dwEventType, LPVOID lpEventData, LPVOID lpContext)
 {
-    if (dwControl == SERVICE_CONTROL_STOP ||
-        dwControl == SERVICE_CONTROL_SHUTDOWN)
-    {
-        PipeServer *pipeServer = PipeServer::GetPipeServer();
-        delete pipeServer;
+	if (dwControl == SERVICE_CONTROL_STOP || dwControl == SERVICE_CONTROL_SHUTDOWN)
+	{
+		PipeServer* pipeServer = PipeServer::GetPipeServer();
+		delete pipeServer;
 
-        ServiceStatus.dwCurrentState        = SERVICE_STOPPED;
-        ServiceStatus.dwCheckPoint          = 0;
-        ServiceStatus.dwWaitHint            = 0;
+		ServiceStatus.dwCurrentState = SERVICE_STOPPED;
+		ServiceStatus.dwCheckPoint   = 0;
+		ServiceStatus.dwWaitHint     = 0;
 
-        if (pComServer)
-            pComServer->DeleteAllSlaves();
+		if (pComServer)
+		{
+			pComServer->DeleteAllSlaves();
+		}
 
-        DriverAssist::Shutdown();
+		DriverAssist::Shutdown();
+	}
+	else if (dwControl != SERVICE_CONTROL_INTERROGATE)
+	{
+		return ERROR_CALL_NOT_IMPLEMENTED;
+	}
 
-    } else if (dwControl != SERVICE_CONTROL_INTERROGATE)
-        return ERROR_CALL_NOT_IMPLEMENTED;
+	if (!SetServiceStatus(ServiceStatusHandle, &ServiceStatus))
+	{
+		return GetLastError();
+	}
 
-    if (! SetServiceStatus(ServiceStatusHandle, &ServiceStatus))
-        return GetLastError();
-
-    return 0;
+	return 0;
 }
 
 
@@ -274,25 +290,27 @@ DWORD WINAPI ServiceHandlerEx(
 
 void LogEvent(ULONG msgid, ULONG level, ULONG detail)
 {
-    WCHAR extra[64];
-    const WCHAR *ptr_extra[2];
-    USHORT num_extra;
+	WCHAR extra[64];
+	const WCHAR* ptr_extra[2];
+	USHORT num_extra;
 
-    ptr_extra[0] = NULL;
-    if (msgid == MSG_9234) {
-        wsprintf(extra, L"level %04X status=%08X error=%d",
-                    level, detail, detail);
-        ptr_extra[1] = extra;
-        num_extra = 2;
-    } else {
-        ptr_extra[1] = NULL;
-        num_extra = 0;
-    }
+	ptr_extra[0] = NULL;
+	if (msgid == MSG_9234)
+	{
+		wsprintf(extra, L"level %04X status=%08X error=%d", level, detail, detail);
+		ptr_extra[1] = extra;
+		num_extra    = 2;
+	}
+	else
+	{
+		ptr_extra[1] = NULL;
+		num_extra    = 0;
+	}
 
-    if (EventLog) {
-        ReportEvent(EventLog, EVENTLOG_ERROR_TYPE, 0, msgid, NULL,
-                    num_extra, 0, ptr_extra, NULL);
-    }
+	if (EventLog)
+	{
+		ReportEvent(EventLog, EVENTLOG_ERROR_TYPE, 0, msgid, NULL, num_extra, 0, ptr_extra, NULL);
+	}
 }
 
 
@@ -303,16 +321,19 @@ void LogEvent(ULONG msgid, ULONG level, ULONG detail)
 
 void AbortServer(void)
 {
-    SC_HANDLE handle1 = OpenSCManager(NULL, NULL, GENERIC_READ);
-    SC_HANDLE handle2 = NULL;
-    if (handle1)
-        handle2 = OpenService(handle1, SBIESVC, SERVICE_STOP);
-    if (handle2) {
-        SERVICE_STATUS ss;
-        ControlService(handle2, SERVICE_CONTROL_STOP, &ss);
-        Sleep(500);
-    }
-    ExitProcess(0);
+	SC_HANDLE handle1 = OpenSCManager(NULL, NULL, GENERIC_READ);
+	SC_HANDLE handle2 = NULL;
+	if (handle1)
+	{
+		handle2 = OpenService(handle1, SBIESVC, SERVICE_STOP);
+	}
+	if (handle2)
+	{
+		SERVICE_STATUS ss;
+		ControlService(handle2, SERVICE_CONTROL_STOP, &ss);
+		Sleep(500);
+	}
+	ExitProcess(0);
 }
 
 
@@ -323,159 +344,196 @@ void AbortServer(void)
 
 bool RestrictToken(void)
 {
-    static const UCHAR AdminSid[16] = {
-        0x01,                                   // SID Revision
-        0x02,                                   // SubAuthority Count
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x05,     // Identifier Authority
-        0x20, 0x00, 0x00, 0x00,                 // SubAuthority 1: 32
-        0x20, 0x02, 0x00, 0x00                  // SubAuthority 2: 544
-    };
-    static const UCHAR PowerUserSid[16] = {
-        0x01,                                   // SID Revision
-        0x02,                                   // SubAuthority Count
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x05,     // Identifier Authority
-        0x20, 0x00, 0x00, 0x00,                 // SubAuthority 1: 32
-        0x23, 0x02, 0x00, 0x00                  // SubAuthority 2: 547
-    };
-    const ULONG buf_size = 8192;
+	static const UCHAR AdminSid[16] = {
+	    0x01, // SID Revision
+	    0x02, // SubAuthority Count
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x05, // Identifier Authority
+	    0x20,
+	    0x00,
+	    0x00,
+	    0x00, // SubAuthority 1: 32
+	    0x20,
+	    0x02,
+	    0x00,
+	    0x00 // SubAuthority 2: 544
+	};
+	static const UCHAR PowerUserSid[16] = {
+	    0x01, // SID Revision
+	    0x02, // SubAuthority Count
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x00,
+	    0x05, // Identifier Authority
+	    0x20,
+	    0x00,
+	    0x00,
+	    0x00, // SubAuthority 1: 32
+	    0x23,
+	    0x02,
+	    0x00,
+	    0x00 // SubAuthority 2: 547
+	};
+	const ULONG buf_size = 8192;
 
-    NTSTATUS status;
-    HANDLE OldToken, NewToken, DupToken;
-    OBJECT_ATTRIBUTES objattrs;
-    SECURITY_QUALITY_OF_SERVICE QoS;
-    TOKEN_GROUPS *groups = NULL;
-    TOKEN_GROUPS *rsids = NULL;
-    ULONG i;
-    bool ok = false;
+	NTSTATUS status;
+	HANDLE OldToken, NewToken, DupToken;
+	OBJECT_ATTRIBUTES objattrs;
+	SECURITY_QUALITY_OF_SERVICE QoS;
+	TOKEN_GROUPS* groups = NULL;
+	TOKEN_GROUPS* rsids  = NULL;
+	ULONG i;
+	bool ok = false;
 
-    //
-    // get the effective token
-    //
+	//
+	// get the effective token
+	//
 
-    status = NtOpenThreadToken(
-        NtCurrentThread(), MAXIMUM_ALLOWED, FALSE, &OldToken);
-    if (! NT_SUCCESS(status))
-        status = NtOpenProcessToken(
-            NtCurrentProcess(), MAXIMUM_ALLOWED, &OldToken);
+	status = NtOpenThreadToken(NtCurrentThread(), MAXIMUM_ALLOWED, FALSE, &OldToken);
+	if (!NT_SUCCESS(status))
+	{
+		status = NtOpenProcessToken(NtCurrentProcess(), MAXIMUM_ALLOWED, &OldToken);
+	}
 
-    if (! NT_SUCCESS(status)) {
-        OldToken = NULL;
-        goto finish;
-    }
+	if (!NT_SUCCESS(status))
+	{
+		OldToken = NULL;
+		goto finish;
+	}
 
-    //
-    // scan for the BUILTIN\Administrators group SID
-    //
+	//
+	// scan for the BUILTIN\Administrators group SID
+	//
 
-    groups = (TOKEN_GROUPS *)HeapAlloc(GetProcessHeap(), 0, buf_size);
-    if (! groups)
-        goto finish;
+	groups = (TOKEN_GROUPS*)HeapAlloc(GetProcessHeap(), 0, buf_size);
+	if (!groups)
+	{
+		goto finish;
+	}
 
-    status = NtQueryInformationToken(
-                        OldToken, TokenGroups, groups, buf_size, &i);
-    if (NT_SUCCESS(status)) {
+	status = NtQueryInformationToken(OldToken, TokenGroups, groups, buf_size, &i);
+	if (NT_SUCCESS(status))
+	{
+		bool found = false;
 
-        bool found = false;
+		for (i = 0; (!found) && (i < groups->GroupCount); ++i)
+		{
+			char* sid = (char*)groups->Groups[i].Sid;
+			if (memcmp(sid, AdminSid, sizeof(AdminSid)) == 0)
+			{
+				found = true;
+			}
+			if (memcmp(sid, PowerUserSid, sizeof(PowerUserSid)) == 0)
+			{
+				found = true;
+			}
+		}
 
-        for (i = 0; (! found) && (i < groups->GroupCount); ++i) {
+		if (!found)
+		{
+			ok = true;
+		}
 
-            char *sid = (char *)groups->Groups[i].Sid;
-            if (memcmp(sid, AdminSid, sizeof(AdminSid)) == 0)
-                found = true;
-            if (memcmp(sid, PowerUserSid, sizeof(PowerUserSid)) == 0)
-                found = true;
-        }
+		if (found)
+		{
+			//
+			// we should duplicate the list of restricting sids from
+			// the old token, or NtFilterToken might return an error
+			//
 
-        if (! found)
-            ok = true;
+			rsids = (TOKEN_GROUPS*)HeapAlloc(GetProcessHeap(), 0, buf_size);
+			if (!rsids)
+			{
+				goto finish;
+			}
 
-        if (found) {
+			status = NtQueryInformationToken(OldToken, TokenRestrictedSids, rsids, buf_size, &i);
+			if (!NT_SUCCESS(status))
+			{
+				goto finish;
+			}
 
-            //
-            // we should duplicate the list of restricting sids from
-            // the old token, or NtFilterToken might return an error
-            //
+			for (i = 0; i < rsids->GroupCount; ++i)
+			{
+				rsids->Groups[i].Attributes = 0;
+			}
 
-            rsids = (TOKEN_GROUPS *)HeapAlloc(GetProcessHeap(), 0, buf_size);
-            if (! rsids)
-                goto finish;
+			//
+			// SID found, so created a restricted (filtered) token
+			//
 
-            status = NtQueryInformationToken(
-                        OldToken, TokenRestrictedSids, rsids, buf_size, &i);
-            if (! NT_SUCCESS(status))
-                goto finish;
+			groups->GroupCount           = 2;
+			groups->Groups[0].Sid        = (PSID)AdminSid;
+			groups->Groups[0].Attributes = 0;
+			groups->Groups[1].Sid        = (PSID)PowerUserSid;
+			groups->Groups[1].Attributes = 0;
 
-            for (i = 0; i < rsids->GroupCount; ++i)
-                rsids->Groups[i].Attributes = 0;
+			status = NtFilterToken(OldToken, DISABLE_MAX_PRIVILEGE, groups, NULL, rsids, &NewToken);
 
-            //
-            // SID found, so created a restricted (filtered) token
-            //
+			if (NT_SUCCESS(status))
+			{
+				//
+				// now create an impersonation token for the restricted one
+				//
 
-            groups->GroupCount = 2;
-            groups->Groups[0].Sid        = (PSID)AdminSid;
-            groups->Groups[0].Attributes = 0;
-            groups->Groups[1].Sid        = (PSID)PowerUserSid;
-            groups->Groups[1].Attributes = 0;
+				InitializeObjectAttributes(&objattrs, NULL, 0, NULL, NULL);
+				QoS.Length                        = sizeof(SECURITY_QUALITY_OF_SERVICE);
+				QoS.ImpersonationLevel            = SecurityImpersonation;
+				QoS.ContextTrackingMode           = SECURITY_STATIC_TRACKING;
+				QoS.EffectiveOnly                 = FALSE;
+				objattrs.SecurityQualityOfService = &QoS;
 
-            status = NtFilterToken(
-                OldToken, DISABLE_MAX_PRIVILEGE, groups, NULL, rsids,
-                &NewToken);
+				status = NtDuplicateToken(NewToken, MAXIMUM_ALLOWED, &objattrs, FALSE, TokenImpersonation, &DupToken);
 
-            if (NT_SUCCESS(status)) {
+				if (NT_SUCCESS(status))
+				{
+					//
+					// finally, impersonate using the restricted token
+					//
 
-                //
-                // now create an impersonation token for the restricted one
-                //
+					status = NtSetInformationThread(NtCurrentThread(), ThreadImpersonationToken, &DupToken, sizeof(HANDLE));
 
-                InitializeObjectAttributes(&objattrs, NULL, 0, NULL, NULL);
-                QoS.Length = sizeof(SECURITY_QUALITY_OF_SERVICE);
-                QoS.ImpersonationLevel = SecurityImpersonation;
-                QoS.ContextTrackingMode = SECURITY_STATIC_TRACKING;
-                QoS.EffectiveOnly = FALSE;
-                objattrs.SecurityQualityOfService = &QoS;
+					if (NT_SUCCESS(status))
+					{
+						ok = true;
+					}
 
-                status = NtDuplicateToken(
-                    NewToken, MAXIMUM_ALLOWED, &objattrs,
-                    FALSE, TokenImpersonation, &DupToken);
+					NtClose(DupToken);
+				}
 
-                if (NT_SUCCESS(status)) {
+				NtClose(NewToken);
+			}
+		}
+	}
 
-                    //
-                    // finally, impersonate using the restricted token
-                    //
-
-                    status = NtSetInformationThread(
-                        NtCurrentThread(), ThreadImpersonationToken,
-                        &DupToken, sizeof(HANDLE));
-
-                    if (NT_SUCCESS(status))
-                        ok = true;
-
-                    NtClose(DupToken);
-                }
-
-                NtClose(NewToken);
-            }
-        }
-    }
-
-    //
-    // finish
-    //
+	//
+	// finish
+	//
 
 finish:
 
-    if (rsids)
-        HeapFree(GetProcessHeap(), 0, rsids);
+	if (rsids)
+	{
+		HeapFree(GetProcessHeap(), 0, rsids);
+	}
 
-    if (groups)
-        HeapFree(GetProcessHeap(), 0, groups);
+	if (groups)
+	{
+		HeapFree(GetProcessHeap(), 0, groups);
+	}
 
-    if (OldToken)
-        NtClose(OldToken);
+	if (OldToken)
+	{
+		NtClose(OldToken);
+	}
 
-    return ok;
+	return ok;
 }
 
 
@@ -484,9 +542,11 @@ finish:
 //---------------------------------------------------------------------------
 
 
-bool CheckDropRights(const WCHAR *BoxName)
+bool CheckDropRights(const WCHAR* BoxName)
 {
-    if (SbieApi_QueryConfBool(BoxName, L"DropAdminRights", FALSE))
-        return true;
-    return false;
+	if (SbieApi_QueryConfBool(BoxName, L"DropAdminRights", FALSE))
+	{
+		return true;
+	}
+	return false;
 }

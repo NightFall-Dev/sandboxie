@@ -20,8 +20,9 @@
 //---------------------------------------------------------------------------
 
 
-#include "common/defines.h"
 #include "common/lock.h"
+
+#include "common/defines.h"
 
 
 //---------------------------------------------------------------------------
@@ -37,24 +38,24 @@
 //---------------------------------------------------------------------------
 
 
-ALIGNED void Lock_Delay(const WCHAR *Operation, const WCHAR *LockName)
+ALIGNED void Lock_Delay(const WCHAR* Operation, const WCHAR* LockName)
 {
 #ifdef KERNEL_MODE
-    LARGE_INTEGER time;
-    /*
+	LARGE_INTEGER time;
+	/*
     DbgPrint("Waiting (%S) in pid %d for lock %S\n",
         Operation, PsGetCurrentProcessId(), LockName);
     */
-    // DbgPrint("KERNEL WAITING FOR LOCK ==> %S\n", LockName);
-    time.QuadPart = -(SECONDS(1) / LOCK_WAIT_DIVISOR);
-    KeDelayExecutionThread(KernelMode, FALSE, &time);
+	// DbgPrint("KERNEL WAITING FOR LOCK ==> %S\n", LockName);
+	time.QuadPart = -(SECONDS(1) / LOCK_WAIT_DIVISOR);
+	KeDelayExecutionThread(KernelMode, FALSE, &time);
 #else
-    /*
+	/*
     printf("Waiting (%S) in pid %d for lock %S\n",
         Operation, GetCurrentProcessId(), LockName);
     */
-    // OutputDebugString(L"USER WAITING FOR LOCK ==>\n");OutputDebugString(LockName);OutputDebugString(L"\n");
-    SleepEx(1000 / LOCK_WAIT_DIVISOR, TRUE);
+	// OutputDebugString(L"USER WAITING FOR LOCK ==>\n");OutputDebugString(LockName);OutputDebugString(L"\n");
+	SleepEx(1000 / LOCK_WAIT_DIVISOR, TRUE);
 #endif
 }
 
@@ -64,30 +65,36 @@ ALIGNED void Lock_Delay(const WCHAR *Operation, const WCHAR *LockName)
 //---------------------------------------------------------------------------
 
 
-ALIGNED void Lock_Exclusive(LOCK *lockword, const WCHAR *LockName)
+ALIGNED void Lock_Exclusive(LOCK* lockword, const WCHAR* LockName)
 {
-    LONG oldval, newval;
+	LONG oldval, newval;
 
-    while (1) {
-        // exclusive lock expects the exclusive bit to be clear
-        oldval = (*lockword) & (~LOCK_EXCLUSIVE);
-        // and sets the exclusive bit in the incremented count
-        newval = LOCK_EXCLUSIVE | (oldval + 1);
-        if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
-            break;
+	while (1)
+	{
+		// exclusive lock expects the exclusive bit to be clear
+		oldval = (*lockword) & (~LOCK_EXCLUSIVE);
+		// and sets the exclusive bit in the incremented count
+		newval = LOCK_EXCLUSIVE | (oldval + 1);
+		if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
+		{
+			break;
+		}
 
-        Lock_Delay(L"exc1", LockName);
-    }
+		Lock_Delay(L"exc1", LockName);
+	}
 
-    while (1) {
-        // now we wait for all share holders to unlock
-        oldval = LOCK_EXCLUSIVE | 1;
-        newval = LOCK_EXCLUSIVE | 1;
-        if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
-            break;
+	while (1)
+	{
+		// now we wait for all share holders to unlock
+		oldval = LOCK_EXCLUSIVE | 1;
+		newval = LOCK_EXCLUSIVE | 1;
+		if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
+		{
+			break;
+		}
 
-        Lock_Delay(L"exc2", LockName);
-    }
+		Lock_Delay(L"exc2", LockName);
+	}
 }
 
 
@@ -96,20 +103,23 @@ ALIGNED void Lock_Exclusive(LOCK *lockword, const WCHAR *LockName)
 //---------------------------------------------------------------------------
 
 
-ALIGNED void Lock_Share(LOCK *lockword, const WCHAR *LockName)
+ALIGNED void Lock_Share(LOCK* lockword, const WCHAR* LockName)
 {
-    LONG oldval, newval;
+	LONG oldval, newval;
 
-    while (1) {
-        // share lock expects the count to have the exclusive bit clear
-        oldval = (*lockword) & (~LOCK_EXCLUSIVE);
-        // and keeps the exclusive bit clear in the incremented count
-        newval = oldval + 1;
-        if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
-            break;
+	while (1)
+	{
+		// share lock expects the count to have the exclusive bit clear
+		oldval = (*lockword) & (~LOCK_EXCLUSIVE);
+		// and keeps the exclusive bit clear in the incremented count
+		newval = oldval + 1;
+		if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
+		{
+			break;
+		}
 
-        Lock_Delay(L"shr", LockName);
-    }
+		Lock_Delay(L"shr", LockName);
+	}
 }
 
 
@@ -118,25 +128,30 @@ ALIGNED void Lock_Share(LOCK *lockword, const WCHAR *LockName)
 //---------------------------------------------------------------------------
 
 
-ALIGNED void Lock_Unlock(LOCK *lockword, const WCHAR *LockName)
+ALIGNED void Lock_Unlock(LOCK* lockword, const WCHAR* LockName)
 {
-    LONG oldval, newval;
+	LONG oldval, newval;
 
-    while (1) {
-        oldval = *lockword;
-        if (oldval == (LOCK_EXCLUSIVE | 1)) {
-            // if the count indicates a single exclusive holder,
-            // then clear the exclusive bit in the decremented count
-            newval = LOCK_FREE;
-        } else {
-            // otherwise keep the exclusive bit as is
-            // (either set or clear) in the decremented count
-            newval = ((oldval & (~LOCK_EXCLUSIVE)) - 1)
-                   |  (oldval & LOCK_EXCLUSIVE);
-        }
-        if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
-            break;
+	while (1)
+	{
+		oldval = *lockword;
+		if (oldval == (LOCK_EXCLUSIVE | 1))
+		{
+			// if the count indicates a single exclusive holder,
+			// then clear the exclusive bit in the decremented count
+			newval = LOCK_FREE;
+		}
+		else
+		{
+			// otherwise keep the exclusive bit as is
+			// (either set or clear) in the decremented count
+			newval = ((oldval & (~LOCK_EXCLUSIVE)) - 1) | (oldval & LOCK_EXCLUSIVE);
+		}
+		if (InterlockedCompareExchange(lockword, newval, oldval) == oldval)
+		{
+			break;
+		}
 
-        Lock_Delay(L"unlk", LockName);
-    }
+		Lock_Delay(L"unlk", LockName);
+	}
 }

@@ -29,7 +29,7 @@
 //---------------------------------------------------------------------------
 
 
-#define LOCK_FREE      0x00000000L
+#define LOCK_FREE 0x00000000L
 
 #define LOCK_EXCLUSIVE 0x80000000L
 
@@ -48,15 +48,16 @@ typedef volatile ULONG LOCK;
 
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 
-void Lock_Exclusive(LOCK *lockword, const WCHAR *LockName);
+	void Lock_Exclusive(LOCK* lockword, const WCHAR* LockName);
 
-void Lock_Share(LOCK *lockword, const WCHAR *LockName);
+	void Lock_Share(LOCK* lockword, const WCHAR* LockName);
 
-void Lock_Unlock(LOCK *lockword, const WCHAR *LockName);
+	void Lock_Unlock(LOCK* lockword, const WCHAR* LockName);
 
 
 #ifdef __cplusplus

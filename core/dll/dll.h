@@ -27,16 +27,15 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include <windows.h>
-#include "common/win32_ntddk.h"
-
-
-#include "sbiedll.h"
 #include "common/defines.h"
 #include "common/list.h"
+#include "common/win32_ntddk.h"
+#include "sbiedll.h"
 
-extern __declspec(dllexport) int __CRTDECL Sbie_swprintf(wchar_t *_Buffer, const wchar_t * const _Format, ...);
-extern __declspec(dllexport) int __CRTDECL Sbie_sprintf(char *_Buffer, const char * const _Format, ...);
+#include <windows.h>
+
+extern __declspec(dllexport) int __CRTDECL Sbie_swprintf(wchar_t* _Buffer, const wchar_t* const _Format, ...);
+extern __declspec(dllexport) int __CRTDECL Sbie_sprintf(char* _Buffer, const char* const _Format, ...);
 
 
 //---------------------------------------------------------------------------
@@ -44,69 +43,70 @@ extern __declspec(dllexport) int __CRTDECL Sbie_sprintf(char *_Buffer, const cha
 //---------------------------------------------------------------------------
 
 
-#define TRUE_NAME_BUFFER        0
-#define COPY_NAME_BUFFER        1
-#define NAME_BUFFER_DEPTH       12
+#define TRUE_NAME_BUFFER 0
+#define COPY_NAME_BUFFER 1
+#define NAME_BUFFER_DEPTH 12
 
 
 #ifdef _WIN64
-#define Dll_IsWin64 1
+	#define Dll_IsWin64 1
 #else
-#define Dll_IsWin64 Dll_IsWow64
+	#define Dll_IsWin64 Dll_IsWow64
 #endif _WIN64
 
 #ifdef _WIN64
 
-// Pointer to 64-bit PEB_LDR_DATA is at offset 0x0018 of 64-bit PEB
-#define GET_ADDR_OF_PEB __readgsqword(0x60)
-#define GET_PEB_LDR_DATA (*(PEB_LDR_DATA **)(GET_ADDR_OF_PEB + 0x18))
-#define GET_PEB_IMAGE_BASE (*(ULONG_PTR *)(GET_ADDR_OF_PEB + 0x10))
-#define GET_PEB_MAJOR_VERSION (*(USHORT *)(GET_ADDR_OF_PEB + 0x118))
-#define GET_PEB_MINOR_VERSION (*(USHORT *)(GET_ADDR_OF_PEB + 0x11c))
-#define GET_PEB_IMAGE_BUILD (*(USHORT *)(GET_ADDR_OF_PEB + 0x120))
+	// Pointer to 64-bit PEB_LDR_DATA is at offset 0x0018 of 64-bit PEB
+	#define GET_ADDR_OF_PEB __readgsqword(0x60)
+	#define GET_PEB_LDR_DATA (*(PEB_LDR_DATA**)(GET_ADDR_OF_PEB + 0x18))
+	#define GET_PEB_IMAGE_BASE (*(ULONG_PTR*)(GET_ADDR_OF_PEB + 0x10))
+	#define GET_PEB_MAJOR_VERSION (*(USHORT*)(GET_ADDR_OF_PEB + 0x118))
+	#define GET_PEB_MINOR_VERSION (*(USHORT*)(GET_ADDR_OF_PEB + 0x11c))
+	#define GET_PEB_IMAGE_BUILD (*(USHORT*)(GET_ADDR_OF_PEB + 0x120))
 
 #else
 
-// Pointer to 32-bit PEB_LDR_DATA is at offset 0x000C of 32-bit PEB
-#define GET_ADDR_OF_PEB __readfsdword(0x30)
-#define GET_PEB_LDR_DATA (*(PEB_LDR_DATA **)(GET_ADDR_OF_PEB + 0x0C))
-#define GET_PEB_IMAGE_BASE (*(ULONG_PTR *)(GET_ADDR_OF_PEB + 0x08))
-#define GET_PEB_MAJOR_VERSION (*(USHORT *)(GET_ADDR_OF_PEB + 0xa4))
-#define GET_PEB_MINOR_VERSION (*(USHORT *)(GET_ADDR_OF_PEB + 0xa8))
-#define GET_PEB_IMAGE_BUILD (*(USHORT *)(GET_ADDR_OF_PEB + 0xac))
+	// Pointer to 32-bit PEB_LDR_DATA is at offset 0x000C of 32-bit PEB
+	#define GET_ADDR_OF_PEB __readfsdword(0x30)
+	#define GET_PEB_LDR_DATA (*(PEB_LDR_DATA**)(GET_ADDR_OF_PEB + 0x0C))
+	#define GET_PEB_IMAGE_BASE (*(ULONG_PTR*)(GET_ADDR_OF_PEB + 0x08))
+	#define GET_PEB_MAJOR_VERSION (*(USHORT*)(GET_ADDR_OF_PEB + 0xa4))
+	#define GET_PEB_MINOR_VERSION (*(USHORT*)(GET_ADDR_OF_PEB + 0xa8))
+	#define GET_PEB_IMAGE_BUILD (*(USHORT*)(GET_ADDR_OF_PEB + 0xac))
 
-#endif  _WIN64
+#endif _WIN64
 
-enum {
-    DLL_IMAGE_UNSPECIFIED = 0,
-    DLL_IMAGE_SANDBOXIE_RPCSS,
-    DLL_IMAGE_SANDBOXIE_DCOMLAUNCH,
-    DLL_IMAGE_SANDBOXIE_CRYPTO,
-    DLL_IMAGE_SANDBOXIE_WUAU,
-    DLL_IMAGE_SANDBOXIE_BITS,
-    DLL_IMAGE_SANDBOXIE_SBIESVC,
-    DLL_IMAGE_TRUSTED_INSTALLER,
-    DLL_IMAGE_WUAUCLT,
-    DLL_IMAGE_SHELL_EXPLORER,
-    DLL_IMAGE_INTERNET_EXPLORER,
-    DLL_IMAGE_MOZILLA_FIREFOX,
-    DLL_IMAGE_WINDOWS_MEDIA_PLAYER,
-    DLL_IMAGE_NULLSOFT_WINAMP,
-    DLL_IMAGE_PANDORA_KMPLAYER,
-    DLL_IMAGE_WINDOWS_LIVE_MAIL,
-    DLL_IMAGE_SERVICE_MODEL_REG,
-    DLL_IMAGE_RUNDLL32,
-    DLL_IMAGE_DLLHOST,
-    DLL_IMAGE_DLLHOST_WININET_CACHE,
-    DLL_IMAGE_WISPTIS,
-    DLL_IMAGE_GOOGLE_CHROME,
-    DLL_IMAGE_GOOGLE_UPDATE,
-    DLL_IMAGE_ACROBAT_READER,
-    DLL_IMAGE_OFFICE_OUTLOOK,
-    DLL_IMAGE_OFFICE_EXCEL,
-    DLL_IMAGE_FLASH_PLAYER_SANDBOX,
-    DLL_IMAGE_PLUGIN_CONTAINER,
-    DLL_IMAGE_LAST
+enum
+{
+	DLL_IMAGE_UNSPECIFIED = 0,
+	DLL_IMAGE_SANDBOXIE_RPCSS,
+	DLL_IMAGE_SANDBOXIE_DCOMLAUNCH,
+	DLL_IMAGE_SANDBOXIE_CRYPTO,
+	DLL_IMAGE_SANDBOXIE_WUAU,
+	DLL_IMAGE_SANDBOXIE_BITS,
+	DLL_IMAGE_SANDBOXIE_SBIESVC,
+	DLL_IMAGE_TRUSTED_INSTALLER,
+	DLL_IMAGE_WUAUCLT,
+	DLL_IMAGE_SHELL_EXPLORER,
+	DLL_IMAGE_INTERNET_EXPLORER,
+	DLL_IMAGE_MOZILLA_FIREFOX,
+	DLL_IMAGE_WINDOWS_MEDIA_PLAYER,
+	DLL_IMAGE_NULLSOFT_WINAMP,
+	DLL_IMAGE_PANDORA_KMPLAYER,
+	DLL_IMAGE_WINDOWS_LIVE_MAIL,
+	DLL_IMAGE_SERVICE_MODEL_REG,
+	DLL_IMAGE_RUNDLL32,
+	DLL_IMAGE_DLLHOST,
+	DLL_IMAGE_DLLHOST_WININET_CACHE,
+	DLL_IMAGE_WISPTIS,
+	DLL_IMAGE_GOOGLE_CHROME,
+	DLL_IMAGE_GOOGLE_UPDATE,
+	DLL_IMAGE_ACROBAT_READER,
+	DLL_IMAGE_OFFICE_OUTLOOK,
+	DLL_IMAGE_OFFICE_EXCEL,
+	DLL_IMAGE_FLASH_PLAYER_SANDBOX,
+	DLL_IMAGE_PLUGIN_CONTAINER,
+	DLL_IMAGE_LAST
 };
 
 
@@ -145,73 +145,73 @@ typedef struct _MY_LDR_WORKER_QUEUE_STUFF {
 }MY_LDR_WORKER_QUEUE_STUFF;
 #endif
 */
-typedef struct _THREAD_DATA {
+typedef struct _THREAD_DATA
+{
+	//
+	// name buffers:  first index is for true name, second for copy name
+	//
 
-    //
-    // name buffers:  first index is for true name, second for copy name
-    //
+	WCHAR* name_buffer[2][NAME_BUFFER_DEPTH];
+	ULONG name_buffer_len[2][NAME_BUFFER_DEPTH];
+	int depth;
 
-    WCHAR *name_buffer[2][NAME_BUFFER_DEPTH];
-    ULONG name_buffer_len[2][NAME_BUFFER_DEPTH];
-    int depth;
+	//
+	// locks
+	//
 
-    //
-    // locks
-    //
+	BOOLEAN key_NtCreateKey_lock;
 
-    BOOLEAN key_NtCreateKey_lock;
+	BOOLEAN file_NtCreateFile_lock;
+	BOOLEAN file_NtClose_lock;
+	BOOLEAN file_GetCurDir_lock;
 
-    BOOLEAN file_NtCreateFile_lock;
-    BOOLEAN file_NtClose_lock;
-    BOOLEAN file_GetCurDir_lock;
+	BOOLEAN ipc_KnownDlls_lock;
 
-    BOOLEAN ipc_KnownDlls_lock;
+	BOOLEAN obj_NtQueryObject_lock;
 
-    BOOLEAN obj_NtQueryObject_lock;
+	//
+	// file module
+	//
 
-    //
-    // file module
-    //
+	ULONG file_dont_strip_write_access;
 
-    ULONG file_dont_strip_write_access;
+	//
+	// proc module:  image path for a child process being started
+	//
 
-    //
-    // proc module:  image path for a child process being started
-    //
+	ULONG proc_create_process;
+	BOOLEAN proc_create_process_capture_image;
+	BOOLEAN proc_create_process_force_elevate;
+	BOOLEAN proc_create_process_as_invoker;
+	BOOLEAN proc_image_is_copy;
+	WCHAR* proc_image_path;
+	WCHAR* proc_command_line;
 
-    ULONG           proc_create_process;
-    BOOLEAN         proc_create_process_capture_image;
-    BOOLEAN         proc_create_process_force_elevate;
-    BOOLEAN         proc_create_process_as_invoker;
-    BOOLEAN         proc_image_is_copy;
-    WCHAR          *proc_image_path;
-    WCHAR          *proc_command_line;
+	ULONG sh32_shell_execute;
 
-    ULONG           sh32_shell_execute;
+	//
+	// gui module
+	//
 
-    //
-    // gui module
-    //
+	ULONG_PTR gui_himc;
 
-    ULONG_PTR       gui_himc;
+	HWND gui_dde_client_hwnd;
+	HWND gui_dde_proxy_hwnd;
+	WPARAM gui_dde_post_wparam;
+	LPARAM gui_dde_post_lparam;
 
-    HWND            gui_dde_client_hwnd;
-    HWND            gui_dde_proxy_hwnd;
-    WPARAM          gui_dde_post_wparam;
-    LPARAM          gui_dde_post_lparam;
+	ULONG gui_create_window;
 
-    ULONG           gui_create_window;
+	BOOL gui_should_suppress_msgbox;
 
-    BOOL            gui_should_suppress_msgbox;
+	//
+	// sbieapi:  SbieSvc port handle
+	//
 
-    //
-    // sbieapi:  SbieSvc port handle
-    //
-
-    HANDLE          PortHandle;
-    ULONG           MaxDataLen;
-    ULONG           SizeofPortMsg;
-    BOOLEAN         bOperaFileDlgThread;
+	HANDLE PortHandle;
+	ULONG MaxDataLen;
+	ULONG SizeofPortMsg;
+	BOOLEAN bOperaFileDlgThread;
 
 
 } THREAD_DATA;
@@ -230,13 +230,13 @@ extern HMODULE Dll_Kernel32;
 extern HMODULE Dll_KernelBase;
 extern HMODULE Dll_DigitalGuardian;
 
-extern const WCHAR *Dll_BoxName;
-extern const WCHAR *Dll_ImageName;
-extern const WCHAR *Dll_SidString;
+extern const WCHAR* Dll_BoxName;
+extern const WCHAR* Dll_ImageName;
+extern const WCHAR* Dll_SidString;
 
-extern const WCHAR *Dll_BoxFilePath;
-extern const WCHAR *Dll_BoxKeyPath;
-extern const WCHAR *Dll_BoxIpcPath;
+extern const WCHAR* Dll_BoxFilePath;
+extern const WCHAR* Dll_BoxKeyPath;
+extern const WCHAR* Dll_BoxIpcPath;
 
 extern ULONG Dll_BoxFilePathLen;
 extern ULONG Dll_BoxKeyPathLen;
@@ -265,11 +265,11 @@ extern PSECURITY_DESCRIPTOR Secure_EveryoneSD;
 
 extern BOOLEAN Ldr_BoxedImage;
 
-extern WCHAR *Ldr_ImageTruePath;
+extern WCHAR* Ldr_ImageTruePath;
 
 extern BOOLEAN Ipc_OpenCOM;
 
-extern const WCHAR *Scm_CryptSvc;
+extern const WCHAR* Scm_CryptSvc;
 
 
 //---------------------------------------------------------------------------
@@ -277,26 +277,25 @@ extern const WCHAR *Scm_CryptSvc;
 //---------------------------------------------------------------------------
 
 
-extern const WCHAR *DllName_advapi32;
-extern const WCHAR *DllName_combase;
-extern const WCHAR *DllName_kernel32;
-extern const WCHAR *DllName_kernelbase;
-extern const WCHAR *DllName_ole32;
-extern const WCHAR *DllName_oleaut32;
-extern const WCHAR *DllName_user32;
-extern const WCHAR *DllName_rpcrt4;
-extern const WCHAR *DllName_winnsi;
-extern const WCHAR *DllName_shell32;
-extern const WCHAR *DllName_sechost;
-extern const WCHAR *DllName_gdi32;
-extern const WCHAR *DllName_secur32;
-extern const WCHAR *DllName_sspicli;
-extern const WCHAR *DllName_mscoree;
-extern const WCHAR *DllName_ntmarta;
+extern const WCHAR* DllName_advapi32;
+extern const WCHAR* DllName_combase;
+extern const WCHAR* DllName_kernel32;
+extern const WCHAR* DllName_kernelbase;
+extern const WCHAR* DllName_ole32;
+extern const WCHAR* DllName_oleaut32;
+extern const WCHAR* DllName_user32;
+extern const WCHAR* DllName_rpcrt4;
+extern const WCHAR* DllName_winnsi;
+extern const WCHAR* DllName_shell32;
+extern const WCHAR* DllName_sechost;
+extern const WCHAR* DllName_gdi32;
+extern const WCHAR* DllName_secur32;
+extern const WCHAR* DllName_sspicli;
+extern const WCHAR* DllName_mscoree;
+extern const WCHAR* DllName_ntmarta;
 
 
-#define DllName_ole32_or_combase \
-    ((Dll_OsBuild >= 8400) ? DllName_combase : DllName_ole32)
+#define DllName_ole32_or_combase ((Dll_OsBuild >= 8400) ? DllName_combase : DllName_ole32)
 
 
 //---------------------------------------------------------------------------
@@ -304,22 +303,22 @@ extern const WCHAR *DllName_ntmarta;
 //---------------------------------------------------------------------------
 
 //void *Ldr_GetProcAddr_4(ULONG_PTR DllBase, char *ProcName, int *flag);
-_FX void * myGetProcAddress(HMODULE DllBase, char *ProcName);
+_FX void* myGetProcAddress(HMODULE DllBase, char* ProcName);
 BOOLEAN Dll_InitMem(void);
 
-void *Dll_Alloc(ULONG size);
-void *Dll_AllocTemp(ULONG size);
-void Dll_Free(void *ptr);
+void* Dll_Alloc(ULONG size);
+void* Dll_AllocTemp(ULONG size);
+void Dll_Free(void* ptr);
 
-void *Dll_AllocCode128(void);
-void Dll_FreeCode128(void *ptr);
+void* Dll_AllocCode128(void);
+void Dll_FreeCode128(void* ptr);
 
-THREAD_DATA *Dll_GetTlsData(ULONG *pLastError);
+THREAD_DATA* Dll_GetTlsData(ULONG* pLastError);
 void Dll_FreeTlsData(void);
 
-WCHAR *Dll_GetTlsNameBuffer(THREAD_DATA *data, ULONG which, ULONG size);
-void Dll_PushTlsNameBuffer(THREAD_DATA *data);
-void Dll_PopTlsNameBuffer(THREAD_DATA *data);
+WCHAR* Dll_GetTlsNameBuffer(THREAD_DATA* data, ULONG which, ULONG size);
+void Dll_PushTlsNameBuffer(THREAD_DATA* data);
+void Dll_PopTlsNameBuffer(THREAD_DATA* data);
 
 
 //---------------------------------------------------------------------------
@@ -331,22 +330,22 @@ BOOLEAN Dll_InitPathList(void);
 
 void Dll_RefreshPathList(void);
 
-ULONG SbieDll_MatchPath(WCHAR path_code, const WCHAR *path);
+ULONG SbieDll_MatchPath(WCHAR path_code, const WCHAR* path);
 
-ULONG SbieDll_MatchPath2(WCHAR path_code, const WCHAR *path, BOOLEAN bCheckObjectExists, BOOLEAN bMonitorLog);
+ULONG SbieDll_MatchPath2(WCHAR path_code, const WCHAR* path, BOOLEAN bCheckObjectExists, BOOLEAN bMonitorLog);
 
-#define PATH_OPEN_FLAG      0x10
-#define PATH_CLOSED_FLAG    0x20
-#define PATH_WRITE_FLAG     0x40
+#define PATH_OPEN_FLAG 0x10
+#define PATH_CLOSED_FLAG 0x20
+#define PATH_WRITE_FLAG 0x40
 
-#define PATH_IS_OPEN(f)     (((f) & PATH_OPEN_FLAG) != 0)
-#define PATH_NOT_OPEN(f)    (((f) & PATH_OPEN_FLAG) == 0)
+#define PATH_IS_OPEN(f) (((f) & PATH_OPEN_FLAG) != 0)
+#define PATH_NOT_OPEN(f) (((f) & PATH_OPEN_FLAG) == 0)
 
-#define PATH_IS_CLOSED(f)   (((f) & PATH_CLOSED_FLAG) != 0)
-#define PATH_NOT_CLOSED(f)  (((f) & PATH_CLOSED_FLAG) == 0)
+#define PATH_IS_CLOSED(f) (((f) & PATH_CLOSED_FLAG) != 0)
+#define PATH_NOT_CLOSED(f) (((f) & PATH_CLOSED_FLAG) == 0)
 
-#define PATH_IS_WRITE(f)    (((f) & PATH_WRITE_FLAG) != 0)
-#define PATH_NOT_WRITE(f)   (((f) & PATH_WRITE_FLAG) == 0)
+#define PATH_IS_WRITE(f) (((f) & PATH_WRITE_FLAG) != 0)
+#define PATH_NOT_WRITE(f) (((f) & PATH_WRITE_FLAG) == 0)
 
 
 //---------------------------------------------------------------------------
@@ -356,11 +355,11 @@ ULONG SbieDll_MatchPath2(WCHAR path_code, const WCHAR *path, BOOLEAN bCheckObjec
 
 void Dll_InitExeEntry(void);
 
-int Dll_NlsStrCmp(const WCHAR *s1, const WCHAR *s2, ULONG len);
+int Dll_NlsStrCmp(const WCHAR* s1, const WCHAR* s2, ULONG len);
 
-void *Dll_SidStringToSid(const WCHAR *SidString);
+void* Dll_SidStringToSid(const WCHAR* SidString);
 
-NTSTATUS Dll_GetCurrentSidString(UNICODE_STRING *SidString);
+NTSTATUS Dll_GetCurrentSidString(UNICODE_STRING* SidString);
 
 
 //---------------------------------------------------------------------------
@@ -368,19 +367,19 @@ NTSTATUS Dll_GetCurrentSidString(UNICODE_STRING *SidString);
 //---------------------------------------------------------------------------
 
 
-BOOLEAN Dll_SkipHook(const WCHAR *HookName);
+BOOLEAN Dll_SkipHook(const WCHAR* HookName);
 
-void *Dll_JumpStub(void *OldCode, void *NewCode, ULONG_PTR StubArg);
+void* Dll_JumpStub(void* OldCode, void* NewCode, ULONG_PTR StubArg);
 
-ULONG_PTR *Dll_JumpStubData(void);
+ULONG_PTR* Dll_JumpStubData(void);
 
-ULONG_PTR *Dll_JumpStubDataForCode(void *StubCode);
+ULONG_PTR* Dll_JumpStubDataForCode(void* StubCode);
 
 #ifdef _WIN64
 
-#define Dll_FixWow64Syscall()
+	#define Dll_FixWow64Syscall()
 
-#else ! _WIN64
+#else !_WIN64
 
 void Dll_FixWow64Syscall(void);
 
@@ -392,53 +391,33 @@ void Dll_FixWow64Syscall(void);
 //---------------------------------------------------------------------------
 
 
-const WCHAR *Pipe_IsNamedPipe(const WCHAR *path);
+const WCHAR* Pipe_IsNamedPipe(const WCHAR* path);
 
-NTSTATUS Pipe_NtCreateFile(
-    HANDLE *FileHandle,
-    ACCESS_MASK DesiredAccess,
-    OBJECT_ATTRIBUTES *ObjectAttributes,
-    IO_STATUS_BLOCK *IoStatusBlock,
-    LARGE_INTEGER *AllocationSize,
-    ULONG FileAttributes,
-    ULONG ShareAccess,
-    ULONG CreateDisposition,
-    ULONG CreateOptions,
-    void *EaBuffer,
-    ULONG EaLength);
+NTSTATUS Pipe_NtCreateFile(HANDLE* FileHandle, ACCESS_MASK DesiredAccess, OBJECT_ATTRIBUTES* ObjectAttributes, IO_STATUS_BLOCK* IoStatusBlock, LARGE_INTEGER* AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, void* EaBuffer, ULONG EaLength);
 
 void File_DuplicateRecover(HANDLE OldFileHandle, HANDLE NewFileHandle);
 
 void File_DoAutoRecover(BOOLEAN force);
 
-NTSTATUS File_CreateBoxedPath(const WCHAR *PathToCreate);
+NTSTATUS File_CreateBoxedPath(const WCHAR* PathToCreate);
 
-HANDLE File_GetTrueHandle(HANDLE FileHandle, BOOLEAN *pIsOpenPath);
+HANDLE File_GetTrueHandle(HANDLE FileHandle, BOOLEAN* pIsOpenPath);
 
-void *File_AllocAndInitEnvironment(
-    void *Environment, BOOLEAN IsUnicode, BOOLEAN AddDeviceMap,
-    ULONG *OutLengthInBytes);
+void* File_AllocAndInitEnvironment(void* Environment, BOOLEAN IsUnicode, BOOLEAN AddDeviceMap, ULONG* OutLengthInBytes);
 
-WCHAR *File_TranslateDosToNtPath(const WCHAR *DosPath);
+WCHAR* File_TranslateDosToNtPath(const WCHAR* DosPath);
 
-WCHAR *File_GetTruePathForBoxedPath(const WCHAR *Path, BOOLEAN IsDosPath);
+WCHAR* File_GetTruePathForBoxedPath(const WCHAR* Path, BOOLEAN IsDosPath);
 
-NTSTATUS File_MyQueryDirectoryFile(
-    HANDLE FileHandle,
-    void *FileInformation,
-    ULONG Length,
-    FILE_INFORMATION_CLASS FileInformationClass,
-    BOOLEAN ReturnSingleEntry,
-    UNICODE_STRING *FileMask,
-    BOOLEAN RestartScan);
+NTSTATUS File_MyQueryDirectoryFile(HANDLE FileHandle, void* FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass, BOOLEAN ReturnSingleEntry, UNICODE_STRING* FileMask, BOOLEAN RestartScan);
 
-NTSTATUS File_AddProxyPipe(HANDLE *OutHandle, ULONG InHandle);
+NTSTATUS File_AddProxyPipe(HANDLE* OutHandle, ULONG InHandle);
 
-ULONG File_GetProxyPipe(HANDLE FakeHandle, UCHAR *FileIndex);
+ULONG File_GetProxyPipe(HANDLE FakeHandle, UCHAR* FileIndex);
 
-BOOLEAN File_IsBlockedNetParam(const WCHAR *BoxName);
+BOOLEAN File_IsBlockedNetParam(const WCHAR* BoxName);
 
-void File_GetSetDeviceMap(WCHAR *DeviceMap96);
+void File_GetSetDeviceMap(WCHAR* DeviceMap96);
 
 
 //---------------------------------------------------------------------------
@@ -451,20 +430,17 @@ NTSTATUS Key_NtDeleteKeyTreeImpl(HANDLE KeyHandle, BOOLEAN DeleteTree);
 
 NTSTATUS Key_MarkDeletedAndClose(HANDLE KeyHandle);
 
-void Key_DiscardMergeByPath(const WCHAR *TruePath, BOOLEAN Recurse);
+void Key_DiscardMergeByPath(const WCHAR* TruePath, BOOLEAN Recurse);
 
 void Key_NtClose(HANDLE KeyHandle);
 
-HANDLE Key_GetTrueHandle(HANDLE KeyHandle, BOOLEAN *pIsOpenPath);
+HANDLE Key_GetTrueHandle(HANDLE KeyHandle, BOOLEAN* pIsOpenPath);
 
-NTSTATUS Key_OpenIfBoxed(
-    HANDLE *out_handle, ACCESS_MASK access, OBJECT_ATTRIBUTES *objattrs);
+NTSTATUS Key_OpenIfBoxed(HANDLE* out_handle, ACCESS_MASK access, OBJECT_ATTRIBUTES* objattrs);
 
-NTSTATUS Key_OpenOrCreateIfBoxed(
-    HANDLE *out_handle, ACCESS_MASK access, OBJECT_ATTRIBUTES *objattrs);
+NTSTATUS Key_OpenOrCreateIfBoxed(HANDLE* out_handle, ACCESS_MASK access, OBJECT_ATTRIBUTES* objattrs);
 
-void Key_DeleteValueFromCLSID(
-    const WCHAR *Xxxid, const WCHAR *Guid, const WCHAR *ValueName);
+void Key_DeleteValueFromCLSID(const WCHAR* Xxxid, const WCHAR* Guid, const WCHAR* ValueName);
 
 
 //---------------------------------------------------------------------------
@@ -472,13 +448,13 @@ void Key_DeleteValueFromCLSID(
 //---------------------------------------------------------------------------
 
 
-void Sxs_ActivateDefaultManifest(void *ImageBase);
+void Sxs_ActivateDefaultManifest(void* ImageBase);
 
-ULONG Sxs_CheckManifestForCreateProcess(const WCHAR *DosPath);
+ULONG Sxs_CheckManifestForCreateProcess(const WCHAR* DosPath);
 
-BOOLEAN Sxs_KeyCallback(const WCHAR *path, HANDLE *out_handle);
+BOOLEAN Sxs_KeyCallback(const WCHAR* path, HANDLE* out_handle);
 
-BOOLEAN Sxs_FileCallback(const WCHAR *path, HANDLE *out_handle);
+BOOLEAN Sxs_FileCallback(const WCHAR* path, HANDLE* out_handle);
 
 
 //---------------------------------------------------------------------------
@@ -486,8 +462,7 @@ BOOLEAN Sxs_FileCallback(const WCHAR *path, HANDLE *out_handle);
 //---------------------------------------------------------------------------
 
 
-HANDLE Scm_OpenKeyForService(
-    const WCHAR *ServiceName, BOOLEAN ForWrite);
+HANDLE Scm_OpenKeyForService(const WCHAR* ServiceName, BOOLEAN ForWrite);
 
 BOOLEAN Scm_SecHostDll(HMODULE);
 
@@ -523,30 +498,25 @@ void Gui_ResetClipCursor(void);
 
 BOOLEAN AdvApi_EnableDisableSRP(BOOLEAN Enable);
 
-void Com_Trace_Guid(WCHAR *text, REFGUID guid, WCHAR *subkey);
+void Com_Trace_Guid(WCHAR* text, REFGUID guid, WCHAR* subkey);
 
-ULONG_PTR ProtectCall2(void *CallAddress, ULONG_PTR Arg1, ULONG_PTR Arg2);
+ULONG_PTR ProtectCall2(void* CallAddress, ULONG_PTR Arg1, ULONG_PTR Arg2);
 
-ULONG_PTR ProtectCall3(
-    void *CallAddress, ULONG_PTR Arg1, ULONG_PTR Arg2, ULONG_PTR Arg3);
+ULONG_PTR ProtectCall3(void* CallAddress, ULONG_PTR Arg1, ULONG_PTR Arg2, ULONG_PTR Arg3);
 
-ULONG_PTR ProtectCall4(
-    void *CallAddress,
-    ULONG_PTR Arg1, ULONG_PTR Arg2, ULONG_PTR Arg3, ULONG_PTR Arg4);
+ULONG_PTR ProtectCall4(void* CallAddress, ULONG_PTR Arg1, ULONG_PTR Arg2, ULONG_PTR Arg3, ULONG_PTR Arg4);
 
-BOOL SH32_DoRunAs(
-    const WCHAR *CmdLine, const WCHAR *WorkDir,
-    PROCESS_INFORMATION *pi, BOOL *cancelled);
+BOOL SH32_DoRunAs(const WCHAR* CmdLine, const WCHAR* WorkDir, PROCESS_INFORMATION* pi, BOOL* cancelled);
 
 ULONG SH_GetInternetExplorerVersion(void);
 
-void *SysInfo_QueryProcesses(ULONG *out_len);
+void* SysInfo_QueryProcesses(ULONG* out_len);
 
-HANDLE Ipc_GetServerEvent(const WCHAR *service, BOOLEAN *create_flag);
+HANDLE Ipc_GetServerEvent(const WCHAR* service, BOOLEAN* create_flag);
 
-ULONG Proc_WaitForParentExit(void *DoExitProcess);
+ULONG Proc_WaitForParentExit(void* DoExitProcess);
 
-RTL_USER_PROCESS_PARAMETERS *Proc_GetRtlUserProcessParameters(void);
+RTL_USER_PROCESS_PARAMETERS* Proc_GetRtlUserProcessParameters(void);
 
 NTSTATUS Proc_SectionCallback(HANDLE FileHandle);
 
@@ -596,8 +566,8 @@ void Ldr_CallDllCallbacks_WithLock(void);
 
 BOOLEAN Ldr_MakeStaticDll(ULONG_PTR BaseAddress);
 
-void *Ldr_GetProcAddrNew(const WCHAR *DllName, const WCHAR *ProcNameW,char *ProcNameA);
-void *Ldr_GetProcAddrOld(const WCHAR *DllName, const WCHAR *ProcNameW);
+void* Ldr_GetProcAddrNew(const WCHAR* DllName, const WCHAR* ProcNameW, char* ProcNameA);
+void* Ldr_GetProcAddrOld(const WCHAR* DllName, const WCHAR* ProcNameW);
 
 //---------------------------------------------------------------------------
 // Functions (called from Ldr Dll Callback)

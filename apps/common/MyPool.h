@@ -27,21 +27,31 @@
 class CMyPool
 {
 private:
-
-    void *m_pool;
+	void* m_pool;
 
 public:
+	CMyPool();
+	~CMyPool();
 
-    CMyPool();
-    ~CMyPool();
+	void* Alloc(int size);
+	void Free(void* ptr);
 
-    void *Alloc(int size);
-    void Free(void *ptr);
-
-    char      *Alloc_char(int size)     {return (char *)Alloc(size);};
-    UCHAR     *Alloc_UCHAR(int size)    {return (UCHAR *)Alloc(size);};
-    WCHAR     *Alloc_WCHAR(int size)    {return (WCHAR *)Alloc(size);};
-    ULONG_PTR *Alloc_ULONG_PTR(int size){return (ULONG_PTR *)Alloc(size);};
+	char* Alloc_char(int size)
+	{
+		return (char*)Alloc(size);
+	};
+	UCHAR* Alloc_UCHAR(int size)
+	{
+		return (UCHAR*)Alloc(size);
+	};
+	WCHAR* Alloc_WCHAR(int size)
+	{
+		return (WCHAR*)Alloc(size);
+	};
+	ULONG_PTR* Alloc_ULONG_PTR(int size)
+	{
+		return (ULONG_PTR*)Alloc(size);
+	};
 };
 
 

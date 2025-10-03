@@ -29,19 +29,18 @@
 
 class CMyMsg : public CString
 {
-    static const CString &m_unknown;
+	static const CString& m_unknown;
 
-    void Construct(WCHAR *str);
+	void Construct(WCHAR* str);
 
 public:
+	CMyMsg(ULONG msgid);
 
-    CMyMsg(ULONG msgid);
+	CMyMsg(ULONG msgid, const WCHAR* p1);
 
-    CMyMsg(ULONG msgid, const WCHAR *p1);
+	CMyMsg(ULONG msgid, const WCHAR* p1, const WCHAR* p2);
 
-    CMyMsg(ULONG msgid, const WCHAR *p1, const WCHAR *p2);
-
-    CMyMsg(ULONG msgid, const WCHAR *p1, const WCHAR *p2, const WCHAR *p3);
+	CMyMsg(ULONG msgid, const WCHAR* p1, const WCHAR* p2, const WCHAR* p3);
 };
 
 

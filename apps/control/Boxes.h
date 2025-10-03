@@ -29,40 +29,39 @@
 
 class CBoxes : public CObArray
 {
-    static CBoxes *m_instance;
+	static CBoxes* m_instance;
 
-    CBoxes();
+	CBoxes();
 
-    void Clear();
+	void Clear();
 
-    bool m_AnyHiddenBoxes;
+	bool m_AnyHiddenBoxes;
 
 public:
+	static CString m_DefaultBox;
 
-    static CString m_DefaultBox;
+	~CBoxes();
 
-    ~CBoxes();
+	static CBoxes& GetInstance();
 
-    static CBoxes &GetInstance();
+	void ReloadBoxes();
 
-    void ReloadBoxes();
+	void RefreshProcesses();
 
-    void RefreshProcesses();
+	CBox& GetBox(int index) const;
+	CBox& GetBox(const CString& name) const;
+	CBox& GetBoxByProcessId(ULONG pid) const;
+	int GetBoxIndex(const CString& name) const;
 
-    CBox &GetBox(int index) const;
-    CBox &GetBox(const CString &name) const;
-    CBox &GetBoxByProcessId(ULONG pid) const;
-    int GetBoxIndex(const CString &name) const;
+	BOOL AnyActivity() const;
 
-    BOOL AnyActivity() const;
+	void KillAll() const;
 
-    void KillAll() const;
+	bool AnyHiddenBoxes() const;
+	void GetHiddenBoxes(CStringList& list) const;
 
-    bool AnyHiddenBoxes() const;
-    void GetHiddenBoxes(CStringList &list) const;
-
-    void ReadExpandedView();
-    BOOL WriteExpandedView();
+	void ReadExpandedView();
+	BOOL WriteExpandedView();
 };
 
 

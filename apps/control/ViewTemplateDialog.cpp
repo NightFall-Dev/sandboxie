@@ -20,11 +20,11 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "ViewTemplateDialog.h"
 
+#include "MyApp.h"
 #include "SbieIni.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -41,13 +41,12 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CViewTemplateDialog::CViewTemplateDialog(
-    CWnd *pParentWnd, const CString &Template)
-    : CBaseDialog(pParentWnd, L"VIEW_TEMPLATE_DIALOG")
+CViewTemplateDialog::CViewTemplateDialog(CWnd* pParentWnd, const CString& Template) :
+    CBaseDialog(pParentWnd, L"VIEW_TEMPLATE_DIALOG")
 {
-    m_TemplateName = Template;
+	m_TemplateName = Template;
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -68,56 +67,71 @@ CViewTemplateDialog::~CViewTemplateDialog()
 
 BOOL CViewTemplateDialog::OnInitDialog()
 {
-    CString text;
-    if (m_TemplateName.IsEmpty())
-        text = CMyMsg(MSG_4204);
-    else
-        text = CMyMsg(MSG_4202);
-    text.Remove(L'&');
-    SetWindowText(text);
+	CString text;
+	if (m_TemplateName.IsEmpty())
+	{
+		text = CMyMsg(MSG_4204);
+	}
+	else
+	{
+		text = CMyMsg(MSG_4202);
+	}
+	text.Remove(L'&');
+	SetWindowText(text);
 
-    if (m_TemplateName.IsEmpty())
-        text = CMyMsg(MSG_4217);
-    else
-        text = CMyMsg(MSG_4216, m_TemplateName);
-    GetDlgItem(ID_PAGE_LABEL_1)->SetWindowText(text);
+	if (m_TemplateName.IsEmpty())
+	{
+		text = CMyMsg(MSG_4217);
+	}
+	else
+	{
+		text = CMyMsg(MSG_4216, m_TemplateName);
+	}
+	GetDlgItem(ID_PAGE_LABEL_1)->SetWindowText(text);
 
-    CEdit *pEdit = (CEdit *)GetDlgItem(IDTEXT);
+	CEdit* pEdit = (CEdit*)GetDlgItem(IDTEXT);
 
-    CFont font;
-    if (font.CreateStockObject(ANSI_FIXED_FONT))
-        pEdit->SetFont(&font);
+	CFont font;
+	if (font.CreateStockObject(ANSI_FIXED_FONT))
+	{
+		pEdit->SetFont(&font);
+	}
 
-    if (m_TemplateName.IsEmpty())
-        pEdit->Clear();
-    else {
+	if (m_TemplateName.IsEmpty())
+	{
+		pEdit->Clear();
+	}
+	else
+	{
+		CSbieIni& ini = CSbieIni::GetInstance();
 
-        CSbieIni &ini = CSbieIni::GetInstance();
+		CString SectionName = ini.m_Template_ + m_TemplateName;
+		text                = L"[" + SectionName + L"]\r\n";
 
-        CString SectionName = ini.m_Template_ + m_TemplateName;
-        text = L"[" + SectionName + L"]\r\n";
+		CStringList settings;
+		ini.GetSettingsNames(SectionName, settings);
 
-        CStringList settings;
-        ini.GetSettingsNames(SectionName, settings);
+		while (!settings.IsEmpty())
+		{
+			CString setting = settings.RemoveHead();
 
-        while (! settings.IsEmpty()) {
-            CString setting = settings.RemoveHead();
+			CStringList values;
+			ini.GetTextList(SectionName, setting, values);
 
-            CStringList values;
-            ini.GetTextList(SectionName, setting, values);
+			while (!values.IsEmpty())
+			{
+				text += setting + L"=" + values.RemoveHead() + L"\r\n";
+			}
+		}
 
-            while (! values.IsEmpty())
-                text += setting + L"=" + values.RemoveHead() + L"\r\n";
-        }
+		pEdit->SetWindowText(text);
+		pEdit->SetReadOnly(TRUE);
+	}
 
-        pEdit->SetWindowText(text);
-        pEdit->SetReadOnly(TRUE);
-    }
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -128,15 +142,16 @@ BOOL CViewTemplateDialog::OnInitDialog()
 
 void CViewTemplateDialog::OnOK()
 {
-    if (m_TemplateName.IsEmpty()) {
+	if (m_TemplateName.IsEmpty())
+	{
+		if (!VerifyAndAddTemplate())
+		{
+			CMyApp::MsgBox(this, MSG_4220, MB_OK);
+			return;
+		}
+	}
 
-        if (! VerifyAndAddTemplate()) {
-            CMyApp::MsgBox(this, MSG_4220, MB_OK);
-            return;
-        }
-    }
-
-    EndDialog(0);
+	EndDialog(0);
 }
 
 
@@ -147,129 +162,164 @@ void CViewTemplateDialog::OnOK()
 
 BOOL CViewTemplateDialog::VerifyAndAddTemplate()
 {
-    CEdit *pEdit = (CEdit *)GetDlgItem(IDTEXT);
-    CString text;
-    pEdit->GetWindowText(text);
+	CEdit* pEdit = (CEdit*)GetDlgItem(IDTEXT);
+	CString text;
+	pEdit->GetWindowText(text);
 
-    //
-    // break text into separate lines
-    //
+	//
+	// break text into separate lines
+	//
 
-    int index;
-    CString line;
+	int index;
+	CString line;
 
-    CStringList lines;
-    while (! text.IsEmpty()) {
+	CStringList lines;
+	while (!text.IsEmpty())
+	{
+		index = text.Find(L'\r');
+		if (index == -1)
+		{
+			index = text.Find(L'\n');
+		}
+		if (index == -1)
+		{
+			index = text.GetLength();
+		}
 
-        index = text.Find(L'\r');
-        if (index == -1)
-            index = text.Find(L'\n');
-        if (index == -1)
-            index = text.GetLength();
+		line = text.Left(index);
+		line.TrimLeft();
+		line.TrimRight();
+		if (!line.IsEmpty())
+		{
+			lines.AddTail(line);
+		}
 
-        line = text.Left(index);
-        line.TrimLeft();
-        line.TrimRight();
-        if (! line.IsEmpty())
-            lines.AddTail(line);
+		++index;
+		if (index > text.GetLength())
+		{
+			text = CString();
+		}
+		else
+		{
+			text = text.Mid(index);
+		}
+	}
 
-        ++index;
-        if (index > text.GetLength())
-            text = CString();
-        else
-            text = text.Mid(index);
-    }
+	if (lines.IsEmpty())
+	{
+		return FALSE;
+	}
 
-    if (lines.IsEmpty())
-        return FALSE;
+	//
+	// first line must be [Template_Local_Xxx]
+	//
 
-    //
-    // first line must be [Template_Local_Xxx]
-    //
+	CSbieIni& ini = CSbieIni::GetInstance();
 
-    CSbieIni &ini = CSbieIni::GetInstance();
+	CString section = lines.RemoveHead();
+	if (section.GetAt(0) != L'[')
+	{
+		return FALSE;
+	}
+	section = section.Mid(1);
+	if (section.Left(9).CompareNoCase(ini.m_Template_) != 0)
+	{
+		return FALSE;
+	}
+	section = section.Mid(9);
+	index   = section.Find(L']');
+	if (index == -1)
+	{
+		return FALSE;
+	}
+	section = section.Left(index);
+	const CString _Local_(L"Local_");
+	if (section.Left(6).CompareNoCase(_Local_) != 0)
+	{
+		section = _Local_ + section;
+	}
+	section = ini.m_Template_ + section;
 
-    CString section = lines.RemoveHead();
-    if (section.GetAt(0) != L'[')
-        return FALSE;
-    section = section.Mid(1);
-    if (section.Left(9).CompareNoCase(ini.m_Template_) != 0)
-        return FALSE;
-    section = section.Mid(9);
-    index = section.Find(L']');
-    if (index == -1)
-        return FALSE;
-    section = section.Left(index);
-    const CString _Local_(L"Local_");
-    if (section.Left(6).CompareNoCase(_Local_) != 0)
-        section = _Local_ + section;
-    section = ini.m_Template_ + section;
+	//
+	// every other line must be Setting=Value
+	//
 
-    //
-    // every other line must be Setting=Value
-    //
+	POSITION pos = lines.GetHeadPosition();
+	while (pos)
+	{
+		line  = lines.GetNext(pos);
+		index = line.Find(L'=');
+		if (index < 1 || index + 1 >= line.GetLength())
+		{
+			return FALSE;
+		}
+	}
 
-    POSITION pos = lines.GetHeadPosition();
-    while (pos) {
-        line = lines.GetNext(pos);
-        index = line.Find(L'=');
-        if (index < 1 || index + 1 >= line.GetLength())
-            return FALSE;
-    }
+	//
+	// if we're still here, remove the old template
+	//
 
-    //
-    // if we're still here, remove the old template
-    //
+	while (1)
+	{
+		CStringList names;
+		ini.GetSettingsNames(section, names);
 
-    while (1) {
+		if (names.IsEmpty())
+		{
+			break;
+		}
 
-        CStringList names;
-        ini.GetSettingsNames(section, names);
+		while (!names.IsEmpty())
+		{
+			CString& name = names.RemoveHead();
+			ini.SetText(section, name, CString());
+		}
+	}
 
-        if (names.IsEmpty())
-            break;
+	//
+	// if we're still here, add the new template
+	//
 
-        while (! names.IsEmpty()) {
-            CString &name = names.RemoveHead();
-            ini.SetText(section, name, CString());
-        }
-    }
+	const CString TmplTitle(L"Tmpl.Title");
+	const CString TmplClass(L"Tmpl.Class");
+	BOOL TitleFound = FALSE;
 
-    //
-    // if we're still here, add the new template
-    //
+	pos = lines.GetHeadPosition();
+	while (pos)
+	{
+		line  = lines.GetNext(pos);
+		index = line.Find(L'=');
+		if (index < 1 || index + 1 >= line.GetLength())
+		{
+			return FALSE;
+		}
 
-    const CString TmplTitle(L"Tmpl.Title");
-    const CString TmplClass(L"Tmpl.Class");
-    BOOL TitleFound = FALSE;
+		CString setting = line.Left(index);
+		setting.TrimLeft();
+		setting.TrimRight();
 
-    pos = lines.GetHeadPosition();
-    while (pos) {
-        line = lines.GetNext(pos);
-        index = line.Find(L'=');
-        if (index < 1 || index + 1 >= line.GetLength())
-            return FALSE;
+		CString value = line.Mid(index + 1);
+		value.TrimLeft();
+		value.TrimRight();
 
-        CString setting = line.Left(index);
-        setting.TrimLeft();
-        setting.TrimRight();
+		if (setting.CompareNoCase(TmplClass) == 0)
+		{
+			continue;
+		}
 
-        CString value = line.Mid(index + 1);
-        value.TrimLeft();
-        value.TrimRight();
+		if (setting.CompareNoCase(TmplTitle) == 0)
+		{
+			TitleFound = TRUE;
+		}
 
-        if (setting.CompareNoCase(TmplClass) == 0)
-            continue;
+		ini.InsertText(section, setting, value);
+	}
 
-        if (setting.CompareNoCase(TmplTitle) == 0)
-            TitleFound = TRUE;
+	if (!TitleFound)
+	{
+		ini.SetText(section, TmplTitle, section);
+	}
+	ini.SetText(section, TmplClass, L"Local");
 
-        ini.InsertText(section, setting, value);
-    }
-
-    if (! TitleFound)
-        ini.SetText(section, TmplTitle, section);
-    ini.SetText(section, TmplClass, L"Local");
-
-    return TRUE;
+	return TRUE;
 }

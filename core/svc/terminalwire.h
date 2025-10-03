@@ -32,21 +32,21 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct _TERMINAL_QUERY_INFO_REQ {
-
-    MSG_HEADER h;
-    ULONG session_id;
-    ULONG info_class;
-    ULONG data_len;
+typedef struct _TERMINAL_QUERY_INFO_REQ
+{
+	MSG_HEADER h;
+	ULONG session_id;
+	ULONG info_class;
+	ULONG data_len;
 
 } TERMINAL_QUERY_INFO_REQ;
 
 
-typedef struct _TERMINAL_QUERY_INFO_RPL {
-
-    MSG_HEADER h;                       // status is Win32 error
-    ULONG data_len;
-    UCHAR data[1];
+typedef struct _TERMINAL_QUERY_INFO_RPL
+{
+	MSG_HEADER h; // status is Win32 error
+	ULONG data_len;
+	UCHAR data[1];
 
 } TERMINAL_QUERY_INFO_RPL;
 
@@ -56,20 +56,20 @@ typedef struct _TERMINAL_QUERY_INFO_RPL {
 //---------------------------------------------------------------------------
 
 
-typedef struct _TERMINAL_CHECK_TYPE_REQ {
-
-    MSG_HEADER h;
-    ULONG session_id;
-    BOOLEAN check_is_remote;
+typedef struct _TERMINAL_CHECK_TYPE_REQ
+{
+	MSG_HEADER h;
+	ULONG session_id;
+	BOOLEAN check_is_remote;
 
 } TERMINAL_CHECK_TYPE_REQ;
 
 
-typedef struct _TERMINAL_CHECK_TYPE_RPL {
-
-    MSG_HEADER h;                       // status is Win32 error
-    ULONG data_len;
-    UCHAR data[1];
+typedef struct _TERMINAL_CHECK_TYPE_RPL
+{
+	MSG_HEADER h; // status is Win32 error
+	ULONG data_len;
+	UCHAR data[1];
 
 } TERMINAL_CHECK_TYPE_RPL;
 
@@ -79,18 +79,18 @@ typedef struct _TERMINAL_CHECK_TYPE_RPL {
 //---------------------------------------------------------------------------
 
 
-typedef struct _TERMINAL_GET_NAME_REQ {
-
-    MSG_HEADER h;
-    ULONG session_id;
+typedef struct _TERMINAL_GET_NAME_REQ
+{
+	MSG_HEADER h;
+	ULONG session_id;
 
 } TERMINAL_GET_NAME_REQ;
 
 
-typedef struct _TERMINAL_GET_NAME_RPL {
-
-    MSG_HEADER h;                       // status is Win32 error
-    WCHAR name[128];
+typedef struct _TERMINAL_GET_NAME_RPL
+{
+	MSG_HEADER h; // status is Win32 error
+	WCHAR name[128];
 
 } TERMINAL_GET_NAME_RPL;
 
@@ -100,21 +100,21 @@ typedef struct _TERMINAL_GET_NAME_RPL {
 //---------------------------------------------------------------------------
 
 
-typedef struct _TERMINAL_GET_PROPERTY_REQ {
-
-    MSG_HEADER h;
-    ULONG session_id;
-    GUID guid;
+typedef struct _TERMINAL_GET_PROPERTY_REQ
+{
+	MSG_HEADER h;
+	ULONG session_id;
+	GUID guid;
 
 } TERMINAL_GET_PROPERTY_REQ;
 
 
-typedef struct _TERMINAL_GET_PROPERTY_RPL {
-
-    MSG_HEADER h;                       // status is Win32 error
-    ULONG type;
-    ULONG len;
-    UCHAR data[1];
+typedef struct _TERMINAL_GET_PROPERTY_RPL
+{
+	MSG_HEADER h; // status is Win32 error
+	ULONG type;
+	ULONG len;
+	UCHAR data[1];
 
 } TERMINAL_GET_PROPERTY_RPL;
 

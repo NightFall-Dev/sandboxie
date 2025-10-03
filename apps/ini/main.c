@@ -20,8 +20,8 @@
 //---------------------------------------------------------------------------
 
 
-#include "global.h"
 #include "common/my_version.h"
+#include "global.h"
 
 
 //---------------------------------------------------------------------------
@@ -58,10 +58,10 @@
 //---------------------------------------------------------------------------
 
 
-void UsageError(const WCHAR *text)
+void UsageError(const WCHAR* text)
 {
-    printf("Usage:  %S %S\n", SBIEINI, text);
-    ExitProcess(ERRLVL_CMDLINE);
+	printf("Usage:  %S %S\n", SBIEINI, text);
+	ExitProcess(ERRLVL_CMDLINE);
 }
 
 
@@ -72,14 +72,18 @@ void UsageError(const WCHAR *text)
 
 int __cdecl wmain(void)
 {
-    CmdParse();
-    if (CmdIs(L"query") || CmdIs(L"queryex"))
-        return DoQuery();
-    if (CmdIs(L"set") || CmdIs(L"append")
-            || CmdIs(L"insert") || CmdIs(L"delete"))
-        return DoUpdate();
-    else {
-        UsageError(L"<query|queryex|set|append|insert|delete>");
-        return ERRLVL_CMDLINE;  // not reached
-    }
+	CmdParse();
+	if (CmdIs(L"query") || CmdIs(L"queryex"))
+	{
+		return DoQuery();
+	}
+	if (CmdIs(L"set") || CmdIs(L"append") || CmdIs(L"insert") || CmdIs(L"delete"))
+	{
+		return DoUpdate();
+	}
+	else
+	{
+		UsageError(L"<query|queryex|set|append|insert|delete>");
+		return ERRLVL_CMDLINE; // not reached
+	}
 }

@@ -28,31 +28,26 @@
 
 class PStoreServer
 {
-
 public:
-
-    PStoreServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    MSG_HEADER *GetTypeInfo(MSG_HEADER *msg);
-
-    MSG_HEADER *GetSubtypeInfo(MSG_HEADER *msg);
-
-    MSG_HEADER *ReadItem(MSG_HEADER *msg);
-
-    MSG_HEADER *EnumTypes(MSG_HEADER *msg);
-
-    MSG_HEADER *EnumItems(MSG_HEADER *msg);
-
-    static DWORD connectToPStore(void *__this);
+	PStoreServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    void *m_pStore;
+	MSG_HEADER* GetTypeInfo(MSG_HEADER* msg);
 
+	MSG_HEADER* GetSubtypeInfo(MSG_HEADER* msg);
+
+	MSG_HEADER* ReadItem(MSG_HEADER* msg);
+
+	MSG_HEADER* EnumTypes(MSG_HEADER* msg);
+
+	MSG_HEADER* EnumItems(MSG_HEADER* msg);
+
+	static DWORD connectToPStore(void* __this);
+
+protected:
+	void* m_pStore;
 };
 
 

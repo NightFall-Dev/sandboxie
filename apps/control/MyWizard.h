@@ -24,58 +24,47 @@
 #define _MY_MYWIZARD_H
 
 
-#include "apps/common/Layout.h"
 #include "BaseDialog.h"
+#include "apps/common/Layout.h"
 
 
 class CMyWizardPage : public CLayoutPropertyPage
 {
-
 protected:
+	void SetPageTitle(const CString& text);
+	void SetPageTitle(ULONG msgid);
 
-    void SetPageTitle(const CString &text);
-    void SetPageTitle(ULONG msgid);
-
-    CStatic *CreateStatic(
-        const CString &text, const CPoint &pos, const CPoint &size);
-    CStatic *CreateStatic(
-        ULONG msgid, const CPoint &pos, const CPoint &size);
+	CStatic* CreateStatic(const CString& text, const CPoint& pos, const CPoint& size);
+	CStatic* CreateStatic(ULONG msgid, const CPoint& pos, const CPoint& size);
 
 public:
-
-    CMyWizardPage(int page_num);
-
+	CMyWizardPage(int page_num);
 };
 
 
 class CMyWizard : public CPropertySheet
 {
+protected:
+	DECLARE_MESSAGE_MAP()
+
+	CBaseDialog* m_pBaseDialog;
+
+	CPtrList m_pages;
+
+	ULONG m_title_msgid;
 
 protected:
+	void AddPage(CMyWizardPage* page);
 
-    DECLARE_MESSAGE_MAP()
+	virtual BOOL OnInitDialog();
 
-    CBaseDialog *m_pBaseDialog;
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 
-    CPtrList m_pages;
-
-    ULONG m_title_msgid;
-
-protected:
-
-    void AddPage(CMyWizardPage *page);
-
-    virtual BOOL OnInitDialog();
-
-    afx_msg void OnSize(UINT nType, int cx, int cy);
-
-    afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
+	afx_msg void OnNcLButtonDown(UINT nHitTest, CPoint point);
 
 public:
-
-    CMyWizard(CWnd *pParentWnd, ULONG title_msgid);
-    ~CMyWizard();
-
+	CMyWizard(CWnd* pParentWnd, ULONG title_msgid);
+	~CMyWizard();
 };
 
 

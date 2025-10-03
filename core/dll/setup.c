@@ -19,12 +19,11 @@
 // Device Setup
 //---------------------------------------------------------------------------
 
+#include "common/my_version.h"
 #include "dll.h"
 
-#include <windows.h>
 #include <setupapi.h>
-#include "dll.h"
-#include "common/my_version.h"
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -32,46 +31,30 @@
 //---------------------------------------------------------------------------
 
 
-static ULONG Setup_VerifyCatalogFile(const WCHAR *CatalogFullPath);
+static ULONG Setup_VerifyCatalogFile(const WCHAR* CatalogFullPath);
 
-static ULONG Setup_CM_Add_Driver_PackageW(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10);
+static ULONG Setup_CM_Add_Driver_PackageW(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10);
 
-static ULONG Setup_CM_Add_Driver_Package_ExW(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10, ULONG_PTR Unknown11);
+static ULONG Setup_CM_Add_Driver_Package_ExW(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10, ULONG_PTR Unknown11);
 
 
 //---------------------------------------------------------------------------
 
 
-typedef ULONG (*P_VerifyCatalogFile)(const WCHAR *CatalogFullPath);
+typedef ULONG (*P_VerifyCatalogFile)(const WCHAR* CatalogFullPath);
 
-typedef ULONG (*P_CM_Add_Driver_PackageW)(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10);
+typedef ULONG (*P_CM_Add_Driver_PackageW)(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10);
 
-typedef ULONG (*P_CM_Add_Driver_Package_ExW)(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10, ULONG_PTR Unknown11);
+typedef ULONG (*P_CM_Add_Driver_Package_ExW)(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10, ULONG_PTR Unknown11);
 
 
 //---------------------------------------------------------------------------
 
 
-static P_VerifyCatalogFile      __sys_VerifyCatalogFile     = NULL;
+static P_VerifyCatalogFile __sys_VerifyCatalogFile = NULL;
 
-static P_CM_Add_Driver_PackageW     __sys_CM_Add_Driver_PackageW    = NULL;
-static P_CM_Add_Driver_Package_ExW  __sys_CM_Add_Driver_Package_ExW = NULL;
+static P_CM_Add_Driver_PackageW __sys_CM_Add_Driver_PackageW       = NULL;
+static P_CM_Add_Driver_Package_ExW __sys_CM_Add_Driver_Package_ExW = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -79,20 +62,22 @@ static P_CM_Add_Driver_Package_ExW  __sys_CM_Add_Driver_Package_ExW = NULL;
 //---------------------------------------------------------------------------
 
 
-#define DO_CALL_HOOK(name,devName)                              \
-    __sys_##name = SbieDll_Hook(#name, __sys_##name, devName);  \
-    if (! __sys_##name) return FALSE;
+#define DO_CALL_HOOK(name, devName)                            \
+	__sys_##name = SbieDll_Hook(#name, __sys_##name, devName); \
+	if (!__sys_##name)                                         \
+		return FALSE;
 
-#define HOOK_AW(func)                                           \
-    DO_CALL_HOOK(func##A,Dev_##func##A);                        \
-    DO_CALL_HOOK(func##W,Dev_##func##W);
+#define HOOK_AW(func)                     \
+	DO_CALL_HOOK(func##A, Dev_##func##A); \
+	DO_CALL_HOOK(func##W, Dev_##func##W);
 
-#define HOOK(func)                                              \
-    DO_CALL_HOOK(func,Dev_##func);
+#define HOOK(func) DO_CALL_HOOK(func, Dev_##func);
 
-#define FIND_EP(x) __sys_##x = (P_##x) GetProcAddress(module, #x)
-#define FIND_EP1(x,s) __sys_##x##s = (P_##x) GetProcAddress(module, #x#s)
-#define FIND_EP2(x) FIND_EP1(x,A); FIND_EP1(x,W);
+#define FIND_EP(x) __sys_##x = (P_##x)GetProcAddress(module, #x)
+#define FIND_EP1(x, s) __sys_##x##s = (P_##x)GetProcAddress(module, #x #s)
+#define FIND_EP2(x) \
+	FIND_EP1(x, A); \
+	FIND_EP1(x, W);
 
 
 //---------------------------------------------------------------------------
@@ -102,11 +87,11 @@ static P_CM_Add_Driver_Package_ExW  __sys_CM_Add_Driver_Package_ExW = NULL;
 
 _FX BOOLEAN Setup_Init_SetupApi(HMODULE module)
 {
-    FIND_EP(VerifyCatalogFile);
+	FIND_EP(VerifyCatalogFile);
 
-    DO_CALL_HOOK(VerifyCatalogFile,Setup_VerifyCatalogFile);
+	DO_CALL_HOOK(VerifyCatalogFile, Setup_VerifyCatalogFile);
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -115,15 +100,16 @@ _FX BOOLEAN Setup_Init_SetupApi(HMODULE module)
 //---------------------------------------------------------------------------
 
 
-_FX ULONG Setup_VerifyCatalogFile(const WCHAR *CatalogFullPath)
+_FX ULONG Setup_VerifyCatalogFile(const WCHAR* CatalogFullPath)
 {
-    // ERROR_AUTHENTICODE_TRUSTED_PUBLISHER     (APPLICATION_ERROR_MASK|ERROR_SEVERITY_ERROR|0x241)
-    ULONG rc = __sys_VerifyCatalogFile(CatalogFullPath);
-    if (rc != 0 && rc != ERROR_AUTHENTICODE_TRUSTED_PUBLISHER) {
-        SetLastError(0);
-        rc = 0;
-    }
-    return rc;
+	// ERROR_AUTHENTICODE_TRUSTED_PUBLISHER     (APPLICATION_ERROR_MASK|ERROR_SEVERITY_ERROR|0x241)
+	ULONG rc = __sys_VerifyCatalogFile(CatalogFullPath);
+	if (rc != 0 && rc != ERROR_AUTHENTICODE_TRUSTED_PUBLISHER)
+	{
+		SetLastError(0);
+		rc = 0;
+	}
+	return rc;
 }
 
 
@@ -134,19 +120,19 @@ _FX ULONG Setup_VerifyCatalogFile(const WCHAR *CatalogFullPath)
 
 _FX BOOLEAN Setup_Init_CfgMgr32(HMODULE module)
 {
-    FIND_EP(CM_Add_Driver_PackageW);
-    FIND_EP(CM_Add_Driver_Package_ExW);
+	FIND_EP(CM_Add_Driver_PackageW);
+	FIND_EP(CM_Add_Driver_Package_ExW);
 
-    if (__sys_CM_Add_Driver_PackageW) {
-        DO_CALL_HOOK(
-            CM_Add_Driver_PackageW,Setup_CM_Add_Driver_PackageW);
-    }
-    if (__sys_CM_Add_Driver_Package_ExW) {
-        DO_CALL_HOOK(
-            CM_Add_Driver_Package_ExW,Setup_CM_Add_Driver_Package_ExW);
-    }
+	if (__sys_CM_Add_Driver_PackageW)
+	{
+		DO_CALL_HOOK(CM_Add_Driver_PackageW, Setup_CM_Add_Driver_PackageW);
+	}
+	if (__sys_CM_Add_Driver_Package_ExW)
+	{
+		DO_CALL_HOOK(CM_Add_Driver_Package_ExW, Setup_CM_Add_Driver_Package_ExW);
+	}
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -155,14 +141,10 @@ _FX BOOLEAN Setup_Init_CfgMgr32(HMODULE module)
 //---------------------------------------------------------------------------
 
 
-_FX ULONG Setup_CM_Add_Driver_PackageW(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10)
+_FX ULONG Setup_CM_Add_Driver_PackageW(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10)
 {
-    SbieApi_Log(2205, L"CM Add Driver Package");
-    return 0;
+	SbieApi_Log(2205, L"CM Add Driver Package");
+	return 0;
 }
 
 
@@ -171,12 +153,8 @@ _FX ULONG Setup_CM_Add_Driver_PackageW(
 //---------------------------------------------------------------------------
 
 
-_FX ULONG Setup_CM_Add_Driver_Package_ExW(
-    ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3,
-    ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6,
-    ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9,
-    ULONG_PTR Unknown10, ULONG_PTR Unknown11)
+_FX ULONG Setup_CM_Add_Driver_Package_ExW(ULONG_PTR Unknown1, ULONG_PTR Unknown2, ULONG_PTR Unknown3, ULONG_PTR Unknown4, ULONG_PTR Unknown5, ULONG_PTR Unknown6, ULONG_PTR Unknown7, ULONG_PTR Unknown8, ULONG_PTR Unknown9, ULONG_PTR Unknown10, ULONG_PTR Unknown11)
 {
-    SbieApi_Log(2205, L"CM Add Driver Package Ex");
-    return 0;
+	SbieApi_Log(2205, L"CM Add Driver Package Ex");
+	return 0;
 }

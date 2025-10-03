@@ -29,95 +29,85 @@
 
 class CFileListCtrl : public CMyListCtrl
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    CString m_BoxName;
-    CString m_SaveBoxName;
-    CStringList m_CutPaths;
-    int m_anyQuickRecoverFiles;
-    int m_RefreshCounter;
-    bool m_DontClearCutMarks;
+	CString m_BoxName;
+	CString m_SaveBoxName;
+	CStringList m_CutPaths;
+	int m_anyQuickRecoverFiles;
+	int m_RefreshCounter;
+	bool m_DontClearCutMarks;
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    virtual afx_msg void OnSize(UINT nType, int cx, int cy);
+	virtual afx_msg void OnSize(UINT nType, int cx, int cy);
 
-    void UpdateScrollBar();
+	void UpdateScrollBar();
 
-    virtual afx_msg void OnComboSelect();
+	virtual afx_msg void OnComboSelect();
 
-    afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-    afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 
-    void OnArrowKeyDown(UINT nChar);
+	void OnArrowKeyDown(UINT nChar);
 
-    void MyEnsureVisible(int index);
+	void MyEnsureVisible(int index);
 
-    afx_msg void OnDestroyClipboard();
+	afx_msg void OnDestroyClipboard();
 
-    void RebuildCombo();
-    void RebuildFiles();
+	void RebuildCombo();
+	void RebuildFiles();
 
-    int InsertFolder(CBoxFile &boxfile, const CString &_boxpath,
-                     int ListIndex, int ListIndent);
-    void InsertFile(const CString &VirtualPath,
-                    const CString &FolderCopyPath, ULONG64 bytes64,
-                    int ListIndex, int ListIndent);
-    void RemoveFolderItems(int ListIndex, int ListIndent);
+	int InsertFolder(CBoxFile& boxfile, const CString& _boxpath, int ListIndex, int ListIndent);
+	void InsertFile(const CString& VirtualPath, const CString& FolderCopyPath, ULONG64 bytes64, int ListIndex, int ListIndent);
+	void RemoveFolderItems(int ListIndex, int ListIndent);
 
-    void SetFocusByPath(CString SaveItemPath);
+	void SetFocusByPath(CString SaveItemPath);
 
-    virtual afx_msg void OnRefreshPosted();
+	virtual afx_msg void OnRefreshPosted();
 
-    virtual afx_msg void OnClick(NMHDR *pNMHDR, LRESULT *pResult);
+	virtual afx_msg void OnClick(NMHDR* pNMHDR, LRESULT* pResult);
 
-    bool IsPhysicalItem(int ListIndex, bool *pIsFolder,
-                        CString *pTruePath, CString *pCopyPath);
+	bool IsPhysicalItem(int ListIndex, bool* pIsFolder, CString* pTruePath, CString* pCopyPath);
 
-    bool IsCutPath(const CString &CopyPath);
+	bool IsCutPath(const CString& CopyPath);
 
-    bool OnContextMenuMultiple(CMenu *pMenu, CPoint pt);
-    bool OnContextMenuSingle(int index, CMenu *pMenu, CPoint pt);
+	bool OnContextMenuMultiple(CMenu* pMenu, CPoint pt);
+	bool OnContextMenuSingle(int index, CMenu* pMenu, CPoint pt);
 
-    afx_msg void OnCmdRun();
-    afx_msg void OnCmdCreateShortcut();
-    afx_msg void OnCmdCut();
-    afx_msg void OnCmdRecoverFileOrFolder();
-    afx_msg void OnCmdAddOrRemoveFolder();
+	afx_msg void OnCmdRun();
+	afx_msg void OnCmdCreateShortcut();
+	afx_msg void OnCmdCut();
+	afx_msg void OnCmdRecoverFileOrFolder();
+	afx_msg void OnCmdAddOrRemoveFolder();
 
-    void AddItemsToRecoverRecursive(
-        CStringList &ItemsToRecover, const CString &RelativePath,
-        const CString &VirtualPath, const CString &CopyPath);
+	void AddItemsToRecoverRecursive(CStringList& ItemsToRecover, const CString& RelativePath, const CString& VirtualPath, const CString& CopyPath);
 
-    bool ShouldShowFileInQuickRecovery(
-        const WCHAR *file_name, ULONG64 bytes64,
-        const CString &FileCopyPath);
-    bool CompareSameFiles(const CString &CopyPath);
+	bool ShouldShowFileInQuickRecovery(const WCHAR* file_name, ULONG64 bytes64, const CString& FileCopyPath);
+	bool CompareSameFiles(const CString& CopyPath);
 
-    void InspectClipboard();
+	void InspectClipboard();
 
 public:
+	void SetBoxNameForDialogMode(const WCHAR* BoxName);
+	const CString& GetBoxNameForDialogMode() const;
+	bool AnyQuickRecoverFiles() const;
 
-    void SetBoxNameForDialogMode(const WCHAR *BoxName);
-    const CString &GetBoxNameForDialogMode() const;
-    bool AnyQuickRecoverFiles() const;
+	BOOL Create(CWnd* pParentWnd);
 
-    BOOL Create(CWnd *pParentWnd);
+	virtual void RefreshContent();
 
-    virtual void RefreshContent();
+	virtual CBox& GetSelectedBox(CWnd* pWnd, CPoint pt) const;
+	virtual void GetSelectedItemPosition(CPoint& pt) const;
+	void OnContextMenu(CWnd* pWnd, CPoint pt);
 
-    virtual CBox &GetSelectedBox(CWnd *pWnd, CPoint pt) const;
-    virtual void GetSelectedItemPosition(CPoint &pt) const;
-    void OnContextMenu(CWnd *pWnd, CPoint pt);
-
-    void SelectAllItems(bool select);
-
+	void SelectAllItems(bool select);
 };
 
 

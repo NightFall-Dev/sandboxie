@@ -19,12 +19,12 @@
 // Temporarily Disable Forced Programs Dialog Box
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "DisableForceDialog.h"
 
 #include "Boxes.h"
+#include "MyApp.h"
 #include "SbieIni.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -40,12 +40,12 @@ static const CString _ForceDisableSeconds(L"ForceDisableSeconds");
 //---------------------------------------------------------------------------
 
 
-CDisableForceDialog::CDisableForceDialog(CWnd *pParentWnd)
-    : CBaseDialog(pParentWnd, L"DISABLE_FORCE_DIALOG")
+CDisableForceDialog::CDisableForceDialog(CWnd* pParentWnd) :
+    CBaseDialog(pParentWnd, L"DISABLE_FORCE_DIALOG")
 {
-    m_endedok = FALSE;
+	m_endedok = FALSE;
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -66,26 +66,24 @@ CDisableForceDialog::~CDisableForceDialog()
 
 BOOL CDisableForceDialog::OnInitDialog()
 {
-    SetWindowText(CMyMsg(MSG_3651));
+	SetWindowText(CMyMsg(MSG_3651));
 
-    GetDlgItem(ID_DISABLE_FORCE_LABEL_1)->SetWindowText(CMyMsg(MSG_3652));
-    GetDlgItem(ID_DISABLE_FORCE_LABEL_2)->SetWindowText(CMyMsg(MSG_3653));
-    GetDlgItem(ID_DISABLE_FORCE_LABEL_3)->SetWindowText(CMyMsg(MSG_3654));
-    GetDlgItem(ID_DISABLE_FORCE_LABEL_4)->SetWindowText(CMyMsg(MSG_3599));
+	GetDlgItem(ID_DISABLE_FORCE_LABEL_1)->SetWindowText(CMyMsg(MSG_3652));
+	GetDlgItem(ID_DISABLE_FORCE_LABEL_2)->SetWindowText(CMyMsg(MSG_3653));
+	GetDlgItem(ID_DISABLE_FORCE_LABEL_3)->SetWindowText(CMyMsg(MSG_3654));
+	GetDlgItem(ID_DISABLE_FORCE_LABEL_4)->SetWindowText(CMyMsg(MSG_3599));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
 
-    int seconds;
-    CSbieIni::GetInstance().GetNum(
-        _GlobalSettings, _ForceDisableSeconds, seconds, 10);
-    SetDlgItemInt(ID_DISABLE_FORCE_EDIT, seconds);
+	int seconds;
+	CSbieIni::GetInstance().GetNum(_GlobalSettings, _ForceDisableSeconds, seconds, 10);
+	SetDlgItemInt(ID_DISABLE_FORCE_EDIT, seconds);
 
-    CSpinButtonCtrl *spin =
-        (CSpinButtonCtrl *)GetDlgItem(ID_DISABLE_FORCE_SPIN);
-    spin->SetRange(0, 29999);
+	CSpinButtonCtrl* spin = (CSpinButtonCtrl*)GetDlgItem(ID_DISABLE_FORCE_SPIN);
+	spin->SetRange(0, 29999);
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -96,21 +94,20 @@ BOOL CDisableForceDialog::OnInitDialog()
 
 void CDisableForceDialog::OnOK()
 {
-    int seconds = GetDlgItemInt(ID_DISABLE_FORCE_EDIT);
-    BOOL ok = CSbieIni::GetInstance().SetNum(
-        _GlobalSettings, _ForceDisableSeconds, seconds);
-    if (! ok) {
-        CSbieIni::GetInstance().GetNum(
-            _GlobalSettings, _ForceDisableSeconds, seconds, 10);
-        SetDlgItemInt(ID_DISABLE_FORCE_EDIT, seconds);
-        ((CEdit *)GetDlgItem(ID_DISABLE_FORCE_EDIT))->SetSel(0, -1);
-        GetDlgItem(ID_DISABLE_FORCE_EDIT)->SetFocus();
+	int seconds = GetDlgItemInt(ID_DISABLE_FORCE_EDIT);
+	BOOL ok     = CSbieIni::GetInstance().SetNum(_GlobalSettings, _ForceDisableSeconds, seconds);
+	if (!ok)
+	{
+		CSbieIni::GetInstance().GetNum(_GlobalSettings, _ForceDisableSeconds, seconds, 10);
+		SetDlgItemInt(ID_DISABLE_FORCE_EDIT, seconds);
+		((CEdit*)GetDlgItem(ID_DISABLE_FORCE_EDIT))->SetSel(0, -1);
+		GetDlgItem(ID_DISABLE_FORCE_EDIT)->SetFocus();
 
-        return;
-    }
+		return;
+	}
 
-    m_endedok = TRUE;
-    EndDialog(0);
+	m_endedok = TRUE;
+	EndDialog(0);
 }
 
 
@@ -121,5 +118,5 @@ void CDisableForceDialog::OnOK()
 
 BOOL CDisableForceDialog::EndedOk() const
 {
-    return m_endedok;
+	return m_endedok;
 }

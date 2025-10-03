@@ -20,8 +20,9 @@
 //---------------------------------------------------------------------------
 
 
-#include "driver.h"
 #include "mem.h"
+
+#include "driver.h"
 
 
 //---------------------------------------------------------------------------
@@ -29,39 +30,38 @@
 //---------------------------------------------------------------------------
 
 
-_FX void *Mem_AllocEx(POOL *pool, ULONG size, BOOLEAN InitMsg)
+_FX void* Mem_AllocEx(POOL* pool, ULONG size, BOOLEAN InitMsg)
 {
-
 #ifdef DEBUG_MEMORY
 
-    UCHAR *ptr = Pool_Alloc(pool, size + 64 * 2);
-    if (ptr) {
+	UCHAR* ptr = Pool_Alloc(pool, size + 64 * 2);
+	if (ptr)
+	{
+		memset(ptr, 0xCC, 64);
+		ptr += 64;
+		memset(ptr + size, 0xCC, 64);
+	}
 
-        memset(ptr,         0xCC, 64);
-        ptr += 64;
-        memset(ptr + size,  0xCC, 64);
-    }
+#else !DEBUG_MEMORY
 
-#else ! DEBUG_MEMORY
-
-    void *ptr = Pool_Alloc(pool, size);
+	void* ptr = Pool_Alloc(pool, size);
 
 #endif DEBUG_MEMORY
 
-    // We can't log memory failures because the log functions alloc mem and we will get into a recursive loop
-    //if (! ptr) {
+	// We can't log memory failures because the log functions alloc mem and we will get into a recursive loop
+	//if (! ptr) {
 
-    //    if (InitMsg) {
+	//    if (InitMsg) {
 
-    //        Log_Msg0(MSG_1104);
+	//        Log_Msg0(MSG_1104);
 
-    //    } else {
+	//    } else {
 
-    //        Log_Msg_Session(MSG_1201, NULL, NULL, -1);
-    //    }
-    //}
+	//        Log_Msg_Session(MSG_1201, NULL, NULL, -1);
+	//    }
+	//}
 
-    return ptr;
+	return ptr;
 }
 
 
@@ -73,21 +73,24 @@ _FX void *Mem_AllocEx(POOL *pool, ULONG size, BOOLEAN InitMsg)
 #ifdef DEBUG_MEMORY
 
 
-_FX void Mem_Free(void *ptr, ULONG size)
+_FX void Mem_Free(void* ptr, ULONG size)
 {
-    int i;
-    UCHAR *pre, *post;
+	int i;
+	UCHAR *pre, *post;
 
-    pre  = ((UCHAR *)ptr) - 64;
-    post = ((UCHAR *)ptr) + size;
+	pre  = ((UCHAR*)ptr) - 64;
+	post = ((UCHAR*)ptr) + size;
 
-    for (i = 0; i < 64; ++i)
-        if (pre[i] != 0xCC || post[i] != 0xCC) {
-            DbgPrint("Corruption detected in pool block %08X\n", ptr);
-            __debugbreak();
-        }
+	for (i = 0; i < 64; ++i)
+	{
+		if (pre[i] != 0xCC || post[i] != 0xCC)
+		{
+			DbgPrint("Corruption detected in pool block %08X\n", ptr);
+			__debugbreak();
+		}
+	}
 
-    Pool_Free(pre, size + 64 * 2);
+	Pool_Free(pre, size + 64 * 2);
 }
 
 
@@ -99,15 +102,16 @@ _FX void Mem_Free(void *ptr, ULONG size)
 //---------------------------------------------------------------------------
 
 
-_FX WCHAR *Mem_AllocStringEx(
-    POOL *pool, const WCHAR *model_string, BOOLEAN InitMsg)
+_FX WCHAR* Mem_AllocStringEx(POOL* pool, const WCHAR* model_string, BOOLEAN InitMsg)
 {
-    WCHAR *str;
-    ULONG num_bytes = (wcslen(model_string) + 1) * sizeof(WCHAR);
-    str = Mem_AllocEx(pool, num_bytes, InitMsg);
-    if (str)
-        memcpy(str, model_string, num_bytes);
-    return str;
+	WCHAR* str;
+	ULONG num_bytes = (wcslen(model_string) + 1) * sizeof(WCHAR);
+	str             = Mem_AllocEx(pool, num_bytes, InitMsg);
+	if (str)
+	{
+		memcpy(str, model_string, num_bytes);
+	}
+	return str;
 }
 
 
@@ -116,10 +120,10 @@ _FX WCHAR *Mem_AllocStringEx(
 //---------------------------------------------------------------------------
 
 
-_FX void Mem_FreeString(WCHAR *string)
+_FX void Mem_FreeString(WCHAR* string)
 {
-    ULONG num_bytes = (wcslen(string) + 1) * sizeof(WCHAR);
-    Mem_Free(string, num_bytes);
+	ULONG num_bytes = (wcslen(string) + 1) * sizeof(WCHAR);
+	Mem_Free(string, num_bytes);
 }
 
 
@@ -128,17 +132,20 @@ _FX void Mem_FreeString(WCHAR *string)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Mem_GetLockResource(PERESOURCE *ppResource, BOOLEAN InitMsg)
+_FX BOOLEAN Mem_GetLockResource(PERESOURCE* ppResource, BOOLEAN InitMsg)
 {
-    *ppResource = ExAllocatePoolWithTag(
-                                    NonPagedPool, sizeof(ERESOURCE), tzuk);
-    if (*ppResource) {
-        ExInitializeResourceLite(*ppResource);
-        return TRUE;
-    } else {
-        Log_Msg0(InitMsg ? MSG_1104 : MSG_1201);
-        return FALSE;
-    }
+	*ppResource = ExAllocatePoolWithTag(NonPagedPool, sizeof(ERESOURCE), tzuk);
+	if (*ppResource)
+	{
+		ExInitializeResourceLite(*ppResource);
+		return TRUE;
+	}
+	else
+	{
+		Log_Msg0(InitMsg ? MSG_1104 : MSG_1201)
+			;
+			return FALSE;
+	}
 }
 
 
@@ -147,11 +154,12 @@ _FX BOOLEAN Mem_GetLockResource(PERESOURCE *ppResource, BOOLEAN InitMsg)
 //---------------------------------------------------------------------------
 
 
-_FX void Mem_FreeLockResource(PERESOURCE *ppResource)
+_FX void Mem_FreeLockResource(PERESOURCE* ppResource)
 {
-    if (*ppResource) {
-        ExDeleteResourceLite(*ppResource);
-        ExFreePoolWithTag(*ppResource, tzuk);
-        *ppResource = NULL;
-    }
+	if (*ppResource)
+	{
+		ExDeleteResourceLite(*ppResource);
+		ExFreePoolWithTag(*ppResource, tzuk);
+		*ppResource = NULL;
+	}
 }

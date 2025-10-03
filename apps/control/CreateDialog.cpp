@@ -20,10 +20,10 @@
 //---------------------------------------------------------------------------
 
 
-#include "MyApp.h"
 #include "CreateDialog.h"
 
 #include "Boxes.h"
+#include "MyApp.h"
 #include "SbieIni.h"
 #include "common/win32_ntddk.h"
 
@@ -35,7 +35,7 @@
 
 BEGIN_MESSAGE_MAP(CCreateDialog, CBaseDialog)
 
-    ON_CONTROL(EN_CHANGE, ID_CREATE_NAME, OnNameChange)
+ON_CONTROL(EN_CHANGE, ID_CREATE_NAME, OnNameChange)
 
 END_MESSAGE_MAP()
 
@@ -45,23 +45,26 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CCreateDialog::CCreateDialog(CWnd *pParentWnd, const CString origName)
-    : CBaseDialog(pParentWnd, L"CREATE_DIALOG")
+CCreateDialog::CCreateDialog(CWnd* pParentWnd, const CString origName) :
+    CBaseDialog(pParentWnd, L"CREATE_DIALOG")
 {
-    //
-    // display dialog
-    //
+	//
+	// display dialog
+	//
 
-    if (origName.IsEmpty()) {
-        m_title_id = MSG_3665;
-        m_explain_id = MSG_3666;
-    } else {
-        m_name = origName;
-        m_title_id = MSG_3476;
-        m_explain_id = MSG_3528;
-    }
+	if (origName.IsEmpty())
+	{
+		m_title_id   = MSG_3665;
+		m_explain_id = MSG_3666;
+	}
+	else
+	{
+		m_name       = origName;
+		m_title_id   = MSG_3476;
+		m_explain_id = MSG_3528;
+	}
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -82,37 +85,38 @@ CCreateDialog::~CCreateDialog()
 
 BOOL CCreateDialog::OnInitDialog()
 {
-    CString text = CMyMsg(m_title_id);
-    text.Remove(L'&');
-    SetWindowText(text);
+	CString text = CMyMsg(m_title_id);
+	text.Remove(L'&');
+	SetWindowText(text);
 
-    GetDlgItem(ID_CREATE_EXPLAIN)->SetWindowText(CMyMsg(m_explain_id));
+	GetDlgItem(ID_CREATE_EXPLAIN)->SetWindowText(CMyMsg(m_explain_id));
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3002));
 
-    if (m_name.IsEmpty()) {
+	if (m_name.IsEmpty())
+	{
+		GetDlgItem(ID_CREATE_COPY_TEXT)->SetWindowText(CMyMsg(MSG_3669));
 
-        GetDlgItem(ID_CREATE_COPY_TEXT)->SetWindowText(CMyMsg(MSG_3669));
+		MakeLTR(ID_CREATE_NAME);
+		MakeLTR(ID_CREATE_COPY_COMBO);
+		CComboBox* pCombo = (CComboBox*)GetDlgItem(ID_CREATE_COPY_COMBO);
+		pCombo->AddString(CMyMsg(MSG_3769));
 
-        MakeLTR(ID_CREATE_NAME);
-        MakeLTR(ID_CREATE_COPY_COMBO);
-        CComboBox *pCombo = (CComboBox *)GetDlgItem(ID_CREATE_COPY_COMBO);
-        pCombo->AddString(CMyMsg(MSG_3769));
+		CBoxes& boxes = CBoxes::GetInstance();
+		for (int i = 1; i < boxes.GetSize(); ++i)
+		{
+			pCombo->AddString(boxes.GetBox(i).GetName());
+		}
+		pCombo->SetCurSel(0);
+	}
+	else
+	{
+		GetDlgItem(ID_CREATE_COPY_TEXT)->ShowWindow(SW_HIDE);
+		GetDlgItem(ID_CREATE_COPY_COMBO)->ShowWindow(SW_HIDE);
+	}
 
-        CBoxes &boxes = CBoxes::GetInstance();
-        for (int i = 1; i < boxes.GetSize(); ++i)
-            pCombo->AddString(boxes.GetBox(i).GetName());
-        pCombo->SetCurSel(0);
-
-    } else {
-
-        GetDlgItem(ID_CREATE_COPY_TEXT)->ShowWindow(SW_HIDE);
-        GetDlgItem(ID_CREATE_COPY_COMBO)->ShowWindow(SW_HIDE);
-
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -123,10 +127,11 @@ BOOL CCreateDialog::OnInitDialog()
 
 void CCreateDialog::OnNameChange()
 {
-    if (m_hide) {
-        GetDlgItem(ID_CREATE_ERROR)->ShowWindow(SW_HIDE);
-        m_hide = FALSE;
-    }
+	if (m_hide)
+	{
+		GetDlgItem(ID_CREATE_ERROR)->ShowWindow(SW_HIDE);
+		m_hide = FALSE;
+	}
 }
 
 
@@ -137,65 +142,86 @@ void CCreateDialog::OnNameChange()
 
 void CCreateDialog::OnOK()
 {
-    CWnd *edit = GetDlgItem(ID_CREATE_NAME);
-    CString name;
-    edit->GetWindowText(name);
+	CWnd* edit = GetDlgItem(ID_CREATE_NAME);
+	CString name;
+	edit->GetWindowText(name);
 
-    //
-    // make sure name is valid and unique
-    //
+	//
+	// make sure name is valid and unique
+	//
 
-    ULONG errmsg = 0;
+	ULONG errmsg = 0;
 
-    int i = 0;
-    int len = name.GetLength();
-    if (len <= 32) {
-        for (; i < len; ++i) {
-            if (name[i] >= L'0' && name[i] <= L'9')
-                continue;
-            if (name[i] >= L'A' && name[i] <= L'Z')
-                continue;
-            if (name[i] >= L'a' && name[i] <= L'z')
-                continue;
-            if (name[i] == L'_')
-                continue;
-            break;
-        }
-    }
+	int i   = 0;
+	int len = name.GetLength();
+	if (len <= 32)
+	{
+		for (; i < len; ++i)
+		{
+			if (name[i] >= L'0' && name[i] <= L'9')
+			{
+				continue;
+			}
+			if (name[i] >= L'A' && name[i] <= L'Z')
+			{
+				continue;
+			}
+			if (name[i] >= L'a' && name[i] <= L'z')
+			{
+				continue;
+			}
+			if (name[i] == L'_')
+			{
+				continue;
+			}
+			break;
+		}
+	}
 
-    if (i == 0 || i != len)
-        errmsg = MSG_3667;
-    else {
-        LONG rc = SbieApi_IsBoxEnabled(name);
-        if (rc == STATUS_OBJECT_TYPE_MISMATCH)
-            errmsg = MSG_3667;
-        else if (rc == STATUS_ACCOUNT_RESTRICTION)
-            errmsg = MSG_4665;
-        else if (rc != STATUS_OBJECT_NAME_NOT_FOUND)
-            errmsg = MSG_3668;
-    }
+	if (i == 0 || i != len)
+	{
+		errmsg = MSG_3667;
+	}
+	else
+	{
+		LONG rc = SbieApi_IsBoxEnabled(name);
+		if (rc == STATUS_OBJECT_TYPE_MISMATCH)
+		{
+			errmsg = MSG_3667;
+		}
+		else if (rc == STATUS_ACCOUNT_RESTRICTION)
+		{
+			errmsg = MSG_4665;
+		}
+		else if (rc != STATUS_OBJECT_NAME_NOT_FOUND)
+		{
+			errmsg = MSG_3668;
+		}
+	}
 
-    if (errmsg) {
+	if (errmsg)
+	{
+		GetDlgItem(ID_CREATE_ERROR)->SetWindowText(CMyMsg(errmsg));
+		GetDlgItem(ID_CREATE_ERROR)->ShowWindow(SW_SHOW);
+		edit->SetFocus();
+		m_hide = TRUE;
+		return;
+	}
 
-        GetDlgItem(ID_CREATE_ERROR)->SetWindowText(CMyMsg(errmsg));
-        GetDlgItem(ID_CREATE_ERROR)->ShowWindow(SW_SHOW);
-        edit->SetFocus();
-        m_hide = TRUE;
-        return;
-    }
+	//
+	// finish
+	//
 
-    //
-    // finish
-    //
+	m_name = name;
 
-    m_name = name;
+	CComboBox* pCombo = (CComboBox*)GetDlgItem(ID_CREATE_COPY_COMBO);
+	i                 = pCombo->GetCurSel();
+	if (i != 0 && i != CB_ERR)
+	{
+		pCombo->GetLBText(i, m_oldname);
+	}
 
-    CComboBox *pCombo = (CComboBox *)GetDlgItem(ID_CREATE_COPY_COMBO);
-    i = pCombo->GetCurSel();
-    if (i != 0 && i != CB_ERR)
-        pCombo->GetLBText(i, m_oldname);
-
-    EndDialog(0);
+	EndDialog(0);
 }
 
 
@@ -206,7 +232,7 @@ void CCreateDialog::OnOK()
 
 CString CCreateDialog::GetName() const
 {
-    return m_name;
+	return m_name;
 }
 
 
@@ -217,5 +243,5 @@ CString CCreateDialog::GetName() const
 
 CString CCreateDialog::GetOldName() const
 {
-    return m_oldname;
+	return m_oldname;
 }

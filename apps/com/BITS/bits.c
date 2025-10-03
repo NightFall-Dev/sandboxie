@@ -23,11 +23,12 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "common/defines.h"
 #include "common/my_version.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -35,7 +36,7 @@ typedef long NTSTATUS;
 //---------------------------------------------------------------------------
 
 
-const WCHAR *ServiceTitle = SANDBOXIE L" BITS";
+const WCHAR* ServiceTitle = SANDBOXIE L" BITS";
 #include "../common.h"
 
 
@@ -44,25 +45,11 @@ const WCHAR *ServiceTitle = SANDBOXIE L" BITS";
 //---------------------------------------------------------------------------
 
 
-HANDLE my_CreateFileMappingW(
-    HANDLE hFile,
-    LPSECURITY_ATTRIBUTES lpAttributes,
-    DWORD flProtect,
-    DWORD dwMaximumSizeHigh,
-    DWORD dwMaximumSizeLow,
-    LPCWSTR lpName)
+HANDLE my_CreateFileMappingW(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName)
 {
-    typedef HANDLE (__stdcall *P_CreateFileMappingW)(
-        HANDLE hFile,
-        LPSECURITY_ATTRIBUTES lpAttributes,
-        DWORD flProtect,
-        DWORD dwMaximumSizeHigh,
-        DWORD dwMaximumSizeLow,
-        LPCWSTR lpName);
+	typedef HANDLE(__stdcall * P_CreateFileMappingW)(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName);
 
-    return ((P_CreateFileMappingW)__sys_CreateFileMappingW)(
-        hFile, lpAttributes, flProtect,
-        dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+	return ((P_CreateFileMappingW)__sys_CreateFileMappingW)(hFile, lpAttributes, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
 }
 
 
@@ -74,11 +61,9 @@ HANDLE my_CreateFileMappingW(
 ULONG_PTR __sys_LogonUserW = 0;
 
 
-BOOL my_LogonUserW(
-    const WCHAR *UserName, const WCHAR *DomainName, const WCHAR *Password,
-    DWORD dwLogonType, DWORD dwLogonProvider, HANDLE *phToken)
+BOOL my_LogonUserW(const WCHAR* UserName, const WCHAR* DomainName, const WCHAR* Password, DWORD dwLogonType, DWORD dwLogonProvider, HANDLE* phToken)
 {
-    return OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, phToken);
+	return OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, phToken);
 }
 
 
@@ -88,27 +73,27 @@ BOOL my_LogonUserW(
 
 
 __declspec(dllimport) HRESULT CoImpersonateClient(void);
-BOOL WTSQueryUserToken(ULONG SessionId, HANDLE *pToken);
+BOOL WTSQueryUserToken(ULONG SessionId, HANDLE* pToken);
 
 
 ULONG_PTR __sys_CoImpersonateClient = 0;
 
 HRESULT my_CoImpersonateClient(void)
 {
-    HANDLE hPriToken, hImpToken;
-    BOOL ok;
+	HANDLE hPriToken, hImpToken;
+	BOOL ok;
 
-    if (WTSQueryUserToken(0, &hPriToken)) {
-        ok = DuplicateTokenEx(
-                hPriToken, TOKEN_ALL_ACCESS, NULL,
-                SecurityImpersonation, TokenImpersonation, &hImpToken);
-        if (ok) {
-            ok = SetThreadToken(NULL, hImpToken);
-            CloseHandle(hImpToken);
-        }
-        CloseHandle(hPriToken);
-    }
-    return (ok ? S_OK : CO_E_FAILEDTOIMPERSONATE);
+	if (WTSQueryUserToken(0, &hPriToken))
+	{
+		ok = DuplicateTokenEx(hPriToken, TOKEN_ALL_ACCESS, NULL, SecurityImpersonation, TokenImpersonation, &hImpToken);
+		if (ok)
+		{
+			ok = SetThreadToken(NULL, hImpToken);
+			CloseHandle(hImpToken);
+		}
+		CloseHandle(hPriToken);
+	}
+	return (ok ? S_OK : CO_E_FAILEDTOIMPERSONATE);
 }
 
 
@@ -116,22 +101,18 @@ HRESULT my_CoImpersonateClient(void)
 // WinMain
 //---------------------------------------------------------------------------
 
-int __stdcall WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine, int nCmdShow)
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    WCHAR ServiceName[16];
-    BOOL hook_success = TRUE;
-    BOOL ok;
+	WCHAR ServiceName[16];
+	BOOL hook_success = TRUE;
+	BOOL ok;
 
-    SetupExceptionHandler();
+	SetupExceptionHandler();
 
-    HOOK_WIN32(CoImpersonateClient);
-    HOOK_WIN32(LogonUserW);
+	HOOK_WIN32(CoImpersonateClient);
+	HOOK_WIN32(LogonUserW);
 
-    wcscpy(ServiceName, L"BITS");
-    ok = Service_Start_ServiceMain(
-                ServiceName, L"qmgr.dll", "ServiceMain", FALSE);
-    return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+	wcscpy(ServiceName, L"BITS");
+	ok = Service_Start_ServiceMain(ServiceName, L"qmgr.dll", "ServiceMain", FALSE);
+	return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }

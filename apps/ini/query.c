@@ -23,9 +23,9 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include "global.h"
-#include "core/dll/sbiedll.h"
 #include "common/win32_ntddk.h"
+#include "core/dll/sbiedll.h"
+#include "global.h"
 
 
 //---------------------------------------------------------------------------
@@ -35,31 +35,39 @@ typedef long NTSTATUS;
 
 void DoListSections(void)
 {
-    ULONG index = -1;
+	ULONG index = -1;
 
-    BOOLEAN boxes = FALSE;
-    if (CmdOpt(L"boxes"))
-        boxes = TRUE;
+	BOOLEAN boxes = FALSE;
+	if (CmdOpt(L"boxes"))
+	{
+		boxes = TRUE;
+	}
 
-    if (! boxes)
-        printf("GlobalSettings\n");
+	if (!boxes)
+	{
+		printf("GlobalSettings\n");
+	}
 
-    while (1) {
+	while (1)
+	{
+		WCHAR section_name[34];
+		index = SbieApi_EnumBoxesEx(index | CONF_GET_NO_TEMPLS, section_name, TRUE);
+		if (index == -1)
+		{
+			break;
+		}
 
-        WCHAR section_name[34];
-        index = SbieApi_EnumBoxesEx(
-                    index | CONF_GET_NO_TEMPLS, section_name, TRUE);
-        if (index == -1)
-            break;
+		if (boxes)
+		{
+			ULONG rc = SbieApi_IsBoxEnabled(section_name);
+			if (rc != 0)
+			{
+				continue;
+			}
+		}
 
-        if (boxes) {
-            ULONG rc = SbieApi_IsBoxEnabled(section_name);
-            if (rc != 0)
-                continue;
-        }
-
-        printf("%S\n", section_name);
-    }
+		printf("%S\n", section_name);
+	}
 }
 
 
@@ -70,22 +78,22 @@ void DoListSections(void)
 
 void DoListSettings(void)
 {
-    ULONG setting_idx = 0;
-    WCHAR setting_name[66];
+	ULONG setting_idx = 0;
+	WCHAR setting_name[66];
 
-    while (1) {
+	while (1)
+	{
+		ULONG status = SbieApi_QueryConfAsIs(CmdVerb(1), NULL, setting_idx | CONF_GET_NO_TEMPLS, setting_name, sizeof(WCHAR) * 66);
 
-        ULONG status = SbieApi_QueryConfAsIs(
-            CmdVerb(1), NULL, setting_idx | CONF_GET_NO_TEMPLS,
-            setting_name, sizeof(WCHAR) * 66);
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
 
-        if (! NT_SUCCESS(status))
-            break;
+		++setting_idx;
 
-        ++setting_idx;
-
-        printf("%S\n", setting_name);
-    }
+		printf("%S\n", setting_name);
+	}
 }
 
 
@@ -96,30 +104,37 @@ void DoListSettings(void)
 
 void DoQuerySetting(void)
 {
-    WCHAR value[512];
+	WCHAR value[512];
 
-    ULONG index = CONF_GET_NO_TEMPLS;
-    BOOL expand = CmdIs(L"queryex");
-    if ((! expand) && CmdOpt(L"expand"))
-        expand = TRUE;
-    if (! expand)
-        index |= CONF_GET_NO_EXPAND;
+	ULONG index = CONF_GET_NO_TEMPLS;
+	BOOL expand = CmdIs(L"queryex");
+	if ((!expand) && CmdOpt(L"expand"))
+	{
+		expand = TRUE;
+	}
+	if (!expand)
+	{
+		index |= CONF_GET_NO_EXPAND;
+	}
 
-    while (1) {
+	while (1)
+	{
+		ULONG status = SbieApi_QueryConf(CmdVerb(1), CmdVerb(2), index, value, sizeof(WCHAR) * 510);
 
-        ULONG status = SbieApi_QueryConf(
-            CmdVerb(1), CmdVerb(2), index, value, sizeof(WCHAR) * 510);
+		if (status != 0)
+		{
+			break;
+		}
 
-        if (status != 0)
-            break;
+		if (expand)
+		{
+			SbieDll_TranslateNtToDosPath(value);
+		}
 
-        if (expand)
-            SbieDll_TranslateNtToDosPath(value);
+		printf("%S\n", value);
 
-        printf("%S\n", value);
-
-        ++index;
-    }
+		++index;
+	}
 }
 
 
@@ -130,38 +145,37 @@ void DoQuerySetting(void)
 
 int DoQuery(void)
 {
-    if ((! CmdVerb(1)) || (CmdVerb(2) && CmdVerb(3))) {
+	if ((!CmdVerb(1)) || (CmdVerb(2) && CmdVerb(3)))
+	{
+		const WCHAR* _usage = L"query[ex] [/expand] [/boxes] <section> [setting]\n"
+		                      L"- specify * for section to get a list of sections"
+		                      L" in the configuration\n"
+		                      L"- specify /boxes to get a list of sections which"
+		                      L" correspond to sandboxes\n"
+		                      L"  that are enabled and active for this user account\n"
+		                      L"- specify * for setting to get a list of settings"
+		                      L" in a specific section\n"
+		                      L"- specify setting to get the value of a setting in"
+		                      L" a section\n"
+		                      L"- specify /expand to expand variables in the value"
+		                      L" of the setting\n"
+		                      L"- queryex command is same as query /expand\n";
 
-        const WCHAR *_usage =
-            L"query[ex] [/expand] [/boxes] <section> [setting]\n"
-            L"- specify * for section to get a list of sections"
-                L" in the configuration\n"
-            L"- specify /boxes to get a list of sections which"
-                L" correspond to sandboxes\n"
-            L"  that are enabled and active for this user account\n"
-            L"- specify * for setting to get a list of settings"
-                L" in a specific section\n"
-            L"- specify setting to get the value of a setting in"
-                L" a section\n"
-            L"- specify /expand to expand variables in the value"
-                L" of the setting\n"
-            L"- queryex command is same as query /expand\n";
+		UsageError(_usage);
+	}
 
-        UsageError(_usage);
-    }
+	if (wcscmp(CmdVerb(1), L"*") == 0)
+	{
+		DoListSections();
+	}
+	else if ((!CmdVerb(2)) || (wcscmp(CmdVerb(2), L"*") == 0))
+	{
+		DoListSettings();
+	}
+	else if (CmdVerb(2))
+	{
+		DoQuerySetting();
+	}
 
-    if (wcscmp(CmdVerb(1), L"*") == 0) {
-
-        DoListSections();
-
-    } else if ((! CmdVerb(2)) || (wcscmp(CmdVerb(2), L"*") == 0)) {
-
-        DoListSettings();
-
-    } else if (CmdVerb(2)) {
-
-        DoQuerySetting();
-    }
-
-    return 0;
+	return 0;
 }

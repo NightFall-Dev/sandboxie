@@ -19,9 +19,11 @@
 // Layout Class
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
 #include "Layout.h"
+
 #include "common/defines.h"
+#include "stdafx.h"
+
 #include <math.h>
 
 
@@ -32,18 +34,22 @@
 
 struct CLayoutChild
 {
-    CWnd *m_wnd;
-    CPoint m_pos;               // in percent
-    CSize m_size;               // in percent
-    CSize m_size_min;           // in pixels
-    CSize m_size_max;           // in pixels
+	CWnd* m_wnd;
+	CPoint m_pos;     // in percent
+	CSize m_size;     // in percent
+	CSize m_size_min; // in pixels
+	CSize m_size_max; // in pixels
 
-    CLayoutChild(CWnd *wnd, const CPoint &pos, const CSize &size)
-    {
-        m_wnd = wnd; m_pos = pos; m_size = size;
-        m_size_min.cx = 0; m_size_min.cy = 0;
-        m_size_max.cx = 0; m_size_max.cy = 0;
-    }
+	CLayoutChild(CWnd* wnd, const CPoint& pos, const CSize& size)
+	{
+		m_wnd         = wnd;
+		m_pos         = pos;
+		m_size        = size;
+		m_size_min.cx = 0;
+		m_size_min.cy = 0;
+		m_size_max.cx = 0;
+		m_size_max.cy = 0;
+	}
 };
 
 
@@ -52,9 +58,9 @@ struct CLayoutChild
 //---------------------------------------------------------------------------
 
 
-CLayout::CLayout(CWnd *wnd)
+CLayout::CLayout(CWnd* wnd)
 {
-    m_wnd = wnd;
+	m_wnd = wnd;
 }
 
 
@@ -65,7 +71,7 @@ CLayout::CLayout(CWnd *wnd)
 
 CLayout::~CLayout()
 {
-    DeleteChildren();
+	DeleteChildren();
 }
 
 
@@ -74,16 +80,19 @@ CLayout::~CLayout()
 //---------------------------------------------------------------------------
 
 
-BOOL CLayout::AttachChild(
-    CWnd *wnd, const CPoint &point, const CSize &size)
+BOOL CLayout::AttachChild(CWnd* wnd, const CPoint& point, const CSize& size)
 {
-    CLayoutChild *childobj = new CLayoutChild(wnd, point, size);
-    if (! childobj)
-        return FALSE;
-    m_children.AddTail(childobj);
-    if (m_wnd->IsWindowVisible())
-        Calculate();
-    return TRUE;
+	CLayoutChild* childobj = new CLayoutChild(wnd, point, size);
+	if (!childobj)
+	{
+		return FALSE;
+	}
+	m_children.AddTail(childobj);
+	if (m_wnd->IsWindowVisible())
+	{
+		Calculate();
+	}
+	return TRUE;
 }
 
 
@@ -92,19 +101,21 @@ BOOL CLayout::AttachChild(
 //---------------------------------------------------------------------------
 
 
-BOOL CLayout::ReplaceChild(CWnd *oldchild, CWnd *newchild)
+BOOL CLayout::ReplaceChild(CWnd* oldchild, CWnd* newchild)
 {
-    POSITION pos = m_children.GetHeadPosition();
-    while (pos) {
-        POSITION save_pos = pos;
-        CLayoutChild *childobj = (CLayoutChild *)m_children.GetNext(pos);
-        if (childobj->m_wnd == oldchild) {
-            delete oldchild;
-            childobj->m_wnd = newchild;
-            return TRUE;
-        }
-    }
-    return FALSE;
+	POSITION pos = m_children.GetHeadPosition();
+	while (pos)
+	{
+		POSITION save_pos      = pos;
+		CLayoutChild* childobj = (CLayoutChild*)m_children.GetNext(pos);
+		if (childobj->m_wnd == oldchild)
+		{
+			delete oldchild;
+			childobj->m_wnd = newchild;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 
@@ -113,19 +124,20 @@ BOOL CLayout::ReplaceChild(CWnd *oldchild, CWnd *newchild)
 //---------------------------------------------------------------------------
 
 
-BOOL CLayout::SetMinMaxChildObject(
-        CWnd *wnd, const CSize &size_min, const CSize &size_max)
+BOOL CLayout::SetMinMaxChildObject(CWnd* wnd, const CSize& size_min, const CSize& size_max)
 {
-    POSITION pos = m_children.GetHeadPosition();
-    while (pos) {
-        CLayoutChild *childobj = (CLayoutChild *)m_children.GetNext(pos);
-        if (childobj->m_wnd == wnd) {
-            childobj->m_size_min = size_min;
-            childobj->m_size_max = size_max;
-            return TRUE;
-        }
-    }
-    return FALSE;
+	POSITION pos = m_children.GetHeadPosition();
+	while (pos)
+	{
+		CLayoutChild* childobj = (CLayoutChild*)m_children.GetNext(pos);
+		if (childobj->m_wnd == wnd)
+		{
+			childobj->m_size_min = size_min;
+			childobj->m_size_max = size_max;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 
@@ -134,22 +146,19 @@ BOOL CLayout::SetMinMaxChildObject(
 //---------------------------------------------------------------------------
 
 
-CWnd *CLayout::CreateChild(
-    int ctrlid, const WCHAR *clsnm, ULONG exstyle, ULONG style,
-    const CPoint &pos, const CSize &size)
+CWnd* CLayout::CreateChild(int ctrlid, const WCHAR* clsnm, ULONG exstyle, ULONG style, const CPoint& pos, const CSize& size)
 {
-    CWnd *wnd = new CWnd();
-    if (wnd->CreateEx(exstyle, clsnm, L"", (style | WS_CHILD | WS_VISIBLE),
-                      CRect(), m_wnd, ctrlid, NULL)) {
+	CWnd* wnd = new CWnd();
+	if (wnd->CreateEx(exstyle, clsnm, L"", (style | WS_CHILD | WS_VISIBLE), CRect(), m_wnd, ctrlid, NULL))
+	{
+		if (AttachChild(wnd, pos, size))
+		{
+			return wnd;
+		}
+	}
 
-        if (AttachChild(wnd, pos, size)) {
-
-            return wnd;
-        }
-    }
-
-    delete wnd;
-    return NULL;
+	delete wnd;
+	return NULL;
 }
 
 
@@ -160,18 +169,20 @@ CWnd *CLayout::CreateChild(
 
 BOOL CLayout::DeleteChild(HWND hwnd)
 {
-    POSITION pos = m_children.GetHeadPosition();
-    while (pos) {
-        POSITION save_pos = pos;
-        CLayoutChild *childobj = (CLayoutChild *)m_children.GetNext(pos);
-        if (childobj->m_wnd->m_hWnd == hwnd) {
-            m_children.RemoveAt(save_pos);
-            delete childobj->m_wnd;
-            delete childobj;
-            return TRUE;
-        }
-    }
-    return FALSE;
+	POSITION pos = m_children.GetHeadPosition();
+	while (pos)
+	{
+		POSITION save_pos      = pos;
+		CLayoutChild* childobj = (CLayoutChild*)m_children.GetNext(pos);
+		if (childobj->m_wnd->m_hWnd == hwnd)
+		{
+			m_children.RemoveAt(save_pos);
+			delete childobj->m_wnd;
+			delete childobj;
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 
@@ -180,9 +191,9 @@ BOOL CLayout::DeleteChild(HWND hwnd)
 //---------------------------------------------------------------------------
 
 
-BOOL CLayout::DeleteChild(CWnd *wnd)
+BOOL CLayout::DeleteChild(CWnd* wnd)
 {
-    return DeleteChild(wnd->m_hWnd);
+	return DeleteChild(wnd->m_hWnd);
 }
 
 
@@ -193,11 +204,12 @@ BOOL CLayout::DeleteChild(CWnd *wnd)
 
 void CLayout::DeleteChildren()
 {
-    while (! m_children.IsEmpty()) {
-        CLayoutChild *childobj = (CLayoutChild *)m_children.RemoveHead();
-        delete childobj->m_wnd;
-        delete childobj;
-    }
+	while (!m_children.IsEmpty())
+	{
+		CLayoutChild* childobj = (CLayoutChild*)m_children.RemoveHead();
+		delete childobj->m_wnd;
+		delete childobj;
+	}
 }
 
 
@@ -206,16 +218,19 @@ void CLayout::DeleteChildren()
 //---------------------------------------------------------------------------
 
 
-CWnd *CLayout::GetChildByIndex(int index)
+CWnd* CLayout::GetChildByIndex(int index)
 {
-    POSITION pos = m_children.GetHeadPosition();
-    while (pos) {
-        CLayoutChild *childobj = (CLayoutChild *)m_children.GetNext(pos);
-        if (index == 0)
-            return childobj->m_wnd;
-        --index;
-    }
-    return NULL;
+	POSITION pos = m_children.GetHeadPosition();
+	while (pos)
+	{
+		CLayoutChild* childobj = (CLayoutChild*)m_children.GetNext(pos);
+		if (index == 0)
+		{
+			return childobj->m_wnd;
+		}
+		--index;
+	}
+	return NULL;
 }
 
 
@@ -224,29 +239,36 @@ CWnd *CLayout::GetChildByIndex(int index)
 //---------------------------------------------------------------------------
 
 
-void CLayout::CalculatePositionAndSize(void *_childobj, int w, int h,
-                                       CPoint &out_pos, CSize &out_size)
+void CLayout::CalculatePositionAndSize(void* _childobj, int w, int h, CPoint& out_pos, CSize& out_size)
 {
-    CLayoutChild *childobj = (CLayoutChild *)_childobj;
+	CLayoutChild* childobj = (CLayoutChild*)_childobj;
 
-    int x  = (int)floorf(childobj->m_pos.x   * w / 100.0f + 0.5f);
-    int y  = (int)floorf(childobj->m_pos.y   * h / 100.0f + 0.5f);
-    int cx = (int)floorf(childobj->m_size.cx * w / 100.0f + 0.5f);
-    int cy = (int)floorf(childobj->m_size.cy * h / 100.0f + 0.5f);
+	int x  = (int)floorf(childobj->m_pos.x * w / 100.0f + 0.5f);
+	int y  = (int)floorf(childobj->m_pos.y * h / 100.0f + 0.5f);
+	int cx = (int)floorf(childobj->m_size.cx * w / 100.0f + 0.5f);
+	int cy = (int)floorf(childobj->m_size.cy * h / 100.0f + 0.5f);
 
-    if (childobj->m_size_min.cx && cx < childobj->m_size_min.cx)
-        cx = childobj->m_size_min.cx;
-    if (childobj->m_size_min.cy && cy < childobj->m_size_min.cy)
-        cy = childobj->m_size_min.cy;
-    if (childobj->m_size_max.cx && cx > childobj->m_size_max.cx)
-        cx = childobj->m_size_max.cx;
-    if (childobj->m_size_max.cy && cy > childobj->m_size_max.cy)
-        cy = childobj->m_size_max.cy;
+	if (childobj->m_size_min.cx && cx < childobj->m_size_min.cx)
+	{
+		cx = childobj->m_size_min.cx;
+	}
+	if (childobj->m_size_min.cy && cy < childobj->m_size_min.cy)
+	{
+		cy = childobj->m_size_min.cy;
+	}
+	if (childobj->m_size_max.cx && cx > childobj->m_size_max.cx)
+	{
+		cx = childobj->m_size_max.cx;
+	}
+	if (childobj->m_size_max.cy && cy > childobj->m_size_max.cy)
+	{
+		cy = childobj->m_size_max.cy;
+	}
 
-    out_pos.x = x;
-    out_pos.y = y;
-    out_size.cx = cx;
-    out_size.cy = cy;
+	out_pos.x   = x;
+	out_pos.y   = y;
+	out_size.cx = cx;
+	out_size.cy = cy;
 }
 
 
@@ -255,20 +277,18 @@ void CLayout::CalculatePositionAndSize(void *_childobj, int w, int h,
 //---------------------------------------------------------------------------
 
 
-void CLayout::CalculateOneWindow(void *_childobj)
+void CLayout::CalculateOneWindow(void* _childobj)
 {
-    CLayoutChild *childobj = (CLayoutChild *)_childobj;
+	CLayoutChild* childobj = (CLayoutChild*)_childobj;
 
-    CRect rc;
-    m_wnd->GetClientRect(&rc);
+	CRect rc;
+	m_wnd->GetClientRect(&rc);
 
-    CPoint pos;
-    CSize size;
-    CalculatePositionAndSize(
-        childobj, rc.Width(), rc.Height(), pos, size);
+	CPoint pos;
+	CSize size;
+	CalculatePositionAndSize(childobj, rc.Width(), rc.Height(), pos, size);
 
-    childobj->m_wnd->SetWindowPos(NULL, pos.x, pos.y, size.cx, size.cy,
-        SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+	childobj->m_wnd->SetWindowPos(NULL, pos.x, pos.y, size.cx, size.cy, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 }
 
 
@@ -279,37 +299,36 @@ void CLayout::CalculateOneWindow(void *_childobj)
 
 void CLayout::Calculate()
 {
-    int num_children = (int)m_children.GetCount();
-    if (num_children <= 1) {
-        if (num_children == 1)
-            CalculateOneWindow(m_children.GetHead());
-        return;
-    }
+	int num_children = (int)m_children.GetCount();
+	if (num_children <= 1)
+	{
+		if (num_children == 1)
+		{
+			CalculateOneWindow(m_children.GetHead());
+		}
+		return;
+	}
 
-    CRect rc;
-    m_wnd->GetClientRect(&rc);
-    int w = rc.Width();
-    int h = rc.Height();
+	CRect rc;
+	m_wnd->GetClientRect(&rc);
+	int w = rc.Width();
+	int h = rc.Height();
 
-    HDWP hdwp = BeginDeferWindowPos(num_children + 2);
+	HDWP hdwp = BeginDeferWindowPos(num_children + 2);
 
-    POSITION pos = m_children.GetHeadPosition();
-    while (pos) {
+	POSITION pos = m_children.GetHeadPosition();
+	while (pos)
+	{
+		CLayoutChild* childobj = (CLayoutChild*)m_children.GetNext(pos);
 
-        CLayoutChild *childobj = (CLayoutChild *)m_children.GetNext(pos);
+		CPoint pos;
+		CSize size;
+		CalculatePositionAndSize(childobj, rc.Width(), rc.Height(), pos, size);
 
-        CPoint pos;
-        CSize size;
-        CalculatePositionAndSize(
-            childobj, rc.Width(), rc.Height(), pos, size);
+		hdwp = DeferWindowPos(hdwp, childobj->m_wnd->m_hWnd, 0, pos.x, pos.y, size.cx, size.cy, SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
+	}
 
-        hdwp = DeferWindowPos(
-            hdwp, childobj->m_wnd->m_hWnd, 0,
-            pos.x, pos.y, size.cx, size.cy,
-            SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER);
-    }
-
-    EndDeferWindowPos(hdwp);
+	EndDeferWindowPos(hdwp);
 }
 
 
@@ -320,10 +339,10 @@ void CLayout::Calculate()
 
 BEGIN_MESSAGE_MAP(CLayoutWnd, CWnd)
 
-    ON_WM_SIZE()
-    ON_WM_SIZING()
-    ON_WM_DESTROY()
-    ON_WM_PARENTNOTIFY()
+ON_WM_SIZE()
+ON_WM_SIZING()
+ON_WM_DESTROY()
+ON_WM_PARENTNOTIFY()
 
 END_MESSAGE_MAP()
 
@@ -334,10 +353,10 @@ END_MESSAGE_MAP()
 
 
 #pragma warning(push)
-#pragma warning(disable: 4355)
+#pragma warning(disable : 4355)
 
-CLayoutWnd::CLayoutWnd()
-    : m_layout(this)
+CLayoutWnd::CLayoutWnd() :
+    m_layout(this)
 {
 }
 
@@ -349,11 +368,9 @@ CLayoutWnd::CLayoutWnd()
 //---------------------------------------------------------------------------
 
 
-CWnd *CLayoutWnd::CreateChild(
-    int ctrlid, const WCHAR *clsnm, ULONG exstyle, ULONG style,
-    const CPoint &pos, const CSize &size)
+CWnd* CLayoutWnd::CreateChild(int ctrlid, const WCHAR* clsnm, ULONG exstyle, ULONG style, const CPoint& pos, const CSize& size)
 {
-    return m_layout.CreateChild(ctrlid, clsnm, exstyle, style, pos, size);
+	return m_layout.CreateChild(ctrlid, clsnm, exstyle, style, pos, size);
 }
 
 
@@ -362,53 +379,53 @@ CWnd *CLayoutWnd::CreateChild(
 //---------------------------------------------------------------------------
 
 
-CLayoutWnd *CLayoutWnd::CreateLayoutCtrl(
-    const CPoint &pos, const CSize &size)
+CLayoutWnd* CLayoutWnd::CreateLayoutCtrl(const CPoint& pos, const CSize& size)
 {
-    static ATOM _layout_ctrl_atom = NULL;
+	static ATOM _layout_ctrl_atom = NULL;
 
-    if (! _layout_ctrl_atom) {
+	if (!_layout_ctrl_atom)
+	{
+		WNDCLASSEX wc;
+		wc.cbSize        = sizeof(WNDCLASSEX);
+		wc.style         = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_GLOBALCLASS;
+		wc.lpfnWndProc   = LayoutCtrlWndClass;
+		wc.cbClsExtra    = 0;
+		wc.cbWndExtra    = 0;
+		wc.hInstance     = AfxGetInstanceHandle();
+		wc.hIcon         = NULL;
+		wc.hCursor       = ::LoadCursor(NULL, IDC_ARROW);
+		wc.hbrBackground = NULL;
+		wc.lpszMenuName  = NULL;
+		wc.lpszClassName = L"LayoutCtrlClass";
+		wc.hIconSm       = NULL;
 
-        WNDCLASSEX wc;
-        wc.cbSize = sizeof(WNDCLASSEX);
-        wc.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS | CS_GLOBALCLASS;
-        wc.lpfnWndProc = LayoutCtrlWndClass;
-        wc.cbClsExtra = 0;
-        wc.cbWndExtra = 0;
-        wc.hInstance = AfxGetInstanceHandle();
-        wc.hIcon = NULL;
-        wc.hCursor = ::LoadCursor(NULL, IDC_ARROW);
-        wc.hbrBackground = NULL;
-        wc.lpszMenuName = NULL;
-        wc.lpszClassName = L"LayoutCtrlClass";
-        wc.hIconSm = NULL;
+		_layout_ctrl_atom = RegisterClassEx(&wc);
+		if (!_layout_ctrl_atom)
+		{
+			return FALSE;
+		}
+	}
 
-        _layout_ctrl_atom = RegisterClassEx(&wc);
-        if (! _layout_ctrl_atom)
-            return FALSE;
-    }
+	CLayoutWnd* ctrl = new CLayoutWnd();
+	if (ctrl)
+	{
+		const ULONG exstyle = 0;
+		const ULONG style   = WS_CHILD | WS_VISIBLE;
 
-    CLayoutWnd *ctrl = new CLayoutWnd();
-    if (ctrl) {
+		if (ctrl->CreateEx(exstyle, (LPCTSTR)_layout_ctrl_atom, L"", style, CRect(), this, -1, NULL))
+		{
+			if (m_layout.AttachChild(ctrl, pos, size))
+			{
+				return ctrl;
+			}
 
-        const ULONG exstyle = 0;
-        const ULONG style   = WS_CHILD | WS_VISIBLE;
+			ctrl->DestroyWindow();
+		}
 
-        if (ctrl->CreateEx(exstyle, (LPCTSTR)_layout_ctrl_atom, L"",
-                           style, CRect(), this, -1, NULL)) {
+		delete ctrl;
+	}
 
-            if (m_layout.AttachChild(ctrl, pos, size)) {
-
-                return ctrl;
-            }
-
-            ctrl->DestroyWindow();
-        }
-
-        delete ctrl;
-    }
-
-    return NULL;
+	return NULL;
 }
 
 
@@ -417,17 +434,17 @@ CLayoutWnd *CLayoutWnd::CreateLayoutCtrl(
 //---------------------------------------------------------------------------
 
 
-LRESULT CLayoutWnd::LayoutCtrlWndClass(
-    HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CLayoutWnd::LayoutCtrlWndClass(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    if ((uMsg >= WM_CTLCOLORMSGBOX && uMsg <= WM_CTLCOLORSTATIC) ||
-        uMsg == WM_COMMAND) {
-
-        hwnd = ::GetParent(hwnd);
-        return ::SendMessage(hwnd, uMsg, wParam, lParam);
-
-    } else
-        return ::DefWindowProc(hwnd, uMsg, wParam, lParam);
+	if ((uMsg >= WM_CTLCOLORMSGBOX && uMsg <= WM_CTLCOLORSTATIC) || uMsg == WM_COMMAND)
+	{
+		hwnd = ::GetParent(hwnd);
+		return ::SendMessage(hwnd, uMsg, wParam, lParam);
+	}
+	else
+	{
+		return ::DefWindowProc(hwnd, uMsg, wParam, lParam);
+	}
 }
 
 
@@ -436,9 +453,9 @@ LRESULT CLayoutWnd::LayoutCtrlWndClass(
 //---------------------------------------------------------------------------
 
 
-CWnd *CLayoutWnd::GetChildByIndex(int index)
+CWnd* CLayoutWnd::GetChildByIndex(int index)
 {
-    return m_layout.GetChildByIndex(index);
+	return m_layout.GetChildByIndex(index);
 }
 
 
@@ -449,9 +466,11 @@ CWnd *CLayoutWnd::GetChildByIndex(int index)
 
 void CLayoutWnd::OnSize(UINT nType, int cx, int cy)
 {
-    if (nType == SIZE_MAXIMIZED || nType == SIZE_RESTORED)
-        m_layout.Calculate();
-    CWnd::OnSize(nType, cx, cy);
+	if (nType == SIZE_MAXIMIZED || nType == SIZE_RESTORED)
+	{
+		m_layout.Calculate();
+	}
+	CWnd::OnSize(nType, cx, cy);
 }
 
 
@@ -462,8 +481,8 @@ void CLayoutWnd::OnSize(UINT nType, int cx, int cy)
 
 void CLayoutWnd::OnSizing(UINT nSide, LPRECT lpRect)
 {
-    m_layout.Calculate();
-    CWnd::OnSizing(nSide, lpRect);
+	m_layout.Calculate();
+	CWnd::OnSizing(nSide, lpRect);
 }
 
 
@@ -474,8 +493,8 @@ void CLayoutWnd::OnSizing(UINT nSide, LPRECT lpRect)
 
 void CLayoutWnd::OnDestroy()
 {
-    m_layout.DeleteChildren();
-    CWnd::OnDestroy();
+	m_layout.DeleteChildren();
+	CWnd::OnDestroy();
 }
 
 
@@ -486,9 +505,11 @@ void CLayoutWnd::OnDestroy()
 
 void CLayoutWnd::OnParentNotify(UINT message, LPARAM lParam)
 {
-    if (message == WM_DESTROY)
-        m_layout.DeleteChild(CWnd::FromHandle((HWND)lParam));
-    CWnd::OnParentNotify(message, lParam);
+	if (message == WM_DESTROY)
+	{
+		m_layout.DeleteChild(CWnd::FromHandle((HWND)lParam));
+	}
+	CWnd::OnParentNotify(message, lParam);
 }
 
 
@@ -499,8 +520,8 @@ void CLayoutWnd::OnParentNotify(UINT message, LPARAM lParam)
 
 BEGIN_MESSAGE_MAP(CLayoutPropertyPage, CPropertyPage)
 
-    ON_WM_ERASEBKGND()
-    ON_WM_CTLCOLOR()
+ON_WM_ERASEBKGND()
+ON_WM_CTLCOLOR()
 
 END_MESSAGE_MAP()
 
@@ -511,10 +532,11 @@ END_MESSAGE_MAP()
 
 
 #pragma warning(push)
-#pragma warning(disable: 4355)
+#pragma warning(disable : 4355)
 
-CLayoutPropertyPage::CLayoutPropertyPage(int page_num)
-    : m_layout(this), m_page_num(page_num)
+CLayoutPropertyPage::CLayoutPropertyPage(int page_num) :
+    m_layout(this),
+    m_page_num(page_num)
 {
 }
 
@@ -526,30 +548,36 @@ CLayoutPropertyPage::CLayoutPropertyPage(int page_num)
 //---------------------------------------------------------------------------
 
 
-void CLayoutPropertyPage::InitPage(
-    ULONG exstyle, const CSize &pct_size, const CSize &size_min,
-    const CSize &size_max, HBRUSH hbrush)
+void CLayoutPropertyPage::InitPage(ULONG exstyle, const CSize& pct_size, const CSize& size_min, const CSize& size_max, HBRUSH hbrush)
 {
-    //
-    // pct_x and pct_y specify the desired size of the dialog box as
-    // a percent of the desktop screen size
-    //
+	//
+	// pct_x and pct_y specify the desired size of the dialog box as
+	// a percent of the desktop screen size
+	//
 
-    CRect rc;
-    GetDesktopWindow()->GetWindowRect(&rc);
-    int cx = (int)floorf(pct_size.cx * rc.Width()  / 100.0f + 0.5f);
-    int cy = (int)floorf(pct_size.cy * rc.Height() / 100.0f + 0.5f);
+	CRect rc;
+	GetDesktopWindow()->GetWindowRect(&rc);
+	int cx = (int)floorf(pct_size.cx * rc.Width() / 100.0f + 0.5f);
+	int cy = (int)floorf(pct_size.cy * rc.Height() / 100.0f + 0.5f);
 
-    if (size_min.cx && cx < size_min.cx)
-        cx = size_min.cx;
-    if (size_min.cy && cy < size_min.cy)
-        cy = size_min.cy;
-    if (size_max.cx && cx > size_max.cx)
-        cx = size_max.cx;
-    if (size_max.cy && cy > size_max.cy)
-        cy = size_max.cy;
+	if (size_min.cx && cx < size_min.cx)
+	{
+		cx = size_min.cx;
+	}
+	if (size_min.cy && cy < size_min.cy)
+	{
+		cy = size_min.cy;
+	}
+	if (size_max.cx && cx > size_max.cx)
+	{
+		cx = size_max.cx;
+	}
+	if (size_max.cy && cy > size_max.cy)
+	{
+		cy = size_max.cy;
+	}
 
-    return InitPage(exstyle, CSize(cx, cy), hbrush);
+	return InitPage(exstyle, CSize(cx, cy), hbrush);
 }
 
 
@@ -558,68 +586,67 @@ void CLayoutPropertyPage::InitPage(
 //---------------------------------------------------------------------------
 
 
-void CLayoutPropertyPage::InitPage(
-    ULONG exstyle, const CSize &abs_size, HBRUSH hbrush)
+void CLayoutPropertyPage::InitPage(ULONG exstyle, const CSize& abs_size, HBRUSH hbrush)
 {
-    //
-    // we need to convert screen units to dialog units, which are the
-    // average character size in the font.  the font is the system default
-    // dialog font because we don't override that in the dialog template
-    //
+	//
+	// we need to convert screen units to dialog units, which are the
+	// average character size in the font.  the font is the system default
+	// dialog font because we don't override that in the dialog template
+	//
 
-    UINT cxFont = 8, cyFont = 16;
-    CFont font;
-    if (font.CreateStockObject(DEFAULT_GUI_FONT)) {
+	UINT cxFont = 8, cyFont = 16;
+	CFont font;
+	if (font.CreateStockObject(DEFAULT_GUI_FONT))
+	{
+		static const WCHAR* _alphabet = L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-        static const WCHAR *_alphabet =
-            L"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		HDC hdc       = ::GetDC(NULL);
+		HFONT oldfont = (HFONT)SelectObject(hdc, font);
 
-        HDC hdc = ::GetDC(NULL);
-        HFONT oldfont = (HFONT)SelectObject(hdc, font);
+		SIZE size;
+		TEXTMETRIC tm;
+		GetTextMetrics(hdc, &tm);
+		cyFont = tm.tmHeight + tm.tmExternalLeading;
+		::GetTextExtentPoint32(hdc, _alphabet, 52, &size);
+		cxFont = (size.cx + 26) / 52;
 
-        SIZE size;
-        TEXTMETRIC tm;
-        GetTextMetrics(hdc, &tm);
-        cyFont = tm.tmHeight + tm.tmExternalLeading;
-        ::GetTextExtentPoint32(hdc, _alphabet, 52, &size);
-        cxFont = (size.cx + 26) / 52;
+		::SelectObject(hdc, oldfont);
+		::ReleaseDC(NULL, hdc);
+	}
 
-        ::SelectObject(hdc, oldfont);
-        ::ReleaseDC(NULL, hdc);
-    }
+	//
+	// construct a trivial and empty dialog box template
+	//
 
-    //
-    // construct a trivial and empty dialog box template
-    //
+	typedef struct
+	{
+		DWORD style;
+		DWORD dwExtendedStyle;
+		WORD cdit;
+		short x;
+		short y;
+		short cx;
+		short cy;
+		WORD id;
+	} DLGTMPL1;
 
-    typedef struct {
-        DWORD style;
-        DWORD dwExtendedStyle;
-        WORD cdit;
-        short x;
-        short y;
-        short cx;
-        short cy;
-        WORD id;
-    } DLGTMPL1;
+	memzero(&m_dlgtmpl, sizeof(m_dlgtmpl));
+	DLGTMPL1* tmpl = (DLGTMPL1*)m_dlgtmpl;
 
-    memzero(&m_dlgtmpl, sizeof(m_dlgtmpl));
-    DLGTMPL1 *tmpl = (DLGTMPL1 *)m_dlgtmpl;
+	tmpl->style           = WS_CHILD | WS_DISABLED | WS_CAPTION;
+	tmpl->dwExtendedStyle = exstyle;
+	tmpl->cdit            = 0;
+	tmpl->cx              = (short)(abs_size.cx * 4 / cxFont);
+	tmpl->cy              = (short)(abs_size.cy * 8 / cyFont);
 
-    tmpl->style = WS_CHILD | WS_DISABLED | WS_CAPTION;
-    tmpl->dwExtendedStyle = exstyle;
-    tmpl->cdit = 0;
-    tmpl->cx = (short)(abs_size.cx * 4 / cxFont);
-    tmpl->cy = (short)(abs_size.cy * 8 / cyFont);
+	m_psp.pResource = (LPCDLGTEMPLATE)tmpl;
+	m_psp.dwFlags |= PSP_DLGINDIRECT;
 
-    m_psp.pResource = (LPCDLGTEMPLATE)tmpl;
-    m_psp.dwFlags |= PSP_DLGINDIRECT;
+	//
+	// set background brush
+	//
 
-    //
-    // set background brush
-    //
-
-    m_hbrush = hbrush;
+	m_hbrush = hbrush;
 }
 
 
@@ -628,14 +655,11 @@ void CLayoutPropertyPage::InitPage(
 //---------------------------------------------------------------------------
 
 
-CWnd *CLayoutPropertyPage::CreateChild(
-    int ctrlid, const WCHAR *clsnm, ULONG exstyle, ULONG style,
-    const CPoint &pos, const CSize &size)
+CWnd* CLayoutPropertyPage::CreateChild(int ctrlid, const WCHAR* clsnm, ULONG exstyle, ULONG style, const CPoint& pos, const CSize& size)
 {
-    CWnd *wnd = m_layout.CreateChild(
-                                ctrlid, clsnm, exstyle, style, pos, size);
-    wnd->SetFont(GetFont());
-    return wnd;
+	CWnd* wnd = m_layout.CreateChild(ctrlid, clsnm, exstyle, style, pos, size);
+	wnd->SetFont(GetFont());
+	return wnd;
 }
 
 
@@ -644,16 +668,18 @@ CWnd *CLayoutPropertyPage::CreateChild(
 //---------------------------------------------------------------------------
 
 
-BOOL CLayoutPropertyPage::OnEraseBkgnd(CDC *pDC)
+BOOL CLayoutPropertyPage::OnEraseBkgnd(CDC* pDC)
 {
-    if (! m_hbrush)
-        return CPropertyPage::OnEraseBkgnd(pDC);
+	if (!m_hbrush)
+	{
+		return CPropertyPage::OnEraseBkgnd(pDC);
+	}
 
-    CRect rc;
-    GetClientRect(&rc);
-    pDC->SelectObject(m_hbrush);
-    pDC->PatBlt(0, 0, rc.Width(), rc.Height(), PATCOPY);
-    return TRUE;
+	CRect rc;
+	GetClientRect(&rc);
+	pDC->SelectObject(m_hbrush);
+	pDC->PatBlt(0, 0, rc.Width(), rc.Height(), PATCOPY);
+	return TRUE;
 }
 
 
@@ -662,40 +688,42 @@ BOOL CLayoutPropertyPage::OnEraseBkgnd(CDC *pDC)
 //---------------------------------------------------------------------------
 
 
-HBRUSH CLayoutPropertyPage::OnCtlColor(CDC *pDC, CWnd *pWnd, UINT nCtlColor)
+HBRUSH CLayoutPropertyPage::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
-    HBRUSH hbr = CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
+	HBRUSH hbr = CPropertyPage::OnCtlColor(pDC, pWnd, nCtlColor);
 
-    if (m_hbrush && nCtlColor == CTLCOLOR_STATIC) {
+	if (m_hbrush && nCtlColor == CTLCOLOR_STATIC)
+	{
+		bool MakeTransparent = true;
+		WCHAR clsnm[130];
+		if (GetClassName(pWnd->m_hWnd, clsnm, 128 * sizeof(WCHAR)) && _wcsicmp(clsnm, L"Edit") == 0)
+		{
+			//
+			// WM_CTLCOLORSTATIC (nCtlColor == CTLCOLOR_STATIC)
+			// is also received by read-only/disabled edit controls,
+			// but we don't want to change those
+			//
+			MakeTransparent = false;
+		}
 
-        bool MakeTransparent = true;
-        WCHAR clsnm[130];
-        if (GetClassName(pWnd->m_hWnd, clsnm, 128 * sizeof(WCHAR)) &&
-                _wcsicmp(clsnm, L"Edit") == 0) {
-            //
-            // WM_CTLCOLORSTATIC (nCtlColor == CTLCOLOR_STATIC)
-            // is also received by read-only/disabled edit controls,
-            // but we don't want to change those
-            //
-            MakeTransparent = false;
-        }
+		if (MakeTransparent)
+		{
+			hbr = (HBRUSH)::GetStockObject(NULL_BRUSH);
 
-        if (MakeTransparent) {
+			pDC->SetBkMode(TRANSPARENT);
 
-            hbr = (HBRUSH)::GetStockObject(NULL_BRUSH);
+			COLORREF rgb = 0;
+			CString text;
+			pWnd->GetWindowText(text);
+			if (text.Left(7).Compare(L"http://") == 0)
+			{
+				rgb = RGB(0, 0, 255);
+			}
+			pDC->SetTextColor(rgb);
+		}
+	}
 
-            pDC->SetBkMode(TRANSPARENT);
-
-            COLORREF rgb = 0;
-            CString text;
-            pWnd->GetWindowText(text);
-            if (text.Left(7).Compare(L"http://") == 0)
-                rgb = RGB(0,0,255);
-            pDC->SetTextColor(rgb);
-        }
-    }
-
-    return hbr;
+	return hbr;
 }
 
 
@@ -706,8 +734,8 @@ HBRUSH CLayoutPropertyPage::OnCtlColor(CDC *pDC, CWnd *pWnd, UINT nCtlColor)
 
 BOOL CLayoutPropertyPage::OnInitDialog()
 {
-    m_layout.Calculate();
-    return TRUE;
+	m_layout.Calculate();
+	return TRUE;
 }
 
 
@@ -718,20 +746,30 @@ BOOL CLayoutPropertyPage::OnInitDialog()
 
 BOOL CLayoutPropertyPage::OnSetActive()
 {
-    SetWindowPos(NULL, 0, 0, 0, 0,  // fixes a problem with WS_EX_LAYOUTRTL
-                 SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+	SetWindowPos(NULL,
+	    0,
+	    0,
+	    0,
+	    0, // fixes a problem with WS_EX_LAYOUTRTL
+	    SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 
-    CPropertySheet *sheet = (CPropertySheet *)GetParent();
+	CPropertySheet* sheet = (CPropertySheet*)GetParent();
 
-    ULONG flags = 0;
-    if (m_page_num > 1)
-        flags |= PSWIZB_BACK;
-    if (m_page_num == sheet->GetPageCount())
-        flags |= PSWIZB_FINISH;
-    else
-        flags |= PSWIZB_NEXT;
+	ULONG flags = 0;
+	if (m_page_num > 1)
+	{
+		flags |= PSWIZB_BACK;
+	}
+	if (m_page_num == sheet->GetPageCount())
+	{
+		flags |= PSWIZB_FINISH;
+	}
+	else
+	{
+		flags |= PSWIZB_NEXT;
+	}
 
-    sheet->SetWizardButtons(flags);
+	sheet->SetWizardButtons(flags);
 
-    return CPropertyPage::OnSetActive();
+	return CPropertyPage::OnSetActive();
 }

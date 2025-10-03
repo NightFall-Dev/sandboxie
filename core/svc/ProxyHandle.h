@@ -24,42 +24,36 @@
 #define _MY_PROXYHANDLE_H
 
 
-typedef void (*P_ProxyHandle_CloseCallback)(void *context, void *proxy_data);
+typedef void (*P_ProxyHandle_CloseCallback)(void* context, void* proxy_data);
 
 
 class ProxyHandle
 {
-
 public:
+	ProxyHandle(HANDLE heap, ULONG size_of_data, P_ProxyHandle_CloseCallback close_callback, void* context_for_callback);
 
-    ProxyHandle(HANDLE heap, ULONG size_of_data,
-                P_ProxyHandle_CloseCallback close_callback,
-                void *context_for_callback);
+	ULONG Create(HANDLE process_id, void* model_data);
 
-    ULONG Create(HANDLE process_id, void *model_data);
+	void* Find(HANDLE process_id, ULONG unique_id);
 
-    void *Find(HANDLE process_id, ULONG unique_id);
+	void Close(void* proxy_data);
 
-    void Close(void *proxy_data);
+	void Release(void* proxy_data);
 
-    void Release(void *proxy_data);
-
-    void ReleaseProcess(HANDLE process_id);
+	void ReleaseProcess(HANDLE process_id);
 
 protected:
+	CRITICAL_SECTION m_lock;
+	LIST m_list;
 
-    CRITICAL_SECTION m_lock;
-    LIST m_list;
+	P_ProxyHandle_CloseCallback m_close_callback;
+	void* m_context_for_callback;
 
-    P_ProxyHandle_CloseCallback m_close_callback;
-    void *m_context_for_callback;
+	HANDLE m_heap;
 
-    HANDLE m_heap;
+	ULONG m_size_of_data;
 
-    ULONG m_size_of_data;
-
-    volatile LONG m_unique_id;
-
+	volatile LONG m_unique_id;
 };
 
 

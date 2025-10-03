@@ -26,20 +26,19 @@
 
 class CDisableForceDialog : public CBaseDialog
 {
-    //DECLARE_MESSAGE_MAP()
+	//DECLARE_MESSAGE_MAP()
 
-    BOOL m_endedok;
+	BOOL m_endedok;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
 public:
+	CDisableForceDialog(CWnd* pParentWnd);
+	~CDisableForceDialog();
 
-    CDisableForceDialog(CWnd *pParentWnd);
-    ~CDisableForceDialog();
-
-    BOOL EndedOk() const;
+	BOOL EndedOk() const;
 };
 
 

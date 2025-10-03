@@ -29,54 +29,40 @@
 
 class ProcessServer
 {
-
 public:
-
-    ProcessServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    MSG_HEADER *CheckInitCompleteHandler();
-
-    BOOL KillProcess(ULONG ProcessId);
-
-    MSG_HEADER *KillOneHandler(HANDLE CallerProcessId, MSG_HEADER *msg);
-
-    MSG_HEADER *KillAllHandler(HANDLE CallerProcessId, MSG_HEADER *msg);
-
-    NTSTATUS KillAllHelper(const WCHAR *BoxName, ULONG SessionId);
-
-    MSG_HEADER *SetDeviceMap(HANDLE CallerProcessId, MSG_HEADER *msg);
-
-    MSG_HEADER *OpenDeviceMap(HANDLE CallerProcessId, MSG_HEADER *msg);
-
-    //
-    // Run Sandboxed
-    //
-
-    MSG_HEADER *RunSandboxedHandler(MSG_HEADER *msg);
-    WCHAR *RunSandboxedCopyString(MSG_HEADER *msg, ULONG ofs, ULONG len);
-    HANDLE RunSandboxedGetToken(
-            HANDLE CallerProcessHandle, bool CallerInSandbox,
-            const WCHAR *BoxName);
-    BOOL RunSandboxedSetDacl(
-            HANDLE CallerProcessHandle, HANDLE NewTokenHandle);
-    BOOL RunSandboxedStartProcess(
-            HANDLE PrimaryTokenHandle, LONG_PTR BoxNameOrModelPid,
-            ULONG CallerProcessId,
-            WCHAR *cmd, const WCHAR *dir, WCHAR *env, ULONG *crflags,
-            STARTUPINFO *si, PROCESS_INFORMATION *pi);
-    WCHAR *RunSandboxedComServer(ULONG CallerProcessId);
-    BOOL RunSandboxedDupAndCloseHandles(
-            HANDLE CallerProcessHandle, ULONG crflags,
-            PROCESS_INFORMATION *piInput, PROCESS_INFORMATION *piReply);
+	ProcessServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    CRITICAL_SECTION m_RunSandboxed_CritSec;
+	MSG_HEADER* CheckInitCompleteHandler();
 
+	BOOL KillProcess(ULONG ProcessId);
+
+	MSG_HEADER* KillOneHandler(HANDLE CallerProcessId, MSG_HEADER* msg);
+
+	MSG_HEADER* KillAllHandler(HANDLE CallerProcessId, MSG_HEADER* msg);
+
+	NTSTATUS KillAllHelper(const WCHAR* BoxName, ULONG SessionId);
+
+	MSG_HEADER* SetDeviceMap(HANDLE CallerProcessId, MSG_HEADER* msg);
+
+	MSG_HEADER* OpenDeviceMap(HANDLE CallerProcessId, MSG_HEADER* msg);
+
+	//
+	// Run Sandboxed
+	//
+
+	MSG_HEADER* RunSandboxedHandler(MSG_HEADER* msg);
+	WCHAR* RunSandboxedCopyString(MSG_HEADER* msg, ULONG ofs, ULONG len);
+	HANDLE RunSandboxedGetToken(HANDLE CallerProcessHandle, bool CallerInSandbox, const WCHAR* BoxName);
+	BOOL RunSandboxedSetDacl(HANDLE CallerProcessHandle, HANDLE NewTokenHandle);
+	BOOL RunSandboxedStartProcess(HANDLE PrimaryTokenHandle, LONG_PTR BoxNameOrModelPid, ULONG CallerProcessId, WCHAR* cmd, const WCHAR* dir, WCHAR* env, ULONG* crflags, STARTUPINFO* si, PROCESS_INFORMATION* pi);
+	WCHAR* RunSandboxedComServer(ULONG CallerProcessId);
+	BOOL RunSandboxedDupAndCloseHandles(HANDLE CallerProcessHandle, ULONG crflags, PROCESS_INFORMATION* piInput, PROCESS_INFORMATION* piReply);
+
+protected:
+	CRITICAL_SECTION m_RunSandboxed_CritSec;
 };
 
 

@@ -19,8 +19,9 @@
 // Flashing Button
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
 #include "FlashingButton.h"
+
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -30,10 +31,10 @@
 
 BEGIN_MESSAGE_MAP(CFlashingButton, CButton)
 
-    ON_WM_PAINT()
-    ON_WM_MOUSEMOVE()
-    ON_MESSAGE(WM_MOUSELEAVE, OnMouseLeave)
-    ON_WM_TIMER()
+ON_WM_PAINT()
+ON_WM_MOUSEMOVE()
+ON_MESSAGE(WM_MOUSELEAVE, OnMouseLeave)
+ON_WM_TIMER()
 
 END_MESSAGE_MAP()
 
@@ -43,8 +44,8 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CFlashingButton::CFlashingButton()
-    : CButton()
+CFlashingButton::CFlashingButton() :
+    CButton()
 {
 }
 
@@ -56,8 +57,10 @@ CFlashingButton::CFlashingButton()
 
 CFlashingButton::~CFlashingButton()
 {
-    if (m_timer)
-        KillTimer(m_timer);
+	if (m_timer)
+	{
+		KillTimer(m_timer);
+	}
 }
 
 
@@ -68,23 +71,24 @@ CFlashingButton::~CFlashingButton()
 
 bool CFlashingButton::Init(HWND hwndButton)
 {
-    if (hwndButton) {
-        if (SubclassWindow(hwndButton)) {
+	if (hwndButton)
+	{
+		if (SubclassWindow(hwndButton))
+		{
+			RECT rc;
+			::GetWindowRect(hwndButton, &rc);
+			m_width  = rc.right - rc.left + 1;
+			m_height = rc.bottom - rc.top + 1;
 
-            RECT rc;
-            ::GetWindowRect(hwndButton, &rc);
-            m_width = rc.right - rc.left + 1;
-            m_height = rc.bottom - rc.top + 1;
+			m_enable = true;
+			m_invert = 1;
+			m_timer  = SetTimer(1234, 750, 0);
 
-            m_enable = true;
-            m_invert = 1;
-            m_timer = SetTimer(1234, 750, 0);
+			return true;
+		}
+	}
 
-            return true;
-        }
-    }
-
-    return false;
+	return false;
 }
 
 
@@ -93,11 +97,11 @@ bool CFlashingButton::Init(HWND hwndButton)
 //---------------------------------------------------------------------------
 
 
-bool CFlashingButton::Init(CWnd *dlg, UINT id)
+bool CFlashingButton::Init(CWnd* dlg, UINT id)
 {
-    HWND hwndButton;
-    dlg->GetDlgItem(id, &hwndButton);
-    return Init(hwndButton);
+	HWND hwndButton;
+	dlg->GetDlgItem(id, &hwndButton);
+	return Init(hwndButton);
 }
 
 
@@ -108,7 +112,7 @@ bool CFlashingButton::Init(CWnd *dlg, UINT id)
 
 void CFlashingButton::EnableFlashing(bool enable)
 {
-    m_enable = enable;
+	m_enable = enable;
 }
 
 
@@ -119,25 +123,25 @@ void CFlashingButton::EnableFlashing(bool enable)
 
 void CFlashingButton::OnPaint()
 {
-    if (m_enable && m_invert == 1) {
+	if (m_enable && m_invert == 1)
+	{
+		PAINTSTRUCT ps;
+		HDC hWinDC      = ::BeginPaint(m_hWnd, &ps);
+		HDC hMemDC      = CreateCompatibleDC(hWinDC);
+		HBITMAP hBitmap = CreateCompatibleBitmap(hWinDC, m_width, m_height);
+		SelectObject(hMemDC, hBitmap);
 
-        PAINTSTRUCT ps;
-        HDC hWinDC = ::BeginPaint(m_hWnd, &ps);
-        HDC hMemDC = CreateCompatibleDC(hWinDC);
-        HBITMAP hBitmap = CreateCompatibleBitmap(hWinDC, m_width, m_height);
-        SelectObject(hMemDC, hBitmap);
+		DefWindowProc(WM_PAINT, (WPARAM)hMemDC, NULL);
+		BitBlt(hWinDC, 0, 0, m_width, m_height, hMemDC, 0, 0, NOTSRCCOPY);
 
-        DefWindowProc(WM_PAINT, (WPARAM)hMemDC, NULL);
-        BitBlt(hWinDC, 0, 0, m_width, m_height, hMemDC, 0, 0, NOTSRCCOPY);
-
-        DeleteObject(hBitmap);
-        DeleteDC(hMemDC);
-        ::EndPaint(m_hWnd, &ps);
-
-    } else {
-
-        DefWindowProc(WM_PAINT, NULL, NULL);
-    }
+		DeleteObject(hBitmap);
+		DeleteDC(hMemDC);
+		::EndPaint(m_hWnd, &ps);
+	}
+	else
+	{
+		DefWindowProc(WM_PAINT, NULL, NULL);
+	}
 }
 
 
@@ -148,20 +152,21 @@ void CFlashingButton::OnPaint()
 
 void CFlashingButton::OnMouseMove(UINT nFlags, CPoint point)
 {
-    if (m_invert) {
+	if (m_invert)
+	{
+		TRACKMOUSEEVENT tme;
+		tme.cbSize    = sizeof(TRACKMOUSEEVENT);
+		tme.dwFlags   = TME_LEAVE;
+		tme.hwndTrack = m_hWnd;
 
-        TRACKMOUSEEVENT tme;
-        tme.cbSize = sizeof(TRACKMOUSEEVENT);
-        tme.dwFlags = TME_LEAVE;
-        tme.hwndTrack = m_hWnd;
+		if (_TrackMouseEvent(&tme))
+		{
+			m_invert = 0;
+			Invalidate();
+		}
+	}
 
-        if (_TrackMouseEvent(&tme)) {
-            m_invert = 0;
-            Invalidate();
-        }
-    }
-
-    DefWindowProc(WM_MOUSEMOVE, nFlags, MAKELPARAM(point.x, point.y));
+	DefWindowProc(WM_MOUSEMOVE, nFlags, MAKELPARAM(point.x, point.y));
 }
 
 
@@ -172,9 +177,9 @@ void CFlashingButton::OnMouseMove(UINT nFlags, CPoint point)
 
 LRESULT CFlashingButton::OnMouseLeave(WPARAM wParam, LPARAM lParam)
 {
-    m_invert = 1;
-    Invalidate();
-    return 0;
+	m_invert = 1;
+	Invalidate();
+	return 0;
 }
 
 
@@ -185,8 +190,9 @@ LRESULT CFlashingButton::OnMouseLeave(WPARAM wParam, LPARAM lParam)
 
 void CFlashingButton::OnTimer(UINT_PTR nIDEvent)
 {
-    if (m_invert) {
-        m_invert = -m_invert;
-        Invalidate();
-    }
+	if (m_invert)
+	{
+		m_invert = -m_invert;
+		Invalidate();
+	}
 }

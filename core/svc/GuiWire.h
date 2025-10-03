@@ -29,38 +29,38 @@
 //---------------------------------------------------------------------------
 
 
-enum {
-
-    GUI_SHUTDOWN = 1,
-    GUI_INIT_PROCESS,
-    GUI_GET_WINDOW_STATION,
-    GUI_CREATE_CONSOLE,
-    GUI_QUERY_WINDOW,
-    GUI_IS_WINDOW,
-    GUI_GET_WINDOW_LONG,
-    GUI_GET_WINDOW_PROP,
-    GUI_GET_WINDOW_HANDLE,
-    GUI_GET_CLASS_NAME,
-    GUI_GET_WINDOW_RECT,
-    GUI_GET_WINDOW_INFO,
-    GUI_GRANT_HANDLE,
-    GUI_ENUM_WINDOWS,
-    GUI_FIND_WINDOW,
-    GUI_MAP_WINDOW_POINTS,
-    GUI_SET_WINDOW_POS,
-    GUI_CLOSE_CLIPBOARD,
-    GUI_GET_CLIPBOARD_DATA,
-    GUI_SEND_POST_MESSAGE,
-    GUI_SEND_COPYDATA,
-    GUI_CLIP_CURSOR,
-    GUI_MONITOR_FROM_WINDOW,
-    GUI_SET_FOREGROUND_WINDOW,
-    GUI_SPLWOW64,
-    GUI_CHANGE_DISPLAY_SETTINGS,
-    GUI_SET_CURSOR_POS,
-    GUI_GET_CLIPBOARD_METAFILE,
-    GUI_REMOVE_HOST_WINDOW,
-    GUI_MAX_REQUEST_CODE
+enum
+{
+	GUI_SHUTDOWN = 1,
+	GUI_INIT_PROCESS,
+	GUI_GET_WINDOW_STATION,
+	GUI_CREATE_CONSOLE,
+	GUI_QUERY_WINDOW,
+	GUI_IS_WINDOW,
+	GUI_GET_WINDOW_LONG,
+	GUI_GET_WINDOW_PROP,
+	GUI_GET_WINDOW_HANDLE,
+	GUI_GET_CLASS_NAME,
+	GUI_GET_WINDOW_RECT,
+	GUI_GET_WINDOW_INFO,
+	GUI_GRANT_HANDLE,
+	GUI_ENUM_WINDOWS,
+	GUI_FIND_WINDOW,
+	GUI_MAP_WINDOW_POINTS,
+	GUI_SET_WINDOW_POS,
+	GUI_CLOSE_CLIPBOARD,
+	GUI_GET_CLIPBOARD_DATA,
+	GUI_SEND_POST_MESSAGE,
+	GUI_SEND_COPYDATA,
+	GUI_CLIP_CURSOR,
+	GUI_MONITOR_FROM_WINDOW,
+	GUI_SET_FOREGROUND_WINDOW,
+	GUI_SPLWOW64,
+	GUI_CHANGE_DISPLAY_SETTINGS,
+	GUI_SET_CURSOR_POS,
+	GUI_GET_CLIPBOARD_METAFILE,
+	GUI_REMOVE_HOST_WINDOW,
+	GUI_MAX_REQUEST_CODE
 };
 
 
@@ -71,9 +71,9 @@ enum {
 
 struct tagGUI_INIT_PROCESS_REQ
 {
-    ULONG msgid;
-    ULONG process_id;
-    BOOLEAN add_to_job;
+	ULONG msgid;
+	ULONG process_id;
+	BOOLEAN add_to_job;
 };
 
 typedef struct tagGUI_INIT_PROCESS_REQ GUI_INIT_PROCESS_REQ;
@@ -86,11 +86,11 @@ typedef struct tagGUI_INIT_PROCESS_REQ GUI_INIT_PROCESS_REQ;
 
 struct tagGUI_GET_WINDOW_STATION_RPL
 {
-    ULONG status;
-    ULONG peb64;
-    ULONG64 hwinsta;
-    ULONG64 hdesk;
-    WCHAR name[96];
+	ULONG status;
+	ULONG peb64;
+	ULONG64 hwinsta;
+	ULONG64 hdesk;
+	WCHAR name[96];
 };
 
 typedef struct tagGUI_GET_WINDOW_STATION_RPL GUI_GET_WINDOW_STATION_RPL;
@@ -103,16 +103,16 @@ typedef struct tagGUI_GET_WINDOW_STATION_RPL GUI_GET_WINDOW_STATION_RPL;
 
 struct tagGUI_CREATE_CONSOLE_REQ
 {
-    ULONG msgid;
-    ULONG pad_word;
-    ULONG64 token;
-    USHORT show_window;
+	ULONG msgid;
+	ULONG pad_word;
+	ULONG64 token;
+	USHORT show_window;
 };
 
 struct tagGUI_CREATE_CONSOLE_RPL
 {
-    ULONG status;
-    ULONG process_id;
+	ULONG status;
+	ULONG process_id;
 };
 
 typedef struct tagGUI_CREATE_CONSOLE_REQ GUI_CREATE_CONSOLE_REQ;
@@ -126,17 +126,17 @@ typedef struct tagGUI_CREATE_CONSOLE_RPL GUI_CREATE_CONSOLE_RPL;
 
 struct tagGUI_QUERY_WINDOW_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    ULONG type;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	ULONG type;
 };
 
 struct tagGUI_QUERY_WINDOW_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG64 result;
+	ULONG status;
+	ULONG error;
+	ULONG64 result;
 };
 
 typedef struct tagGUI_QUERY_WINDOW_REQ GUI_QUERY_WINDOW_REQ;
@@ -150,21 +150,21 @@ typedef struct tagGUI_QUERY_WINDOW_RPL GUI_QUERY_WINDOW_RPL;
 
 struct tagGUI_IS_WINDOW_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
 };
 
 struct tagGUI_IS_WINDOW_RPL
 {
-    ULONG status;
-    ULONG error;
-    BOOLEAN window;
-    BOOLEAN visible;
-    BOOLEAN enabled;
-    BOOLEAN unicode;
-    BOOLEAN iconic;
-    BOOLEAN zoomed;
+	ULONG status;
+	ULONG error;
+	BOOLEAN window;
+	BOOLEAN visible;
+	BOOLEAN enabled;
+	BOOLEAN unicode;
+	BOOLEAN iconic;
+	BOOLEAN zoomed;
 };
 
 typedef struct tagGUI_IS_WINDOW_REQ GUI_IS_WINDOW_REQ;
@@ -178,18 +178,18 @@ typedef struct tagGUI_IS_WINDOW_RPL GUI_IS_WINDOW_RPL;
 
 struct tagGUI_GET_WINDOW_LONG_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    LONG index;
-    ULONG which;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	LONG index;
+	ULONG which;
 };
 
 struct tagGUI_GET_WINDOW_LONG_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG64 result;
+	ULONG status;
+	ULONG error;
+	ULONG64 result;
 };
 
 typedef struct tagGUI_GET_WINDOW_LONG_REQ GUI_GET_WINDOW_LONG_REQ;
@@ -203,20 +203,20 @@ typedef struct tagGUI_GET_WINDOW_LONG_RPL GUI_GET_WINDOW_LONG_RPL;
 
 struct tagGUI_GET_WINDOW_PROP_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    ULONG prop_atom;
-    BOOLEAN unicode;
-    BOOLEAN prop_is_text;
-    WCHAR prop_text[128];
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	ULONG prop_atom;
+	BOOLEAN unicode;
+	BOOLEAN prop_is_text;
+	WCHAR prop_text[128];
 };
 
 struct tagGUI_GET_WINDOW_PROP_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG64 result;
+	ULONG status;
+	ULONG error;
+	ULONG64 result;
 };
 
 typedef struct tagGUI_GET_WINDOW_PROP_REQ GUI_GET_WINDOW_PROP_REQ;
@@ -230,17 +230,17 @@ typedef struct tagGUI_GET_WINDOW_PROP_RPL GUI_GET_WINDOW_PROP_RPL;
 
 struct tagGUI_GET_WINDOW_HANDLE_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG which;
-    ULONG hwnd;
+	ULONG msgid;
+	ULONG error;
+	ULONG which;
+	ULONG hwnd;
 };
 
 struct tagGUI_GET_WINDOW_HANDLE_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG hwnd;
+	ULONG status;
+	ULONG error;
+	ULONG hwnd;
 };
 
 typedef struct tagGUI_GET_WINDOW_HANDLE_REQ GUI_GET_WINDOW_HANDLE_REQ;
@@ -254,19 +254,19 @@ typedef struct tagGUI_GET_WINDOW_HANDLE_RPL GUI_GET_WINDOW_HANDLE_RPL;
 
 struct tagGUI_GET_CLASS_NAME_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    ULONG maxlen;
-    BOOLEAN unicode;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	ULONG maxlen;
+	BOOLEAN unicode;
 };
 
 struct tagGUI_GET_CLASS_NAME_RPL
 {
-    ULONG status;
-    ULONG result;
-    ULONG error;
-    WCHAR name[1];
+	ULONG status;
+	ULONG result;
+	ULONG error;
+	WCHAR name[1];
 };
 
 typedef struct tagGUI_GET_CLASS_NAME_REQ GUI_GET_CLASS_NAME_REQ;
@@ -280,18 +280,18 @@ typedef struct tagGUI_GET_CLASS_NAME_RPL GUI_GET_CLASS_NAME_RPL;
 
 struct tagGUI_GET_WINDOW_RECT_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG which;
-    ULONG hwnd;
+	ULONG msgid;
+	ULONG error;
+	ULONG which;
+	ULONG hwnd;
 };
 
 struct tagGUI_GET_WINDOW_RECT_RPL
 {
-    ULONG status;
-    ULONG result;
-    ULONG error;
-    RECT rect;
+	ULONG status;
+	ULONG result;
+	ULONG error;
+	RECT rect;
 };
 
 typedef struct tagGUI_GET_WINDOW_RECT_REQ GUI_GET_WINDOW_RECT_REQ;
@@ -305,17 +305,17 @@ typedef struct tagGUI_GET_WINDOW_RECT_RPL GUI_GET_WINDOW_RECT_RPL;
 
 struct tagGUI_GET_WINDOW_INFO_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
 };
 
 struct tagGUI_GET_WINDOW_INFO_RPL
 {
-    ULONG status;
-    ULONG result;
-    ULONG error;
-    WINDOWINFO info;
+	ULONG status;
+	ULONG result;
+	ULONG error;
+	WINDOWINFO info;
 };
 
 typedef struct tagGUI_GET_WINDOW_INFO_REQ GUI_GET_WINDOW_INFO_REQ;
@@ -329,9 +329,9 @@ typedef struct tagGUI_GET_WINDOW_INFO_RPL GUI_GET_WINDOW_INFO_RPL;
 
 struct tagGUI_GRANT_HANDLE_REQ
 {
-    ULONG msgid;
-    ULONG handle_type;
-    ULONG handle_value;
+	ULONG msgid;
+	ULONG handle_type;
+	ULONG handle_value;
 };
 
 typedef struct tagGUI_GRANT_HANDLE_REQ GUI_GRANT_HANDLE_REQ;
@@ -344,18 +344,18 @@ typedef struct tagGUI_GRANT_HANDLE_REQ GUI_GRANT_HANDLE_REQ;
 
 struct tagGUI_ENUM_WINDOWS_REQ
 {
-    ULONG msgid;
-    UCHAR which;
-    ULONG arg;
+	ULONG msgid;
+	UCHAR which;
+	ULONG arg;
 };
 
 struct tagGUI_ENUM_WINDOWS_RPL
 {
-    ULONG status;
-    ULONG error;
-    BOOL ok;
-    ULONG num_hwnds;
-    ULONG hwnds[1];
+	ULONG status;
+	ULONG error;
+	BOOL ok;
+	ULONG num_hwnds;
+	ULONG hwnds[1];
 };
 
 typedef struct tagGUI_ENUM_WINDOWS_REQ GUI_ENUM_WINDOWS_REQ;
@@ -369,22 +369,22 @@ typedef struct tagGUI_ENUM_WINDOWS_RPL GUI_ENUM_WINDOWS_RPL;
 
 struct tagGUI_FIND_WINDOW_REQ
 {
-    ULONG msgid;
-    ULONG which;
-    ULONG hwnd_parent;
-    ULONG hwnd_child;
-    ULONG class_atom;
-    BOOLEAN class_is_text;
-    BOOLEAN title_is_text;
-    WCHAR class_text[128];
-    WCHAR title_text[128];
+	ULONG msgid;
+	ULONG which;
+	ULONG hwnd_parent;
+	ULONG hwnd_child;
+	ULONG class_atom;
+	BOOLEAN class_is_text;
+	BOOLEAN title_is_text;
+	WCHAR class_text[128];
+	WCHAR title_text[128];
 };
 
 struct tagGUI_FIND_WINDOW_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG hwnd;
+	ULONG status;
+	ULONG error;
+	ULONG hwnd;
 };
 
 typedef struct tagGUI_FIND_WINDOW_REQ GUI_FIND_WINDOW_REQ;
@@ -398,20 +398,20 @@ typedef struct tagGUI_FIND_WINDOW_RPL GUI_FIND_WINDOW_RPL;
 
 struct tagGUI_MAP_WINDOW_POINTS_REQ
 {
-    ULONG msgid;
-    ULONG hwnd_from;
-    ULONG hwnd_to;
-    ULONG num_pts;
-    POINT pts[1];
+	ULONG msgid;
+	ULONG hwnd_from;
+	ULONG hwnd_to;
+	ULONG num_pts;
+	POINT pts[1];
 };
 
 struct tagGUI_MAP_WINDOW_POINTS_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG retval;
-    USHORT num_pts;
-    POINT pts[1];
+	ULONG status;
+	ULONG error;
+	ULONG retval;
+	USHORT num_pts;
+	POINT pts[1];
 };
 
 typedef struct tagGUI_MAP_WINDOW_POINTS_REQ GUI_MAP_WINDOW_POINTS_REQ;
@@ -425,22 +425,22 @@ typedef struct tagGUI_MAP_WINDOW_POINTS_RPL GUI_MAP_WINDOW_POINTS_RPL;
 
 struct tagGUI_SET_WINDOW_POS_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    ULONG hwnd_insert_after;
-    ULONG x;
-    ULONG y;
-    ULONG w;
-    ULONG h;
-    ULONG flags;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	ULONG hwnd_insert_after;
+	ULONG x;
+	ULONG y;
+	ULONG w;
+	ULONG h;
+	ULONG flags;
 };
 
 struct tagGUI_SET_WINDOW_POS_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG retval;
+	ULONG status;
+	ULONG error;
+	ULONG retval;
 };
 
 typedef struct tagGUI_SET_WINDOW_POS_REQ GUI_SET_WINDOW_POS_REQ;
@@ -454,18 +454,18 @@ typedef struct tagGUI_SET_WINDOW_POS_RPL GUI_SET_WINDOW_POS_RPL;
 
 struct tagGUI_GET_CLIPBOARD_DATA_REQ
 {
-    ULONG msgid;
-    ULONG format;
+	ULONG msgid;
+	ULONG format;
 };
 
 struct tagGUI_GET_CLIPBOARD_DATA_RPL
 {
-    ULONG status;
-    ULONG result;
-    ULONG error;
-    ULONG pad_word;
-    ULONG64 section_length;
-    ULONG64 section_handle;
+	ULONG status;
+	ULONG result;
+	ULONG error;
+	ULONG pad_word;
+	ULONG64 section_length;
+	ULONG64 section_handle;
 };
 
 typedef struct tagGUI_GET_CLIPBOARD_DATA_REQ GUI_GET_CLIPBOARD_DATA_REQ;
@@ -479,22 +479,22 @@ typedef struct tagGUI_GET_CLIPBOARD_DATA_RPL GUI_GET_CLIPBOARD_DATA_RPL;
 
 struct tagGUI_SEND_POST_MESSAGE_REQ
 {
-    ULONG msgid;
-    ULONG which;
-    ULONG hwnd;
-    ULONG msg;
-    ULONG64 wparam;
-    ULONG64 lparam;
-    ULONG flags;
-    ULONG timeout;
+	ULONG msgid;
+	ULONG which;
+	ULONG hwnd;
+	ULONG msg;
+	ULONG64 wparam;
+	ULONG64 lparam;
+	ULONG flags;
+	ULONG timeout;
 };
 
 struct tagGUI_SEND_POST_MESSAGE_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG64 lresult1;
-    ULONG64 lresult2;
+	ULONG status;
+	ULONG error;
+	ULONG64 lresult1;
+	ULONG64 lresult2;
 };
 
 typedef struct tagGUI_SEND_POST_MESSAGE_REQ GUI_SEND_POST_MESSAGE_REQ;
@@ -508,24 +508,24 @@ typedef struct tagGUI_SEND_POST_MESSAGE_RPL GUI_SEND_POST_MESSAGE_RPL;
 
 struct tagGUI_SEND_COPYDATA_REQ
 {
-    ULONG msgid;
-    ULONG which;
-    ULONG hwnd;
-    ULONG pad_word;
-    ULONG64 wparam;
-    ULONG flags;
-    ULONG timeout;
-    ULONG64 cds_key;
-    ULONG cds_len;
-    WCHAR cds_buf[1];
+	ULONG msgid;
+	ULONG which;
+	ULONG hwnd;
+	ULONG pad_word;
+	ULONG64 wparam;
+	ULONG flags;
+	ULONG timeout;
+	ULONG64 cds_key;
+	ULONG cds_len;
+	WCHAR cds_buf[1];
 };
 
 struct tagGUI_SEND_COPYDATA_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG64 lresult1;
-    ULONG64 lresult2;
+	ULONG status;
+	ULONG error;
+	ULONG64 lresult1;
+	ULONG64 lresult2;
 };
 
 typedef struct tagGUI_SEND_COPYDATA_REQ GUI_SEND_COPYDATA_REQ;
@@ -539,9 +539,9 @@ typedef struct tagGUI_SEND_COPYDATA_RPL GUI_SEND_COPYDATA_RPL;
 
 struct tagGUI_CLIP_CURSOR_REQ
 {
-    ULONG msgid;
-    BOOLEAN have_rect;
-    RECT rect;
+	ULONG msgid;
+	BOOLEAN have_rect;
+	RECT rect;
 };
 
 typedef struct tagGUI_CLIP_CURSOR_REQ GUI_CLIP_CURSOR_REQ;
@@ -554,12 +554,11 @@ typedef struct tagGUI_CLIP_CURSOR_REQ GUI_CLIP_CURSOR_REQ;
 
 struct tagGUI_SET_FOREGROUND_WINDOW_REQ
 {
-    ULONG msgid;
-    ULONG hwnd;
+	ULONG msgid;
+	ULONG hwnd;
 };
 
-typedef struct tagGUI_SET_FOREGROUND_WINDOW_REQ
-                                            GUI_SET_FOREGROUND_WINDOW_REQ;
+typedef struct tagGUI_SET_FOREGROUND_WINDOW_REQ GUI_SET_FOREGROUND_WINDOW_REQ;
 
 
 //---------------------------------------------------------------------------
@@ -569,17 +568,17 @@ typedef struct tagGUI_SET_FOREGROUND_WINDOW_REQ
 
 struct tagGUI_MONITOR_FROM_WINDOW_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    ULONG hwnd;
-    ULONG flags;
+	ULONG msgid;
+	ULONG error;
+	ULONG hwnd;
+	ULONG flags;
 };
 
 struct tagGUI_MONITOR_FROM_WINDOW_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG retval;
+	ULONG status;
+	ULONG error;
+	ULONG retval;
 };
 
 typedef struct tagGUI_MONITOR_FROM_WINDOW_REQ GUI_MONITOR_FROM_WINDOW_REQ;
@@ -593,9 +592,9 @@ typedef struct tagGUI_MONITOR_FROM_WINDOW_RPL GUI_MONITOR_FROM_WINDOW_RPL;
 
 struct tagGUI_SPLWOW64_REQ
 {
-    ULONG msgid;
-    BOOLEAN set;
-    BOOLEAN win8;
+	ULONG msgid;
+	BOOLEAN set;
+	BOOLEAN win8;
 };
 
 
@@ -609,27 +608,25 @@ typedef struct tagGUI_SPLWOW64_REQ GUI_SPLWOW64_REQ;
 
 struct tagGUI_CHANGE_DISPLAY_SETTINGS_REQ
 {
-    ULONG msgid;
-    ULONG flags;
-    BOOLEAN unicode;
-    BOOLEAN have_devname;
-    BOOLEAN have_devmode;
-    WCHAR devname[64];
-    DEVMODEW devmode;
+	ULONG msgid;
+	ULONG flags;
+	BOOLEAN unicode;
+	BOOLEAN have_devname;
+	BOOLEAN have_devmode;
+	WCHAR devname[64];
+	DEVMODEW devmode;
 };
 
 struct tagGUI_CHANGE_DISPLAY_SETTINGS_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG retval;
+	ULONG status;
+	ULONG error;
+	ULONG retval;
 };
 
 
-typedef struct tagGUI_CHANGE_DISPLAY_SETTINGS_REQ
-                                            GUI_CHANGE_DISPLAY_SETTINGS_REQ;
-typedef struct tagGUI_CHANGE_DISPLAY_SETTINGS_RPL
-                                            GUI_CHANGE_DISPLAY_SETTINGS_RPL;
+typedef struct tagGUI_CHANGE_DISPLAY_SETTINGS_REQ GUI_CHANGE_DISPLAY_SETTINGS_REQ;
+typedef struct tagGUI_CHANGE_DISPLAY_SETTINGS_RPL GUI_CHANGE_DISPLAY_SETTINGS_RPL;
 
 
 //---------------------------------------------------------------------------
@@ -639,17 +636,17 @@ typedef struct tagGUI_CHANGE_DISPLAY_SETTINGS_RPL
 
 struct tagGUI_SET_CURSOR_POS_REQ
 {
-    ULONG msgid;
-    ULONG error;
-    LONG x;
-    LONG y;
+	ULONG msgid;
+	ULONG error;
+	LONG x;
+	LONG y;
 };
 
 struct tagGUI_SET_CURSOR_POS_RPL
 {
-    ULONG status;
-    ULONG error;
-    ULONG retval;
+	ULONG status;
+	ULONG error;
+	ULONG retval;
 };
 
 typedef struct tagGUI_SET_CURSOR_POS_REQ GUI_SET_CURSOR_POS_REQ;
@@ -663,14 +660,14 @@ typedef struct tagGUI_SET_CURSOR_POS_RPL GUI_SET_CURSOR_POS_RPL;
 
 struct tagGUI_REMOVE_HOST_WINDOW_REQ
 {
-    ULONG msgid;
-    DWORD threadid;
+	ULONG msgid;
+	DWORD threadid;
 };
 
 struct tagGUI_REMOVE_HOST_WINDOW_RPL
 {
-    ULONG status;
-    BOOL  bRemoved;
+	ULONG status;
+	BOOL bRemoved;
 };
 
 typedef struct tagGUI_REMOVE_HOST_WINDOW_REQ GUI_REMOVE_HOST_WINDOW_REQ;

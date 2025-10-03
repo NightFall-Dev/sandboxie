@@ -26,56 +26,52 @@
 
 class CSetLayoutDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    static LRESULT MyKeyboardHook(int code, WPARAM wParam, LPARAM lParam);
+	static LRESULT MyKeyboardHook(int code, WPARAM wParam, LPARAM lParam);
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    void InitTree();
-    void InitTree2(HTREEITEM hParent, void *_order_entry);
+	void InitTree();
+	void InitTree2(HTREEITEM hParent, void* _order_entry);
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    void ConvertToBoxOrder(HTREEITEM hParent, void *_order_entry);
+	void ConvertToBoxOrder(HTREEITEM hParent, void* _order_entry);
 
-    afx_msg void OnRightClick(NMHDR *pNMHDR, LRESULT *plResult);
+	afx_msg void OnRightClick(NMHDR* pNMHDR, LRESULT* plResult);
 
-    void CreateMoveMenu(CMenu *menu, CPtrArray *handles);
-    void CreateMoveMenu2(
-        CMenu *menu, CPtrArray *handles, HTREEITEM hItem, CString prefix);
+	void CreateMoveMenu(CMenu* menu, CPtrArray* handles);
+	void CreateMoveMenu2(CMenu* menu, CPtrArray* handles, HTREEITEM hItem, CString prefix);
 
-    afx_msg void OnRestore();
+	afx_msg void OnRestore();
 
-    afx_msg void OnInsert();
+	afx_msg void OnInsert();
 
-    afx_msg void OnRename();
+	afx_msg void OnRename();
 
-    afx_msg void OnLabelEdit(NMHDR *pNMHDR, LRESULT *plResult);
+	afx_msg void OnLabelEdit(NMHDR* pNMHDR, LRESULT* plResult);
 
-    afx_msg void OnDelete();
+	afx_msg void OnDelete();
 
-    afx_msg void OnMoveUp();
+	afx_msg void OnMoveUp();
 
-    afx_msg void OnMoveDown();
+	afx_msg void OnMoveDown();
 
-    afx_msg void OnMoveTo();
+	afx_msg void OnMoveTo();
 
-    HTREEITEM ReparentItem(HTREEITEM hItem, HTREEITEM hNewParentItem,
-                           HTREEITEM hInsertAfterItem = NULL);
+	HTREEITEM ReparentItem(HTREEITEM hItem, HTREEITEM hNewParentItem, HTREEITEM hInsertAfterItem = NULL);
 
-    void ReparentItemForDelete(HTREEITEM hItem, HTREEITEM hNewParentItem);
+	void ReparentItemForDelete(HTREEITEM hItem, HTREEITEM hNewParentItem);
 
 private:
-
-    CTreeCtrl *m_tree;
-    static HHOOK m_hhook;
-    static bool m_inLabelEdit;
+	CTreeCtrl* m_tree;
+	static HHOOK m_hhook;
+	static bool m_inLabelEdit;
 
 public:
-
-    CSetLayoutDialog(CWnd *pParentWnd);
-    ~CSetLayoutDialog();
+	CSetLayoutDialog(CWnd* pParentWnd);
+	~CSetLayoutDialog();
 };
 
 

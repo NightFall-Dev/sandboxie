@@ -27,106 +27,100 @@
 #include "ToolTipButton.h"
 
 
-#define QR_SAME                     10
-#define QR_ANY                      20
-#define QR_AUTO                     30
-#define QR_LOG                      40
+#define QR_SAME 10
+#define QR_ANY 20
+#define QR_AUTO 30
+#define QR_LOG 40
 
 
 class CQuickRecover : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CString m_BoxName;
-    CString m_SrcPath;
-    CString m_DstPath;
+	CString m_BoxName;
+	CString m_SrcPath;
+	CString m_DstPath;
 
-    CStringList m_items;
-    CStringList m_list;
-    BOOL m_check;
-    BOOL m_ready;
-    BOOL m_replace;
-    BOOL m_log;
+	CStringList m_items;
+	CStringList m_list;
+	BOOL m_check;
+	BOOL m_ready;
+	BOOL m_replace;
+	BOOL m_log;
 
-    HWND m_hwndTree;
-    CStatic m_static;
-    CButton m_checkbox;
-    CListBox m_listbox;
+	HWND m_hwndTree;
+	CStatic m_static;
+	CButton m_checkbox;
+	CListBox m_listbox;
 
-    ULONG m_log_count;
+	ULONG m_log_count;
 
-    CToolTipButton SelectAllButton;
-    CToolTipButton RightClickButton;
-    CToolTipButton CycleRecoverButton;
+	CToolTipButton SelectAllButton;
+	CToolTipButton RightClickButton;
+	CToolTipButton CycleRecoverButton;
 
-    int m_recover_mode;
+	int m_recover_mode;
 
-    static ULONG m_TempFolderCounter;
-    static CStringList m_past_files;
+	static ULONG m_TempFolderCounter;
+	static CStringList m_past_files;
 
-    static const WCHAR *ReplaceButtonText;
+	static const WCHAR* ReplaceButtonText;
 
-    afx_msg void OnDestroy();
-    afx_msg void OnListSelect();
-    afx_msg int  OnVKeyToItem(UINT nKey, CListBox *pListBox, UINT nIndex);
-    afx_msg void OnSelectAll();
-    afx_msg void OnContextMenu(CWnd *pWnd, CPoint pt);
-    afx_msg void OnCheckBoxClick();
-    afx_msg void OnCycleRecover();
+	afx_msg void OnDestroy();
+	afx_msg void OnListSelect();
+	afx_msg int OnVKeyToItem(UINT nKey, CListBox* pListBox, UINT nIndex);
+	afx_msg void OnSelectAll();
+	afx_msg void OnContextMenu(CWnd* pWnd, CPoint pt);
+	afx_msg void OnCheckBoxClick();
+	afx_msg void OnCycleRecover();
 
-    void InitFolderList(bool AddHead, int SelectIndex);
-    void AddHeadFolderList(ULONG msgid);
+	void InitFolderList(bool AddHead, int SelectIndex);
+	void AddHeadFolderList(ULONG msgid);
 
-    CString GetDestPlusRelative(
-        const CString &DestPath, const CString &RelativePath);
+	CString GetDestPlusRelative(const CString& DestPath, const CString& RelativePath);
 
-    BOOL RecoverToAnyFolder(const CString &RelativePath = CString());
+	BOOL RecoverToAnyFolder(const CString& RelativePath = CString());
 
-    static int CALLBACK BrowseCallback(
-        HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData);
+	static int CALLBACK BrowseCallback(HWND hwnd, UINT msg, LPARAM lParam, LPARAM lpData);
 
-    void OnInitDialogAnyFolder();
+	void OnInitDialogAnyFolder();
 
-    void AutoRecover();
+	void AutoRecover();
 
-    void MoveButtonIntoList(
-        CButton *pButton, CListBox *pListBox, HBITMAP hBitmap);
+	void MoveButtonIntoList(CButton* pButton, CListBox* pListBox, HBITMAP hBitmap);
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    BOOL RecoverToSameFolder();
+	BOOL RecoverToSameFolder();
 
-    BOOL RecoverFile(const CString &DestPath, BOOL SameFolder = FALSE);
-    BOOL RecoverFile2(WCHAR *src, WCHAR *dst, BOOL SameFolder);
-    BOOL RecoverFile3(WCHAR *src, WCHAR *dst, BOOL SameFolder);
-    void RecoverFileX(WCHAR *src);
+	BOOL RecoverFile(const CString& DestPath, BOOL SameFolder = FALSE);
+	BOOL RecoverFile2(WCHAR* src, WCHAR* dst, BOOL SameFolder);
+	BOOL RecoverFile3(WCHAR* src, WCHAR* dst, BOOL SameFolder);
+	void RecoverFileX(WCHAR* src);
 
-    BOOL RecoverFolder(BOOL SameFolder);
+	BOOL RecoverFolder(BOOL SameFolder);
 
-    //
-    // recovery log
-    //
+	//
+	// recovery log
+	//
 
-    void RecoveryLog();
+	void RecoveryLog();
 
-    BOOL OnInitDialogRecoveryLog();
-    void OnOKRecoveryLog();
-    afx_msg void OnActivate(UINT nState, CWnd *pWndOther, BOOL bMinimized);
-    afx_msg void OnRemoveFolders();
+	BOOL OnInitDialogRecoveryLog();
+	void OnOKRecoveryLog();
+	afx_msg void OnActivate(UINT nState, CWnd* pWndOther, BOOL bMinimized);
+	afx_msg void OnRemoveFolders();
 
 public:
+	CQuickRecover(CWnd* pParentWnd, const CString& BoxName, const CString& SrcPath, int qrMode);
 
-    CQuickRecover(CWnd *pParentWnd, const CString &BoxName,
-                  const CString &SrcPath, int qrMode);
+	CQuickRecover(CWnd* pParentWnd, const CString& BoxName, CStringList& list, int qrMode);
 
-    CQuickRecover(CWnd *pParentWnd, const CString &BoxName,
-                  CStringList &list, int qrMode);
+	~CQuickRecover();
 
-    ~CQuickRecover();
-
-    void AddAutoRecoverItem(const CString &SrcPath);
+	void AddAutoRecoverItem(const CString& SrcPath);
 };
 
 

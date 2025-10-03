@@ -27,9 +27,9 @@
 #undef NTDDI_VERSION
 #define NTDDI_VERSION NTDDI_VISTA
 #define __RPC_FAR
-#include <rpc.h>
-
 #include "common/defines.h"
+
+#include <rpc.h>
 
 //---------------------------------------------------------------------------
 // EPMapper Get Port Name Service
@@ -38,19 +38,19 @@
 
 struct tagEPMAPPER_GET_PORT_NAME_REQ
 {
-    MSG_HEADER h;
-    RPC_IF_ID   ifidRequest;
+	MSG_HEADER h;
+	RPC_IF_ID ifidRequest;
 };
 
 struct tagEPMAPPER_GET_PORT_NAME_RPL
 {
-    MSG_HEADER h;           // h.status is RPC_STATUS
-    HRESULT hr;
-    WCHAR wszPortName[DYNAMIC_PORT_NAME_CHARS];
+	MSG_HEADER h; // h.status is RPC_STATUS
+	HRESULT hr;
+	WCHAR wszPortName[DYNAMIC_PORT_NAME_CHARS];
 };
 
-typedef struct tagEPMAPPER_GET_PORT_NAME_REQ    EPMAPPER_GET_PORT_NAME_REQ;
-typedef struct tagEPMAPPER_GET_PORT_NAME_RPL    EPMAPPER_GET_PORT_NAME_RPL;
+typedef struct tagEPMAPPER_GET_PORT_NAME_REQ EPMAPPER_GET_PORT_NAME_REQ;
+typedef struct tagEPMAPPER_GET_PORT_NAME_RPL EPMAPPER_GET_PORT_NAME_RPL;
 
 
-#endif  // _MY_EPMAPPERWIRE_H
+#endif // _MY_EPMAPPERWIRE_H

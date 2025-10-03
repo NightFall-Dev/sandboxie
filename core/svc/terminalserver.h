@@ -29,34 +29,29 @@
 
 class TerminalServer
 {
-
 public:
-
-    TerminalServer(PipeServer *pipeServer);
-
-protected:
-
-    static MSG_HEADER *Handler(void *_this, MSG_HEADER *msg);
-
-    MSG_HEADER *QueryInfo(MSG_HEADER *msg);
-
-    MSG_HEADER *CheckType(MSG_HEADER *msg);
-
-    MSG_HEADER *GetName(MSG_HEADER *msg);
-
-    MSG_HEADER *GetProperty(MSG_HEADER *msg);
-
-    MSG_HEADER *Disconnect(MSG_HEADER *msg);
+	TerminalServer(PipeServer* pipeServer);
 
 protected:
+	static MSG_HEADER* Handler(void* _this, MSG_HEADER* msg);
 
-    void *m_WinStaQueryInformation;
-    void *m_WinStationIsSessionRemoteable;
-    void *m_WinStationNameFromLogonId;
-    void *m_WinStationGetConnectionProperty;
-    void *m_WinStationFreePropertyValue;
-    void *m_WinStationDisconnect;
+	MSG_HEADER* QueryInfo(MSG_HEADER* msg);
 
+	MSG_HEADER* CheckType(MSG_HEADER* msg);
+
+	MSG_HEADER* GetName(MSG_HEADER* msg);
+
+	MSG_HEADER* GetProperty(MSG_HEADER* msg);
+
+	MSG_HEADER* Disconnect(MSG_HEADER* msg);
+
+protected:
+	void* m_WinStaQueryInformation;
+	void* m_WinStationIsSessionRemoteable;
+	void* m_WinStationNameFromLogonId;
+	void* m_WinStationGetConnectionProperty;
+	void* m_WinStationFreePropertyValue;
+	void* m_WinStationDisconnect;
 };
 
 

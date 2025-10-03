@@ -21,11 +21,12 @@
 
 
 #include "thread.h"
+
+#include "api.h"
 #include "process.h"
+#include "session.h"
 #include "syscall.h"
 #include "token.h"
-#include "session.h"
-#include "api.h"
 
 
 //---------------------------------------------------------------------------
@@ -33,15 +34,11 @@
 //---------------------------------------------------------------------------
 
 
-#define PROCESS_DENIED_ACCESS_MASK                              \
-        ~(  STANDARD_RIGHTS_READ | SYNCHRONIZE |                \
-            PROCESS_VM_READ | PROCESS_QUERY_INFORMATION |       \
-            PROCESS_QUERY_LIMITED_INFORMATION )
+#define PROCESS_DENIED_ACCESS_MASK \
+	~(STANDARD_RIGHTS_READ | SYNCHRONIZE | PROCESS_VM_READ | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION)
 
-#define THREAD_DENIED_ACCESS_MASK                               \
-        ~(  STANDARD_RIGHTS_READ | SYNCHRONIZE |                \
-            THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION |     \
-            THREAD_QUERY_LIMITED_INFORMATION )
+#define THREAD_DENIED_ACCESS_MASK \
+	~(STANDARD_RIGHTS_READ | SYNCHRONIZE | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION | THREAD_QUERY_LIMITED_INFORMATION)
 
 
 //---------------------------------------------------------------------------
@@ -49,17 +46,16 @@
 //---------------------------------------------------------------------------
 
 
-struct _THREAD {
+struct _THREAD
+{
+	LIST_ELEM list_elem;
 
-    LIST_ELEM list_elem;
+	HANDLE tid;
 
-    HANDLE tid;
-
-    void *token_object;
-    BOOLEAN token_CopyOnOpen;
-    BOOLEAN token_EffectiveOnly;
-    SECURITY_IMPERSONATION_LEVEL token_ImpersonationLevel;
-
+	void* token_object;
+	BOOLEAN token_CopyOnOpen;
+	BOOLEAN token_EffectiveOnly;
+	SECURITY_IMPERSONATION_LEVEL token_ImpersonationLevel;
 };
 
 
@@ -70,39 +66,29 @@ struct _THREAD {
 
 static void Thread_Notify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create);
 
-static PROCESS *Thread_FindAndInitProcess(
-    PROCESS *proc1, void *ProcessObject2, KIRQL *out_irql);
+static PROCESS* Thread_FindAndInitProcess(PROCESS* proc1, void* ProcessObject2, KIRQL* out_irql);
 
-static THREAD *Thread_GetCurrent(PROCESS *proc);
+static THREAD* Thread_GetCurrent(PROCESS* proc);
 
-static THREAD *Thread_GetOrCreate(PROCESS *proc, HANDLE tid, BOOLEAN create);
+static THREAD* Thread_GetOrCreate(PROCESS* proc, HANDLE tid, BOOLEAN create);
 
-static NTSTATUS Thread_MyImpersonateClient(
-    PETHREAD ThreadObject, void *TokenObject,
-    BOOLEAN CopyOnOpen, BOOLEAN EffectiveOnly,
-    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel);
+static NTSTATUS Thread_MyImpersonateClient(PETHREAD ThreadObject, void* TokenObject, BOOLEAN CopyOnOpen, BOOLEAN EffectiveOnly, SECURITY_IMPERSONATION_LEVEL ImpersonationLevel);
 
 
 //---------------------------------------------------------------------------
 
 
-static NTSTATUS Thread_CheckProcessObject(
-    PROCESS *proc, void *Object, UNICODE_STRING *Name,
-    ACCESS_MASK GrantedAccess);
+static NTSTATUS Thread_CheckProcessObject(PROCESS* proc, void* Object, UNICODE_STRING* Name, ACCESS_MASK GrantedAccess);
 
-static NTSTATUS Thread_CheckThreadObject(
-    PROCESS *proc, void *Object, UNICODE_STRING *Name,
-    ACCESS_MASK GrantedAccess);
+static NTSTATUS Thread_CheckThreadObject(PROCESS* proc, void* Object, UNICODE_STRING* Name, ACCESS_MASK GrantedAccess);
 
-static NTSTATUS Thread_CheckObject_Common(
-    PROCESS *proc, PEPROCESS ProcessObject,
-    ACCESS_MASK GrantedAccess, ACCESS_MASK WriteAccess, WCHAR Letter1);
+static NTSTATUS Thread_CheckObject_Common(PROCESS* proc, PEPROCESS ProcessObject, ACCESS_MASK GrantedAccess, ACCESS_MASK WriteAccess, WCHAR Letter1);
 
 
 //---------------------------------------------------------------------------
 
 
-static NTSTATUS Thread_Api_OpenProcess(PROCESS *proc, ULONG64 *parms);
+static NTSTATUS Thread_Api_OpenProcess(PROCESS* proc, ULONG64* parms);
 
 static void Thread_InitAnonymousToken(void);
 
@@ -111,8 +97,8 @@ static void Thread_InitAnonymousToken(void);
 
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text (INIT, Thread_Init)
-#pragma alloc_text (INIT, Thread_InitAnonymousToken)
+	#pragma alloc_text(INIT, Thread_Init)
+	#pragma alloc_text(INIT, Thread_InitAnonymousToken)
 #endif // ALLOC_PRAGMA
 
 
@@ -139,82 +125,101 @@ static BOOLEAN Thread_NotifyInstalled = FALSE;
 
 _FX BOOLEAN Thread_Init(void)
 {
-    NTSTATUS status;
+	NTSTATUS status;
 
-    //
-    // set up the thread notify routine
-    //
+	//
+	// set up the thread notify routine
+	//
 
-    status = PsSetCreateThreadNotifyRoutine(Thread_Notify);
+	status = PsSetCreateThreadNotifyRoutine(Thread_Notify);
 
-    if (NT_SUCCESS(status)) {
+	if (NT_SUCCESS(status))
+	{
+		Thread_NotifyInstalled = TRUE;
+	}
+	else
+	{
+		// too many notify routines are already installed in the system
+		Log_Status(MSG_PROCESS_NOTIFY, 0x33, status);
+		return FALSE;
+	}
 
-        Thread_NotifyInstalled = TRUE;
+	//
+	// get an impersonation token for Thread_ImpersonateAnonymousToken
+	//
 
-    } else {
+	Thread_InitAnonymousToken();
 
-        // too many notify routines are already installed in the system
-        Log_Status(MSG_PROCESS_NOTIFY, 0x33, status);
-        return FALSE;
-    }
+	//
+	// set syscalls handlers
+	//
 
-    //
-    // get an impersonation token for Thread_ImpersonateAnonymousToken
-    //
+	if (!Syscall_Set1("OpenProcessToken", Thread_OpenProcessToken))
+	{
+		return FALSE;
+	}
+	if (!Syscall_Set1("OpenProcessTokenEx", Thread_OpenProcessTokenEx))
+	{
+		return FALSE;
+	}
 
-    Thread_InitAnonymousToken();
+	if (!Syscall_Set1("OpenThreadToken", Thread_OpenThreadToken))
+	{
+		return FALSE;
+	}
+	if (!Syscall_Set1("OpenThreadTokenEx", Thread_OpenThreadTokenEx))
+	{
+		return FALSE;
+	}
 
-    //
-    // set syscalls handlers
-    //
+	if (!Syscall_Set1("SetInformationProcess", Thread_SetInformationProcess))
+	{
+		return FALSE;
+	}
+	if (!Syscall_Set1("SetInformationThread", Thread_SetInformationThread))
+	{
+		return FALSE;
+	}
 
-    if (! Syscall_Set1("OpenProcessToken",      Thread_OpenProcessToken))
-        return FALSE;
-    if (! Syscall_Set1("OpenProcessTokenEx",    Thread_OpenProcessTokenEx))
-        return FALSE;
+	if (!Syscall_Set1("ImpersonateAnonymousToken", Thread_ImpersonateAnonymousToken))
+	{
+		return FALSE;
+	}
 
-    if (! Syscall_Set1("OpenThreadToken",       Thread_OpenThreadToken))
-        return FALSE;
-    if (! Syscall_Set1("OpenThreadTokenEx",     Thread_OpenThreadTokenEx))
-        return FALSE;
+	//
+	// set object open handlers
+	//
 
-    if (! Syscall_Set1("SetInformationProcess",Thread_SetInformationProcess))
-        return FALSE;
-    if (! Syscall_Set1("SetInformationThread",  Thread_SetInformationThread))
-        return FALSE;
+	if (!Syscall_Set2("OpenProcess", Thread_CheckProcessObject))
+	{
+		return FALSE;
+	}
 
-    if (! Syscall_Set1(
-            "ImpersonateAnonymousToken", Thread_ImpersonateAnonymousToken))
-        return FALSE;
+	if (!Syscall_Set2("OpenThread", Thread_CheckThreadObject))
+	{
+		return FALSE;
+	}
 
-    //
-    // set object open handlers
-    //
+	if (Driver_OsVersion >= DRIVER_WINDOWS_VISTA)
+	{
+		if (!Syscall_Set2("AlpcOpenSenderProcess", Thread_CheckProcessObject))
+		{
+			return FALSE;
+		}
 
-    if (! Syscall_Set2("OpenProcess",           Thread_CheckProcessObject))
-        return FALSE;
+		if (!Syscall_Set2("AlpcOpenSenderThread", Thread_CheckThreadObject))
+		{
+			return FALSE;
+		}
+	}
 
-    if (! Syscall_Set2("OpenThread",            Thread_CheckThreadObject))
-        return FALSE;
+	//
+	// set API handlers
+	//
 
-    if (Driver_OsVersion >= DRIVER_WINDOWS_VISTA) {
+	Api_SetFunction(API_OPEN_PROCESS, Thread_Api_OpenProcess);
 
-        if (! Syscall_Set2(
-                    "AlpcOpenSenderProcess",    Thread_CheckProcessObject))
-            return FALSE;
-
-        if (! Syscall_Set2(
-                    "AlpcOpenSenderThread",     Thread_CheckThreadObject))
-            return FALSE;
-    }
-
-    //
-    // set API handlers
-    //
-
-    Api_SetFunction(API_OPEN_PROCESS,       Thread_Api_OpenProcess);
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -225,16 +230,17 @@ _FX BOOLEAN Thread_Init(void)
 
 _FX void Thread_Unload(void)
 {
-    if (Thread_NotifyInstalled) {
+	if (Thread_NotifyInstalled)
+	{
+		PsRemoveCreateThreadNotifyRoutine(Thread_Notify);
+		Thread_NotifyInstalled = FALSE;
+	}
 
-        PsRemoveCreateThreadNotifyRoutine(Thread_Notify);
-        Thread_NotifyInstalled = FALSE;
-    }
-
-    if (Thread_AnonymousToken) {
-        ObDereferenceObject(Thread_AnonymousToken);
-        Thread_AnonymousToken = NULL;
-    }
+	if (Thread_AnonymousToken)
+	{
+		ObDereferenceObject(Thread_AnonymousToken);
+		Thread_AnonymousToken = NULL;
+	}
 }
 
 
@@ -245,66 +251,70 @@ _FX void Thread_Unload(void)
 
 _FX void Thread_Notify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create)
 {
-    void *TokenObject = NULL;
-    PROCESS *proc;
-    THREAD *thrd;
-    KIRQL irql;
+	void* TokenObject = NULL;
+	PROCESS* proc;
+	THREAD* thrd;
+	KIRQL irql;
 
-    //
-    // implement Gui_ThreadModifyCount watchdog hook for gui_xp module
-    //
+	//
+	// implement Gui_ThreadModifyCount watchdog hook for gui_xp module
+	//
 
 #ifndef _WIN64
 
-    if ((Create) && (Driver_OsVersion < DRIVER_WINDOWS_VISTA)) {
-
-        extern volatile ULONG Gui_ThreadModifyCount;
-        InterlockedIncrement(&Gui_ThreadModifyCount);
-    }
+	if ((Create) && (Driver_OsVersion < DRIVER_WINDOWS_VISTA))
+	{
+		extern volatile ULONG Gui_ThreadModifyCount;
+		InterlockedIncrement(&Gui_ThreadModifyCount);
+	}
 
 #endif _WIN64
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    proc = Process_Find(ProcessId, &irql);
-    if (proc && proc->threads_lock) {
+	proc = Process_Find(ProcessId, &irql);
+	if (proc && proc->threads_lock)
+	{
+		ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
 
-        ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
+		thrd = List_Head(&proc->threads);
+		while (thrd)
+		{
+			if (thrd->tid == ThreadId)
+			{
+				break;
+			}
+			thrd = List_Next(thrd);
+		}
 
-        thrd = List_Head(&proc->threads);
-        while (thrd) {
-            if (thrd->tid == ThreadId)
-                break;
-            thrd = List_Next(thrd);
-        }
+		if (thrd)
+		{
+			if (Create)
+			{
+				// already have an entry for this thread id, shouldn't happen
+				Process_SetTerminated(proc, 10);
+			}
+			else
+			{
+				TokenObject = InterlockedExchangePointer(&thrd->token_object, NULL);
 
-        if (thrd) {
+				List_Remove(&proc->threads, thrd);
+				Mem_Free(thrd, sizeof(THREAD));
+			}
+		}
 
-            if (Create) {
+		ExReleaseResourceLite(proc->threads_lock);
+	}
 
-                // already have an entry for this thread id, shouldn't happen
-                Process_SetTerminated(proc, 10);
+	ExReleaseResourceLite(Process_ListLock);
+	KeLowerIrql(irql);
 
-            } else {
-
-                TokenObject = InterlockedExchangePointer(
-                                            &thrd->token_object, NULL);
-
-                List_Remove(&proc->threads, thrd);
-                Mem_Free(thrd, sizeof(THREAD));
-            }
-        }
-
-        ExReleaseResourceLite(proc->threads_lock);
-    }
-
-    ExReleaseResourceLite(Process_ListLock);
-    KeLowerIrql(irql);
-
-    if (TokenObject)
-        ObDereferenceObject(TokenObject);
+	if (TokenObject)
+	{
+		ObDereferenceObject(TokenObject);
+	}
 }
 
 
@@ -313,28 +323,29 @@ _FX void Thread_Notify(HANDLE ProcessId, HANDLE ThreadId, BOOLEAN Create)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Thread_InitProcess(PROCESS *proc)
+_FX BOOLEAN Thread_InitProcess(PROCESS* proc)
 {
-    NTSTATUS status = STATUS_SUCCESS;
-    BOOLEAN ok;
+	NTSTATUS status = STATUS_SUCCESS;
+	BOOLEAN ok;
 
-    if (! proc->threads_lock) {
+	if (!proc->threads_lock)
+	{
+		List_Init(&proc->threads);
 
-        List_Init(&proc->threads);
+		ok = Mem_GetLockResource(&proc->threads_lock, FALSE);
+		if (!ok)
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+		}
 
-        ok = Mem_GetLockResource(&proc->threads_lock, FALSE);
-        if (! ok)
-            status = STATUS_INSUFFICIENT_RESOURCES;
+		if (!NT_SUCCESS(status))
+		{
+			Log_Status_Ex_Session(MSG_1231, 0x44, status, NULL, proc->box->session_id);
+			return FALSE;
+		}
+	}
 
-        if (! NT_SUCCESS(status)) {
-
-            Log_Status_Ex_Session(
-                MSG_1231, 0x44, status, NULL, proc->box->session_id);
-            return FALSE;
-        }
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -343,42 +354,45 @@ _FX BOOLEAN Thread_InitProcess(PROCESS *proc)
 //---------------------------------------------------------------------------
 
 
-_FX void Thread_ReleaseProcess(PROCESS *proc)
+_FX void Thread_ReleaseProcess(PROCESS* proc)
 {
-    THREAD *thrd;
-    KIRQL irql;
+	THREAD* thrd;
+	KIRQL irql;
 
-    if (proc->threads_lock) {
+	if (proc->threads_lock)
+	{
+		while (1)
+		{
+			void* TokenObject = NULL;
 
-        while (1) {
+			KeRaiseIrql(APC_LEVEL, &irql);
+			ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
 
-            void *TokenObject = NULL;
+			thrd = List_Head(&proc->threads);
+			while (thrd)
+			{
+				TokenObject = InterlockedExchangePointer(&thrd->token_object, NULL);
+				if (TokenObject)
+				{
+					break;
+				}
 
-            KeRaiseIrql(APC_LEVEL, &irql);
-            ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
+				thrd = List_Next(thrd);
+			}
 
-            thrd = List_Head(&proc->threads);
-            while (thrd) {
+			ExReleaseResourceLite(proc->threads_lock);
+			KeLowerIrql(irql);
 
-                TokenObject = InterlockedExchangePointer(
-                                            &thrd->token_object, NULL);
-                if (TokenObject)
-                    break;
+			if (!TokenObject)
+			{
+				break;
+			}
 
-                thrd = List_Next(thrd);
-            }
+			ObDereferenceObject(TokenObject);
+		}
 
-            ExReleaseResourceLite(proc->threads_lock);
-            KeLowerIrql(irql);
-
-            if (! TokenObject)
-                break;
-
-            ObDereferenceObject(TokenObject);
-        }
-
-        Mem_FreeLockResource(&proc->threads_lock);
-    }
+		Mem_FreeLockResource(&proc->threads_lock);
+	}
 }
 
 
@@ -387,25 +401,28 @@ _FX void Thread_ReleaseProcess(PROCESS *proc)
 //---------------------------------------------------------------------------
 
 
-_FX PROCESS *Thread_FindAndInitProcess(
-    PROCESS *proc1, void *ProcessObject2, KIRQL *out_irql)
+_FX PROCESS* Thread_FindAndInitProcess(PROCESS* proc1, void* ProcessObject2, KIRQL* out_irql)
 {
-    PROCESS *proc2 = Process_Find(PsGetProcessId(ProcessObject2), out_irql);
-    if (proc2) {
+	PROCESS* proc2 = Process_Find(PsGetProcessId(ProcessObject2), out_irql);
+	if (proc2)
+	{
+		if (!Process_IsSameBox(proc1, proc2, 0))
+		{
+			proc2 = NULL;
+		}
 
-        if (! Process_IsSameBox(proc1, proc2, 0))
-            proc2 = NULL;
+		else if (!proc2->threads_lock)
+		{
+			BOOLEAN ok = Thread_InitProcess(proc2);
+			if (!ok)
+			{
+				Process_SetTerminated(proc2, 11);
+				proc2 = NULL;
+			}
+		}
+	}
 
-        else if (! proc2->threads_lock) {
-            BOOLEAN ok = Thread_InitProcess(proc2);
-            if (! ok) {
-                Process_SetTerminated(proc2, 11);
-                proc2 = NULL;
-            }
-        }
-    }
-
-    return proc2;
+	return proc2;
 }
 
 
@@ -416,61 +433,50 @@ _FX PROCESS *Thread_FindAndInitProcess(
 
 _FX BOOLEAN Thread_AdjustGrantedAccess(void)
 {
-
 #ifndef _WIN64
 
-    static BOOLEAN _GrantedAccessOffsetIsGood = FALSE;
+	static BOOLEAN _GrantedAccessOffsetIsGood = FALSE;
 
-    //
-    // on Windows XP, the kernel caches a granted access value for use
-    // with the psuedo handle NtCurrentThread(), but this value is
-    // computed using the real primary token which is highly restricted.
-    // we have to fix this value
-    //
-    // note that we don't mind assigning impersonation rights because all
-    // impersonation requests end up in PsImpersonateClient which only
-    // grants the SecurityIdentification impersonation level if the primary
-    // token does not include the SeImpersonatePrivilege privilege.
-    // see also Thread_MyImpersonateClient
-    //
+	//
+	// on Windows XP, the kernel caches a granted access value for use
+	// with the psuedo handle NtCurrentThread(), but this value is
+	// computed using the real primary token which is highly restricted.
+	// we have to fix this value
+	//
+	// note that we don't mind assigning impersonation rights because all
+	// impersonation requests end up in PsImpersonateClient which only
+	// grants the SecurityIdentification impersonation level if the primary
+	// token does not include the SeImpersonatePrivilege privilege.
+	// see also Thread_MyImpersonateClient
+	//
 
-    if (   Driver_OsVersion >= DRIVER_WINDOWS_XP
-        && Driver_OsVersion <= DRIVER_WINDOWS_2003) {
+	if (Driver_OsVersion >= DRIVER_WINDOWS_XP && Driver_OsVersion <= DRIVER_WINDOWS_2003)
+	{
+		PETHREAD ThreadObject = PsGetCurrentThread();
 
-        PETHREAD ThreadObject = PsGetCurrentThread();
+		const ULONG GrantedAccessOffset = (Driver_OsVersion == DRIVER_WINDOWS_XP) ? 0x244 // Windows XP offset
+		                                                                            :
+		                                                                            0x23C; // Windows 2003 offset
 
-        const ULONG GrantedAccessOffset =
-            (Driver_OsVersion == DRIVER_WINDOWS_XP)
-                ? 0x244         // Windows XP offset
-                : 0x23C;        // Windows 2003 offset
+		ULONG* pGrantedAccess = (ULONG*)((ULONG_PTR)ThreadObject + GrantedAccessOffset);
 
-        ULONG *pGrantedAccess = (ULONG *)
-            ((ULONG_PTR)ThreadObject + GrantedAccessOffset);
+		if (!_GrantedAccessOffsetIsGood)
+		{
+			if (*pGrantedAccess != 0x001F03FF)
+			{
+				// must not have the right offset, shouldn't happen
+				Log_Status_Ex_Session(MSG_1231, 0x55, *pGrantedAccess, NULL, -1);
+				return FALSE;
+			}
+			_GrantedAccessOffsetIsGood = TRUE;
+		}
 
-        if (! _GrantedAccessOffsetIsGood) {
-            if (*pGrantedAccess != 0x001F03FF) {
-                // must not have the right offset, shouldn't happen
-                Log_Status_Ex_Session(
-                        MSG_1231, 0x55, *pGrantedAccess, NULL, -1);
-                return FALSE;
-            }
-            _GrantedAccessOffsetIsGood = TRUE;
-        }
+		*pGrantedAccess |= STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE | THREAD_TERMINATE | THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT | THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION | THREAD_SET_THREAD_TOKEN | THREAD_IMPERSONATE | THREAD_DIRECT_IMPERSONATION | THREAD_SET_LIMITED_INFORMATION | THREAD_QUERY_LIMITED_INFORMATION;
+	}
 
-        *pGrantedAccess |=
-                  STANDARD_RIGHTS_REQUIRED | SYNCHRONIZE
-                | THREAD_TERMINATE | THREAD_SUSPEND_RESUME
-                | THREAD_GET_CONTEXT | THREAD_SET_CONTEXT
-                | THREAD_SET_INFORMATION | THREAD_QUERY_INFORMATION
-                | THREAD_SET_THREAD_TOKEN | THREAD_IMPERSONATE
-                | THREAD_DIRECT_IMPERSONATION
-                | THREAD_SET_LIMITED_INFORMATION
-                | THREAD_QUERY_LIMITED_INFORMATION;
-    }
+#endif !_WIN64
 
-#endif ! _WIN64
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -479,29 +485,34 @@ _FX BOOLEAN Thread_AdjustGrantedAccess(void)
 //---------------------------------------------------------------------------
 
 
-_FX THREAD *Thread_GetCurrent(PROCESS *proc)
+_FX THREAD* Thread_GetCurrent(PROCESS* proc)
 {
-    THREAD *thrd;
-    HANDLE tid;
-    KIRQL irql;
+	THREAD* thrd;
+	HANDLE tid;
+	KIRQL irql;
 
-    if (! proc->threads_lock)
-        return NULL;
+	if (!proc->threads_lock)
+	{
+		return NULL;
+	}
 
-    tid = PsGetCurrentThreadId();
-    KeRaiseIrql(APC_LEVEL, &irql);
-    ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
+	tid = PsGetCurrentThreadId();
+	KeRaiseIrql(APC_LEVEL, &irql);
+	ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
 
-    thrd = List_Head(&proc->threads);
-    while (thrd) {
-        if (thrd->tid == tid)
-            break;
-        thrd = List_Next(thrd);
-    }
+	thrd = List_Head(&proc->threads);
+	while (thrd)
+	{
+		if (thrd->tid == tid)
+		{
+			break;
+		}
+		thrd = List_Next(thrd);
+	}
 
-    ExReleaseResourceLite(proc->threads_lock);
-    KeLowerIrql(irql);
-    return thrd;
+	ExReleaseResourceLite(proc->threads_lock);
+	KeLowerIrql(irql);
+	return thrd;
 }
 
 
@@ -510,30 +521,37 @@ _FX THREAD *Thread_GetCurrent(PROCESS *proc)
 //---------------------------------------------------------------------------
 
 
-_FX THREAD *Thread_GetOrCreate(PROCESS *proc, HANDLE tid, BOOLEAN create)
+_FX THREAD* Thread_GetOrCreate(PROCESS* proc, HANDLE tid, BOOLEAN create)
 {
-    THREAD *thrd;
+	THREAD* thrd;
 
-    if (! tid)
-        tid = PsGetCurrentThreadId();
+	if (!tid)
+	{
+		tid = PsGetCurrentThreadId();
+	}
 
-    thrd = List_Head(&proc->threads);
-    while (thrd) {
-        if (thrd->tid == tid)
-            break;
-        thrd = List_Next(thrd);
-    }
+	thrd = List_Head(&proc->threads);
+	while (thrd)
+	{
+		if (thrd->tid == tid)
+		{
+			break;
+		}
+		thrd = List_Next(thrd);
+	}
 
-    if ((! thrd) && create) {
-        thrd = Mem_Alloc(proc->pool, sizeof(THREAD));
-        if (thrd) {
-            memzero(thrd, sizeof(THREAD));
-            thrd->tid = tid;
-            List_Insert_After(&proc->threads, NULL, thrd);
-        }
-    }
+	if ((!thrd) && create)
+	{
+		thrd = Mem_Alloc(proc->pool, sizeof(THREAD));
+		if (thrd)
+		{
+			memzero(thrd, sizeof(THREAD));
+			thrd->tid = tid;
+			List_Insert_After(&proc->threads, NULL, thrd);
+		}
+	}
 
-    return thrd;
+	return thrd;
 }
 
 
@@ -542,181 +560,214 @@ _FX THREAD *Thread_GetOrCreate(PROCESS *proc, HANDLE tid, BOOLEAN create)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_MyImpersonateClient(
-    PETHREAD ThreadObject, void *TokenObject,
-    BOOLEAN CopyOnOpen, BOOLEAN EffectiveOnly,
-    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)
+_FX NTSTATUS Thread_MyImpersonateClient(PETHREAD ThreadObject, void* TokenObject, BOOLEAN CopyOnOpen, BOOLEAN EffectiveOnly, SECURITY_IMPERSONATION_LEVEL ImpersonationLevel)
 {
-    //
-    // (starting with Windows XP SP 2) PsImpersonateClient will not
-    // directly impersonate the requested token if:
-    // - the primary token of the process does not include the
-    //   privilege SeImpersonatePrivilege
-    // - the requested impersonation level is >= SecurityImpersonation
-    // - the impersonate privilege is not granted in the primary token
-    //   that is associated with the process of the specified
-    // - the SID in the requested token is different from the SID in
-    //   the primary process token
-    //
-    // the conditions above will always be true because a sandboxed
-    // process has a highly restricted anonymous primary token (see
-    // Token_AssignPrimary).  in this case PsImpersonateClient will clone
-    // the requested token, and will impersonate the cloned token with
-    // SecurityIdentification impersonation level.
-    //
-    // impersonation at SecurityIdentification level (or lower) does not
-    // allow the calling thread to open any securable objects, not even
-    // its own thread token
-    //
-    // to work around this, we intentionally call PsImpersonateClient
-    // with SecurityIdentification so it can impersonate the specified
-    // token directly, and then we adjust the impersonation level stored
-    // in the thread object to SecurityImpersonation
-    //
-    // see also Token_AssignPrimary
-    //
+	//
+	// (starting with Windows XP SP 2) PsImpersonateClient will not
+	// directly impersonate the requested token if:
+	// - the primary token of the process does not include the
+	//   privilege SeImpersonatePrivilege
+	// - the requested impersonation level is >= SecurityImpersonation
+	// - the impersonate privilege is not granted in the primary token
+	//   that is associated with the process of the specified
+	// - the SID in the requested token is different from the SID in
+	//   the primary process token
+	//
+	// the conditions above will always be true because a sandboxed
+	// process has a highly restricted anonymous primary token (see
+	// Token_AssignPrimary).  in this case PsImpersonateClient will clone
+	// the requested token, and will impersonate the cloned token with
+	// SecurityIdentification impersonation level.
+	//
+	// impersonation at SecurityIdentification level (or lower) does not
+	// allow the calling thread to open any securable objects, not even
+	// its own thread token
+	//
+	// to work around this, we intentionally call PsImpersonateClient
+	// with SecurityIdentification so it can impersonate the specified
+	// token directly, and then we adjust the impersonation level stored
+	// in the thread object to SecurityImpersonation
+	//
+	// see also Token_AssignPrimary
+	//
 
-    NTSTATUS status = PsImpersonateClient(ThreadObject, TokenObject,
-                        CopyOnOpen, EffectiveOnly, SecurityIdentification);
+	NTSTATUS status = PsImpersonateClient(ThreadObject, TokenObject, CopyOnOpen, EffectiveOnly, SecurityIdentification);
 
-    // ***** ImpersonationInfo_offset is the offset of ClientSecurity field in nt!ETHREAD structure *****
+	// ***** ImpersonationInfo_offset is the offset of ClientSecurity field in nt!ETHREAD structure *****
 
-    if (NT_SUCCESS(status) && TokenObject) {
-
-        ULONG ImpersonationInfo_offset = 0;
+	if (NT_SUCCESS(status) && TokenObject)
+	{
+		ULONG ImpersonationInfo_offset = 0;
 
 #ifdef _WIN64
 
-        // offset of ClientSecurity field in nt!ETHREAD structure
+		// offset of ClientSecurity field in nt!ETHREAD structure
 
-        if (Driver_OsVersion == DRIVER_WINDOWS_VISTA)
-            ImpersonationInfo_offset = 0x3B0;
+		if (Driver_OsVersion == DRIVER_WINDOWS_VISTA)
+		{
+			ImpersonationInfo_offset = 0x3B0;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_7)
-            ImpersonationInfo_offset = 0x3E0;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_7)
+		{
+			ImpersonationInfo_offset = 0x3E0;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_8)
-            ImpersonationInfo_offset = 0x3C8;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_8)
+		{
+			ImpersonationInfo_offset = 0x3C8;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_81)
-            ImpersonationInfo_offset = 0x650;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_81)
+		{
+			ImpersonationInfo_offset = 0x650;
+		}
 
-        else if (Driver_OsBuild < 14316)
-            ImpersonationInfo_offset = 0x658;
-        else if (Driver_OsBuild < 15031)
-            ImpersonationInfo_offset = 0x660;
-        else if (Driver_OsBuild < 18312)
-            ImpersonationInfo_offset = 0x668;
-        else if (Driver_OsBuild <= 18363)
-            ImpersonationInfo_offset = 0x678;
-        else if (Driver_OsBuild < 18980)
-            ImpersonationInfo_offset = 0x688;
-        else if (Driver_OsBuild >= 18980)
-            ImpersonationInfo_offset = 0x4a8;
+		else if (Driver_OsBuild < 14316)
+		{
+			ImpersonationInfo_offset = 0x658;
+		}
+		else if (Driver_OsBuild < 15031)
+		{
+			ImpersonationInfo_offset = 0x660;
+		}
+		else if (Driver_OsBuild < 18312)
+		{
+			ImpersonationInfo_offset = 0x668;
+		}
+		else if (Driver_OsBuild <= 18363)
+		{
+			ImpersonationInfo_offset = 0x678;
+		}
+		else if (Driver_OsBuild < 18980)
+		{
+			ImpersonationInfo_offset = 0x688;
+		}
+		else if (Driver_OsBuild >= 18980)
+		{
+			ImpersonationInfo_offset = 0x4a8;
+		}
 
-#else ! _WIN64
+#else !_WIN64
 
-        if (Driver_OsVersion == DRIVER_WINDOWS_XP)
-            ImpersonationInfo_offset = 0x20C;
+		if (Driver_OsVersion == DRIVER_WINDOWS_XP)
+		{
+			ImpersonationInfo_offset = 0x20C;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_2003)
-            ImpersonationInfo_offset = 0x204;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_2003)
+		{
+			ImpersonationInfo_offset = 0x204;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_VISTA)
-            ImpersonationInfo_offset = 0x228;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_VISTA)
+		{
+			ImpersonationInfo_offset = 0x228;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_7)
-            ImpersonationInfo_offset = 0x248;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_7)
+		{
+			ImpersonationInfo_offset = 0x248;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_8)
-            ImpersonationInfo_offset = 0x230;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_8)
+		{
+			ImpersonationInfo_offset = 0x230;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_81)
-            ImpersonationInfo_offset = 0x380;
+		else if (Driver_OsVersion == DRIVER_WINDOWS_81)
+		{
+			ImpersonationInfo_offset = 0x380;
+		}
 
-        else if (Driver_OsVersion == DRIVER_WINDOWS_10) {
-            if (Driver_OsBuild < 14965) {
-                ImpersonationInfo_offset = 0x390;
-            }
-            else if (Driver_OsBuild <= 18309) {
-                ImpersonationInfo_offset = 0x398;
-            }
-            else  if (Driver_OsBuild < 18980) {
-                ImpersonationInfo_offset = 0x3A0;
-            }
-            else {
-                ImpersonationInfo_offset = 0x2c8;
-            }
-        }
-        //
-        // on Windows XP (which is supported only in a 32-bit)
-        // impersonation information is a structure
-        //
+		else if (Driver_OsVersion == DRIVER_WINDOWS_10)
+		{
+			if (Driver_OsBuild < 14965)
+			{
+				ImpersonationInfo_offset = 0x390;
+			}
+			else if (Driver_OsBuild <= 18309)
+			{
+				ImpersonationInfo_offset = 0x398;
+			}
+			else if (Driver_OsBuild < 18980)
+			{
+				ImpersonationInfo_offset = 0x3A0;
+			}
+			else
+			{
+				ImpersonationInfo_offset = 0x2c8;
+			}
+		}
+		//
+		// on Windows XP (which is supported only in a 32-bit)
+		// impersonation information is a structure
+		//
 
-        if (ImpersonationInfo_offset &&
-                Driver_OsVersion >= DRIVER_WINDOWS_XP &&
-                Driver_OsVersion <= DRIVER_WINDOWS_2003) {
+		if (ImpersonationInfo_offset && Driver_OsVersion >= DRIVER_WINDOWS_XP && Driver_OsVersion <= DRIVER_WINDOWS_2003)
+		{
+			typedef struct _PS_IMPERSONATION_INFORMATION
+			{
+				void* TokenObject;
+				BOOLEAN CopyOnOpen;
+				BOOLEAN EffectiveOnly;
+				SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+			} PS_IMPERSONATION_INFORMATION;
 
-            typedef struct _PS_IMPERSONATION_INFORMATION {
-                void *TokenObject;
-                BOOLEAN CopyOnOpen;
-                BOOLEAN EffectiveOnly;
-                SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
-            } PS_IMPERSONATION_INFORMATION;
+			PS_IMPERSONATION_INFORMATION* ImpersonationInfo = *(PS_IMPERSONATION_INFORMATION**)((ULONG_PTR)ThreadObject + ImpersonationInfo_offset);
 
-            PS_IMPERSONATION_INFORMATION *ImpersonationInfo =
-                *(PS_IMPERSONATION_INFORMATION **)
-                    ((ULONG_PTR)ThreadObject + ImpersonationInfo_offset);
+			if (ImpersonationInfo->TokenObject != TokenObject)
+			{
+				ImpersonationInfo_offset = 0; // trigger error message
+			}
 
-            if (ImpersonationInfo->TokenObject != TokenObject)
-                ImpersonationInfo_offset = 0;   // trigger error message
-
-            else if (ImpersonationLevel != SecurityIdentification) {
-
-                ImpersonationInfo->ImpersonationLevel = ImpersonationLevel;
-            }
-        }
+			else if (ImpersonationLevel != SecurityIdentification)
+			{
+				ImpersonationInfo->ImpersonationLevel = ImpersonationLevel;
+			}
+		}
 
 #endif _WIN64
 
-        //
-        // on Windows Vista and later, impersonation info is a ULONG_PTR
-        // where bits 0..1 are the impersonation level,
-        // bit 2 is the effective only flag,
-        // bits 3..31 (or 3..63) is the token object pointer
-        // and CopyOnOpen is recorded somewhere else in the thread structure
-        // (check output of "dt nt!_PS_CLIENT_SECURITY_CONTEXT" in windbg)
-        //
+		//
+		// on Windows Vista and later, impersonation info is a ULONG_PTR
+		// where bits 0..1 are the impersonation level,
+		// bit 2 is the effective only flag,
+		// bits 3..31 (or 3..63) is the token object pointer
+		// and CopyOnOpen is recorded somewhere else in the thread structure
+		// (check output of "dt nt!_PS_CLIENT_SECURITY_CONTEXT" in windbg)
+		//
 
-        if (ImpersonationInfo_offset &&
-                Driver_OsVersion >= DRIVER_WINDOWS_VISTA) {
+		if (ImpersonationInfo_offset && Driver_OsVersion >= DRIVER_WINDOWS_VISTA)
+		{
+			ULONG_PTR* ImpersonationInfo = (ULONG_PTR*)((ULONG_PTR)ThreadObject + ImpersonationInfo_offset);
 
-            ULONG_PTR *ImpersonationInfo = (ULONG_PTR *)
-                    ((ULONG_PTR)ThreadObject + ImpersonationInfo_offset);
+			if ((*ImpersonationInfo & ~7) != (ULONG_PTR)TokenObject)
+			{
+				// kernel updates occasionally alter structure of ETHREAD
+				// and ImpersonationInfo_offset may be off by a ULONG_PTR
+				++ImpersonationInfo;
+			}
 
-            if ((*ImpersonationInfo & ~7) != (ULONG_PTR)TokenObject) {
-                // kernel updates occasionally alter structure of ETHREAD
-                // and ImpersonationInfo_offset may be off by a ULONG_PTR
-                ++ImpersonationInfo;
-            }
+			if ((*ImpersonationInfo & ~7) != (ULONG_PTR)TokenObject)
+			{
+				ImpersonationInfo_offset = 0; // trigger error message
+			}
 
-            if ((*ImpersonationInfo & ~7) != (ULONG_PTR)TokenObject)
-                ImpersonationInfo_offset = 0;   // trigger error message
+			else if (ImpersonationLevel != SecurityIdentification)
+			{
+				*ImpersonationInfo = ((*ImpersonationInfo) & ~3) | (ImpersonationLevel & 3);
+			}
+		}
 
-            else if (ImpersonationLevel != SecurityIdentification) {
+		if (!ImpersonationInfo_offset)
+		{
+			status = STATUS_ACCESS_DENIED;
+			Log_Status(MSG_1222, 0x62, STATUS_UNKNOWN_REVISION);
+		}
+	}
 
-                *ImpersonationInfo = ((*ImpersonationInfo) & ~3)
-                                   | (ImpersonationLevel & 3);
-            }
-        }
-
-        if (! ImpersonationInfo_offset) {
-            status = STATUS_ACCESS_DENIED;
-            Log_Status(MSG_1222, 0x62, STATUS_UNKNOWN_REVISION);
-        }
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -725,97 +776,101 @@ _FX NTSTATUS Thread_MyImpersonateClient(
 //---------------------------------------------------------------------------
 
 
-_FX void Thread_SetThreadToken(PROCESS *proc)
+_FX void Thread_SetThreadToken(PROCESS* proc)
 {
-    void *TokenObject;
-    THREAD *thrd;
-    NTSTATUS status;
-    KIRQL irql;
-    BOOLEAN DerefToken;
-    BOOLEAN CopyOnOpen;
-    BOOLEAN EffectiveOnly;
-    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+	void* TokenObject;
+	THREAD* thrd;
+	NTSTATUS status;
+	KIRQL irql;
+	BOOLEAN DerefToken;
+	BOOLEAN CopyOnOpen;
+	BOOLEAN EffectiveOnly;
+	SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
 
-    if (! proc->primary_token)
-        return;
+	if (!proc->primary_token)
+	{
+		return;
+	}
 
-    //
-    // enable security before processing a system call
-    //
-    // a user mode thread in a sandboxed process should always be running
-    // without impersonation and with highly restricted primary token.
-    // when invoking a system call, we want to restore the original
-    // security context so call can succeed
-    //
-    // if the thread has a recorded impersonation token in our thread
-    // structure, we restore this token;  otherwise we use the original
-    // primary token which is stored in our process structure
-    //
-    // after processing a system call, the impersonation token is discarded
-    //
+	//
+	// enable security before processing a system call
+	//
+	// a user mode thread in a sandboxed process should always be running
+	// without impersonation and with highly restricted primary token.
+	// when invoking a system call, we want to restore the original
+	// security context so call can succeed
+	//
+	// if the thread has a recorded impersonation token in our thread
+	// structure, we restore this token;  otherwise we use the original
+	// primary token which is stored in our process structure
+	//
+	// after processing a system call, the impersonation token is discarded
+	//
 
-    DerefToken = FALSE;
+	DerefToken = FALSE;
 
-    thrd = Thread_GetCurrent(proc);
-    if (thrd) {
+	thrd = Thread_GetCurrent(proc);
+	if (thrd)
+	{
+		//
+		// we have a thread structure which means we might have an
+		// impersonation token, although not necessarily
+		//
 
-        //
-        // we have a thread structure which means we might have an
-        // impersonation token, although not necessarily
-        //
+		KeRaiseIrql(APC_LEVEL, &irql);
+		ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
 
-        KeRaiseIrql(APC_LEVEL, &irql);
-        ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
+		TokenObject        = thrd->token_object;
+		CopyOnOpen         = thrd->token_CopyOnOpen;
+		EffectiveOnly      = thrd->token_EffectiveOnly;
+		ImpersonationLevel = thrd->token_ImpersonationLevel;
 
-        TokenObject = thrd->token_object;
-        CopyOnOpen = thrd->token_CopyOnOpen;
-        EffectiveOnly = thrd->token_EffectiveOnly;
-        ImpersonationLevel = thrd->token_ImpersonationLevel;
+		if (TokenObject)
+		{
+			ObReferenceObject(TokenObject);
+			DerefToken = TRUE;
+		}
 
-        if (TokenObject) {
-            ObReferenceObject(TokenObject);
-            DerefToken = TRUE;
-        }
+		ExReleaseResourceLite(proc->threads_lock);
+		KeLowerIrql(irql);
+	}
+	else
+	{
+		//
+		// no thread structure means the thread has never impersonated
+		//
 
-        ExReleaseResourceLite(proc->threads_lock);
-        KeLowerIrql(irql);
+		TokenObject = NULL;
+	}
 
-    } else {
+	if (!TokenObject)
+	{
+		//
+		// if the thread is not currently impersonating, use primary token
+		//
 
-        //
-        // no thread structure means the thread has never impersonated
-        //
+		TokenObject        = proc->primary_token;
+		CopyOnOpen         = FALSE;
+		EffectiveOnly      = FALSE;
+		ImpersonationLevel = SecurityImpersonation;
+	}
 
-        TokenObject = NULL;
-    }
+	//
+	// begin thread impersonation for the selected token
+	//
 
-    if (! TokenObject) {
+	status = Thread_MyImpersonateClient(PsGetCurrentThread(), TokenObject, CopyOnOpen, EffectiveOnly, ImpersonationLevel);
 
-        //
-        // if the thread is not currently impersonating, use primary token
-        //
+	if (!NT_SUCCESS(status))
+	{
+		Log_Status(MSG_1222, 0x61, status);
+		Process_SetTerminated(proc, 12);
+	}
 
-        TokenObject = proc->primary_token;
-        CopyOnOpen = FALSE;
-        EffectiveOnly = FALSE;
-        ImpersonationLevel = SecurityImpersonation;
-    }
-
-    //
-    // begin thread impersonation for the selected token
-    //
-
-    status = Thread_MyImpersonateClient(PsGetCurrentThread(), TokenObject,
-                CopyOnOpen, EffectiveOnly, ImpersonationLevel);
-
-    if (! NT_SUCCESS(status)) {
-
-        Log_Status(MSG_1222, 0x61, status);
-        Process_SetTerminated(proc, 12);
-    }
-
-    if (DerefToken)
-        ObDereferenceObject(TokenObject);
+	if (DerefToken)
+	{
+		ObDereferenceObject(TokenObject);
+	}
 }
 
 
@@ -824,98 +879,109 @@ _FX void Thread_SetThreadToken(PROCESS *proc)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_StoreThreadToken(PROCESS *proc)
+_FX NTSTATUS Thread_StoreThreadToken(PROCESS* proc)
 {
-    THREAD *thrd;
-    void *TokenObject;
-    BOOLEAN CopyOnOpen;
-    BOOLEAN EffectiveOnly;
-    SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
-    KIRQL irql;
-    NTSTATUS status;
+	THREAD* thrd;
+	void* TokenObject;
+	BOOLEAN CopyOnOpen;
+	BOOLEAN EffectiveOnly;
+	SECURITY_IMPERSONATION_LEVEL ImpersonationLevel;
+	KIRQL irql;
+	NTSTATUS status;
 
-    //
-    // syscalls like NtImpersonateAnonymousToken/NtImpersonateClientOfPort
-    // will not be able to impersonate with SecurityImpersonation level
-    // because our highly restricted process token does not include the
-    // SeImpersonatePrivilege privilege.  to work around this limitation,
-    // this functions gets the active impersonation token which was put in
-    // place by a syscall like NtImpersonateAnonymousToken, and stores it
-    // in our thread structure with SecurityImpersonation level.
-    //
+	//
+	// syscalls like NtImpersonateAnonymousToken/NtImpersonateClientOfPort
+	// will not be able to impersonate with SecurityImpersonation level
+	// because our highly restricted process token does not include the
+	// SeImpersonatePrivilege privilege.  to work around this limitation,
+	// this functions gets the active impersonation token which was put in
+	// place by a syscall like NtImpersonateAnonymousToken, and stores it
+	// in our thread structure with SecurityImpersonation level.
+	//
 
-    //
-    // get the active impersonation token
-    //
+	//
+	// get the active impersonation token
+	//
 
-    if (! proc->primary_token)
-        return STATUS_SUCCESS;
+	if (!proc->primary_token)
+	{
+		return STATUS_SUCCESS;
+	}
 
-    status = STATUS_NO_IMPERSONATION_TOKEN;
+	status = STATUS_NO_IMPERSONATION_TOKEN;
 
-    TokenObject = PsReferenceImpersonationToken(PsGetCurrentThread(),
-                    &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel);
+	TokenObject = PsReferenceImpersonationToken(PsGetCurrentThread(), &CopyOnOpen, &EffectiveOnly, &ImpersonationLevel);
 
-    if (! TokenObject) {
-        // if we are called, there should be an impersonation token
-        return status;
-    }
+	if (!TokenObject)
+	{
+		// if we are called, there should be an impersonation token
+		return status;
+	}
 
-    //
-    // check if we need to store the new token into our thread struccture
-    //
+	//
+	// check if we need to store the new token into our thread struccture
+	//
 
-    KeRaiseIrql(APC_LEVEL, &irql);
-    ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
+	KeRaiseIrql(APC_LEVEL, &irql);
+	ExAcquireResourceExclusiveLite(proc->threads_lock, TRUE);
 
-    thrd = Thread_GetCurrent(proc);
-    if (thrd) {
+	thrd = Thread_GetCurrent(proc);
+	if (thrd)
+	{
+		//
+		// store the currently active impersonation token into our
+		// thread structure, unless the same token is already there
+		//
 
-        //
-        // store the currently active impersonation token into our
-        // thread structure, unless the same token is already there
-        //
+		if (thrd->token_object != TokenObject)
+		{
+			status = STATUS_SUCCESS;
+		}
+	}
+	else
+	{
+		thrd = Thread_GetOrCreate(proc, NULL, TRUE);
+		if (thrd)
+		{
+			status = STATUS_SUCCESS;
+		}
+		else
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+		}
+	}
 
-        if (thrd->token_object != TokenObject)
-            status = STATUS_SUCCESS;
+	if (NT_SUCCESS(status))
+	{
+		TokenObject                    = InterlockedExchangePointer(&thrd->token_object, TokenObject);
+		thrd->token_CopyOnOpen         = CopyOnOpen;
+		thrd->token_EffectiveOnly      = EffectiveOnly;
+		thrd->token_ImpersonationLevel = SecurityImpersonation;
 
-    } else {
-
-        thrd = Thread_GetOrCreate(proc, NULL, TRUE);
-        if (thrd)
-            status = STATUS_SUCCESS;
-        else
-            status = STATUS_INSUFFICIENT_RESOURCES;
-    }
-
-    if (NT_SUCCESS(status)) {
-
-        TokenObject = InterlockedExchangePointer(
-                                        &thrd->token_object, TokenObject);
-        thrd->token_CopyOnOpen = CopyOnOpen;
-        thrd->token_EffectiveOnly = EffectiveOnly;
-        thrd->token_ImpersonationLevel = SecurityImpersonation;
-
-        /*if (CopyOnOpen)
+		/*if (CopyOnOpen)
             DbgPrint("Stored Thread Token With CopyOnOpen\n");*/
+	}
+	else if (status == STATUS_NO_IMPERSONATION_TOKEN)
+	{
+		status = STATUS_SUCCESS;
+	}
 
-    } else if (status == STATUS_NO_IMPERSONATION_TOKEN)
-        status = STATUS_SUCCESS;
+	ExReleaseResourceLite(proc->threads_lock);
+	KeLowerIrql(irql);
 
-    ExReleaseResourceLite(proc->threads_lock);
-    KeLowerIrql(irql);
+	//
+	// dereference the old token, which is either the old token that was
+	// stored in our thread structure and has to be dereferenceed, or it
+	// is the token we got from PsReferenceImpersonationToken which also
+	// would have to be dereference
+	//
 
-    //
-    // dereference the old token, which is either the old token that was
-    // stored in our thread structure and has to be dereferenceed, or it
-    // is the token we got from PsReferenceImpersonationToken which also
-    // would have to be dereference
-    //
+	if (TokenObject)
+	{
+		ObDereferenceObject(TokenObject);
+	}
 
-    if (TokenObject)
-        ObDereferenceObject(TokenObject);
-
-    return status;
+	return status;
 }
 
 
@@ -924,14 +990,11 @@ _FX NTSTATUS Thread_StoreThreadToken(PROCESS *proc)
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_CheckProcessObject(
-    PROCESS *proc, void *Object, UNICODE_STRING *Name,
-    ACCESS_MASK GrantedAccess)
+_FX NTSTATUS Thread_CheckProcessObject(PROCESS* proc, void* Object, UNICODE_STRING* Name, ACCESS_MASK GrantedAccess)
 {
-    PEPROCESS ProcessObject = (PEPROCESS)Object;
-    ACCESS_MASK WriteAccess = (GrantedAccess & PROCESS_DENIED_ACCESS_MASK);
-    return Thread_CheckObject_Common(
-                proc, ProcessObject, GrantedAccess, WriteAccess, L'P');
+	PEPROCESS ProcessObject = (PEPROCESS)Object;
+	ACCESS_MASK WriteAccess = (GrantedAccess & PROCESS_DENIED_ACCESS_MASK);
+	return Thread_CheckObject_Common(proc, ProcessObject, GrantedAccess, WriteAccess, L'P');
 }
 
 
@@ -940,14 +1003,11 @@ _FX NTSTATUS Thread_CheckProcessObject(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_CheckThreadObject(
-    PROCESS *proc, void *Object, UNICODE_STRING *Name,
-    ACCESS_MASK GrantedAccess)
+_FX NTSTATUS Thread_CheckThreadObject(PROCESS* proc, void* Object, UNICODE_STRING* Name, ACCESS_MASK GrantedAccess)
 {
-    PEPROCESS ProcessObject = PsGetThreadProcess(Object);
-    ACCESS_MASK WriteAccess = (GrantedAccess & THREAD_DENIED_ACCESS_MASK);
-    return Thread_CheckObject_Common(
-                proc, ProcessObject, GrantedAccess, WriteAccess, L'T');
+	PEPROCESS ProcessObject = PsGetThreadProcess(Object);
+	ACCESS_MASK WriteAccess = (GrantedAccess & THREAD_DENIED_ACCESS_MASK);
+	return Thread_CheckObject_Common(proc, ProcessObject, GrantedAccess, WriteAccess, L'T');
 }
 
 
@@ -956,116 +1016,130 @@ _FX NTSTATUS Thread_CheckThreadObject(
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_CheckObject_Common(
-    PROCESS *proc, PEPROCESS ProcessObject,
-    ACCESS_MASK GrantedAccess, ACCESS_MASK WriteAccess, WCHAR Letter1)
+_FX NTSTATUS Thread_CheckObject_Common(PROCESS* proc, PEPROCESS ProcessObject, ACCESS_MASK GrantedAccess, ACCESS_MASK WriteAccess, WCHAR Letter1)
 {
-    ULONG_PTR pid;
-    const WCHAR *pSetting;
-    NTSTATUS status;
+	ULONG_PTR pid;
+	const WCHAR* pSetting;
+	NTSTATUS status;
 
-    //
-    // if an error occured and can't find pid, then don't allow
-    //
+	//
+	// if an error occured and can't find pid, then don't allow
+	//
 
-    pid = (ULONG_PTR)PsGetProcessId(ProcessObject);
+	pid = (ULONG_PTR)PsGetProcessId(ProcessObject);
 
-    if (! pid)
-        return STATUS_ACCESS_DENIED;
+	if (!pid)
+	{
+		return STATUS_ACCESS_DENIED;
+	}
 
-    //
-    // for read-only access to the target process, we don't care
-    // if/which boxes are involved
-    //
+	//
+	// for read-only access to the target process, we don't care
+	// if/which boxes are involved
+	//
 
-    if (pid && (WriteAccess == 0)) {
-        status = STATUS_SUCCESS;
-        goto trace;
-    }
+	if (pid && (WriteAccess == 0))
+	{
+		status = STATUS_SUCCESS;
+		goto trace;
+	}
 
-    //
-    // otherwise this is write access, confirm if same box
-    //
+	//
+	// otherwise this is write access, confirm if same box
+	//
 
-    if (Process_IsSameBox(proc, NULL, pid)) {
-        status = STATUS_SUCCESS;
-        goto trace;
-    }
+	if (Process_IsSameBox(proc, NULL, pid))
+	{
+		status = STATUS_SUCCESS;
+		goto trace;
+	}
 
-    //
-    // also permit if process is exiting, because it is possible that
-    // Process_NotifyProcess_Delete already executed, while our caller
-    // still has a handle to the process and calls NtDuplicateObject
-    // (e.g. VS2012 MSBuild.exe does this with the csc.exe compiler)
-    //
+	//
+	// also permit if process is exiting, because it is possible that
+	// Process_NotifyProcess_Delete already executed, while our caller
+	// still has a handle to the process and calls NtDuplicateObject
+	// (e.g. VS2012 MSBuild.exe does this with the csc.exe compiler)
+	//
 
-    if (PsGetProcessExitProcessCalled(ProcessObject)) {
-        status = STATUS_SUCCESS;
-        goto trace;
-    }
+	if (PsGetProcessExitProcessCalled(ProcessObject))
+	{
+		status = STATUS_SUCCESS;
+		goto trace;
+	}
 
-    //
-    // write access outside box, check if we have the following setting
-    // OpenIpcPath=$:ProcessName.exe
-    //
+	//
+	// write access outside box, check if we have the following setting
+	// OpenIpcPath=$:ProcessName.exe
+	//
 
-    status = Process_CheckProcessName(
-                    proc, &proc->open_ipc_paths, pid, &pSetting);
+	status = Process_CheckProcessName(proc, &proc->open_ipc_paths, pid, &pSetting);
 
-    //
-    // log the cross-sandbox access attempt, based on the status code
-    //
+	//
+	// log the cross-sandbox access attempt, based on the status code
+	//
 
-    if (Session_MonitorCount) {
+	if (Session_MonitorCount)
+	{
+		void* nbuf;
+		ULONG nlen;
+		WCHAR* nptr;
 
-        void *nbuf;
-        ULONG nlen;
-        WCHAR *nptr;
+		Process_GetProcessName(proc->pool, pid, &nbuf, &nlen, &nptr);
+		if (nbuf)
+		{
+			USHORT mon_type = MONITOR_IPC;
+			if (NT_SUCCESS(status))
+			{
+				mon_type |= MONITOR_OPEN;
+			}
+			else
+			{
+				mon_type |= MONITOR_DENY;
+			}
 
-        Process_GetProcessName(proc->pool, pid, &nbuf, &nlen, &nptr);
-        if (nbuf) {
+			--nptr;
+			*nptr = L':';
+			--nptr;
+			*nptr = L'$';
 
-            USHORT mon_type = MONITOR_IPC;
-            if (NT_SUCCESS(status))
-                mon_type |= MONITOR_OPEN;
-            else
-                mon_type |= MONITOR_DENY;
+			Session_MonitorPut(mon_type, nptr);
 
-            --nptr; *nptr = L':';
-            --nptr; *nptr = L'$';
+			Mem_Free(nbuf, nlen);
+		}
+	}
 
-            Session_MonitorPut(mon_type, nptr);
-
-            Mem_Free(nbuf, nlen);
-        }
-    }
-
-    //
-    // trace
-    //
+	//
+	// trace
+	//
 
 trace:
 
-    if (proc->ipc_trace & (TRACE_ALLOW | TRACE_DENY)) {
+	if (proc->ipc_trace & (TRACE_ALLOW | TRACE_DENY))
+	{
+		WCHAR str[32];
+		WCHAR Letter2;
 
-        WCHAR str[32];
-        WCHAR Letter2;
+		if ((!NT_SUCCESS(status)) && (proc->ipc_trace & TRACE_DENY))
+		{
+			Letter2 = L'D';
+		}
+		else if (NT_SUCCESS(status) && (proc->ipc_trace & TRACE_ALLOW))
+		{
+			Letter2 = L'A';
+		}
+		else
+		{
+			Letter2 = 0;
+		}
 
-        if ((! NT_SUCCESS(status)) && (proc->ipc_trace & TRACE_DENY))
-            Letter2 = L'D';
-        else if (NT_SUCCESS(status) && (proc->ipc_trace & TRACE_ALLOW))
-            Letter2 = L'A';
-        else
-            Letter2 = 0;
+		if (Letter2)
+		{
+			swprintf(str, L"(%c%c) %08X %06d", Letter1, Letter2, GrantedAccess, (int)pid);
+			Log_Debug_Msg(str, Driver_Empty);
+		}
+	}
 
-        if (Letter2) {
-            swprintf(str, L"(%c%c) %08X %06d",
-                                Letter1, Letter2, GrantedAccess, (int)pid);
-            Log_Debug_Msg(str, Driver_Empty);
-        }
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -1074,107 +1148,115 @@ trace:
 //---------------------------------------------------------------------------
 
 
-_FX NTSTATUS Thread_Api_OpenProcess(PROCESS *proc, ULONG64 *parms)
+_FX NTSTATUS Thread_Api_OpenProcess(PROCESS* proc, ULONG64* parms)
 {
-    API_OPEN_PROCESS_ARGS *args = (API_OPEN_PROCESS_ARGS *)parms;
-    NTSTATUS status;
-    OBJECT_ATTRIBUTES objattrs;
-    CLIENT_ID clientid;
-    ACCESS_MASK DesiredAccess;
-    HANDLE handle;
-    HANDLE user_pid;
-    HANDLE *user_handle;
+	API_OPEN_PROCESS_ARGS* args = (API_OPEN_PROCESS_ARGS*)parms;
+	NTSTATUS status;
+	OBJECT_ATTRIBUTES objattrs;
+	CLIENT_ID clientid;
+	ACCESS_MASK DesiredAccess;
+	HANDLE handle;
+	HANDLE user_pid;
+	HANDLE* user_handle;
 
-    //
-    // this API must be invoked by a sandboxed process
-    //
+	//
+	// this API must be invoked by a sandboxed process
+	//
 
-    if (! proc)
-        return STATUS_NOT_IMPLEMENTED;
+	if (!proc)
+	{
+		return STATUS_NOT_IMPLEMENTED;
+	}
 
-    //
-    // collect and verify parameters
-    //
+	//
+	// collect and verify parameters
+	//
 
-    user_pid = args->process_id.val;
+	user_pid = args->process_id.val;
 
-    user_handle = args->process_handle.val;
+	user_handle = args->process_handle.val;
 
-    ProbeForWrite(user_handle, sizeof(HANDLE), sizeof(ULONG_PTR));
+	ProbeForWrite(user_handle, sizeof(HANDLE), sizeof(ULONG_PTR));
 
-    //
-    // decide how to open the target process
-    //
+	//
+	// decide how to open the target process
+	//
 
-    DesiredAccess = 0;
+	DesiredAccess = 0;
 
-    if (Process_IsSameBox(proc, NULL, (ULONG_PTR)user_pid)) {
+	if (Process_IsSameBox(proc, NULL, (ULONG_PTR)user_pid))
+	{
+		//
+		// scenario 1:  requesting access to another process in
+		// the same sandbox.  give full access.
+		//
 
-        //
-        // scenario 1:  requesting access to another process in
-        // the same sandbox.  give full access.
-        //
+		DesiredAccess = PROCESS_ALL_ACCESS;
+	}
+	else
+	{
+		//
+		// scenario 2:  requesting access to a process outside
+		// any sandbox.  for instance a process with administrator
+		// privileges trying to open csrss.exe but failing because
+		// we stripped the debug privileges.  in this case grant
+		// PROCESS_QUERY_INFORMATION access.
+		//
 
-        DesiredAccess = PROCESS_ALL_ACCESS;
+		BOOLEAN IsAdmin = FALSE;
 
-    } else {
+		if (proc->primary_token)
+		{
+			IsAdmin = SeTokenIsAdmin(proc->primary_token);
+		}
+		else
+		{
+			PACCESS_TOKEN pAccessToken = PsReferencePrimaryToken(PsGetCurrentProcess());
+			IsAdmin                    = SeTokenIsAdmin(pAccessToken);
+			PsDereferencePrimaryToken(pAccessToken);
+		}
 
-        //
-        // scenario 2:  requesting access to a process outside
-        // any sandbox.  for instance a process with administrator
-        // privileges trying to open csrss.exe but failing because
-        // we stripped the debug privileges.  in this case grant
-        // PROCESS_QUERY_INFORMATION access.
-        //
+		if (IsAdmin)
+		{
+			PROCESS* proc2 = Process_Find(user_pid, NULL);
+			if (!proc2)
+			{
+				DesiredAccess = PROCESS_QUERY_INFORMATION;
+			}
+		}
+	}
 
-        BOOLEAN IsAdmin = FALSE;
+	if (!DesiredAccess)
+	{
+		return STATUS_ACCESS_DENIED;
+	}
 
-        if (proc->primary_token)
-            IsAdmin = SeTokenIsAdmin(proc->primary_token);
-        else {
+	//
+	// open process object
+	//
 
-            PACCESS_TOKEN pAccessToken =
-                PsReferencePrimaryToken(PsGetCurrentProcess());
-            IsAdmin = SeTokenIsAdmin(pAccessToken);
-            PsDereferencePrimaryToken(pAccessToken);
-        }
+	InitializeObjectAttributes(&objattrs, NULL, 0, NULL, NULL);
+	clientid.UniqueThread  = NULL;
+	clientid.UniqueProcess = user_pid;
 
-        if (IsAdmin) {
+	status = ZwOpenProcess(&handle, DesiredAccess, &objattrs, &clientid);
 
-            PROCESS *proc2 = Process_Find(user_pid, NULL);
-            if (! proc2) {
+	if (NT_SUCCESS(status))
+	{
+		__try
+		{
+			*user_handle = handle;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			status = GetExceptionCode();
+		}
 
-                DesiredAccess = PROCESS_QUERY_INFORMATION;
-            }
-        }
-    }
+		if (!NT_SUCCESS(status))
+		{
+			ZwClose(handle);
+		}
+	}
 
-    if (! DesiredAccess)
-        return STATUS_ACCESS_DENIED;
-
-    //
-    // open process object
-    //
-
-    InitializeObjectAttributes(&objattrs, NULL, 0, NULL, NULL);
-    clientid.UniqueThread = NULL;
-    clientid.UniqueProcess = user_pid;
-
-    status = ZwOpenProcess(&handle, DesiredAccess, &objattrs, &clientid);
-
-    if (NT_SUCCESS(status)) {
-
-        __try {
-
-            *user_handle = handle;
-
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            status = GetExceptionCode();
-        }
-
-        if (! NT_SUCCESS(status))
-            ZwClose(handle);
-    }
-
-    return status;
+	return status;
 }

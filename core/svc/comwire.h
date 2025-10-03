@@ -43,25 +43,25 @@
 
 typedef struct tagCOM_RPC_SYNTAX_IDENTIFIER
 {
-    GUID SyntaxGUID;
-    unsigned short MajorVersion;
-    unsigned short MinorVersion;
+	GUID SyntaxGUID;
+	unsigned short MajorVersion;
+	unsigned short MinorVersion;
 
 } COM_RPC_SYNTAX_IDENTIFIER;
 
 typedef struct tagCOM_RPC_MESSAGE
 {
-    void *Handle;
-    unsigned long DataRepresentation;
-    void *Buffer;
-    unsigned int BufferLength;
-    unsigned int ProcNum;
-    COM_RPC_SYNTAX_IDENTIFIER *TransferSyntax;
-    void *RpcInterfaceInformation;
-    void *ReservedForRuntime;
-    void *ManagerEpv;
-    void *ImportContext;
-    unsigned long RpcFlags;
+	void* Handle;
+	unsigned long DataRepresentation;
+	void* Buffer;
+	unsigned int BufferLength;
+	unsigned int ProcNum;
+	COM_RPC_SYNTAX_IDENTIFIER* TransferSyntax;
+	void* RpcInterfaceInformation;
+	void* ReservedForRuntime;
+	void* ManagerEpv;
+	void* ImportContext;
+	unsigned long RpcFlags;
 
 } COM_RPC_MESSAGE;
 
@@ -73,17 +73,17 @@ typedef struct tagCOM_RPC_MESSAGE
 
 struct tagCOM_GET_CLASS_OBJECT_REQ
 {
-    MSG_HEADER h;
-    GUID clsid;
-    GUID iid;
-    BOOLEAN elevate;
+	MSG_HEADER h;
+	GUID clsid;
+	GUID iid;
+	BOOLEAN elevate;
 };
 
 struct tagCOM_GET_CLASS_OBJECT_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG objidx;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG objidx;
 };
 
 typedef struct tagCOM_GET_CLASS_OBJECT_REQ COM_GET_CLASS_OBJECT_REQ;
@@ -97,16 +97,16 @@ typedef struct tagCOM_GET_CLASS_OBJECT_RPL COM_GET_CLASS_OBJECT_RPL;
 
 struct tagCOM_CREATE_INSTANCE_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    GUID iid;
+	MSG_HEADER h;
+	ULONG objidx;
+	GUID iid;
 };
 
 struct tagCOM_CREATE_INSTANCE_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG objidx;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG objidx;
 };
 
 typedef struct tagCOM_CREATE_INSTANCE_REQ COM_CREATE_INSTANCE_REQ;
@@ -120,16 +120,16 @@ typedef struct tagCOM_CREATE_INSTANCE_RPL COM_CREATE_INSTANCE_RPL;
 
 struct tagCOM_QUERY_INTERFACE_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    GUID iid;
+	MSG_HEADER h;
+	ULONG objidx;
+	GUID iid;
 };
 
 struct tagCOM_QUERY_INTERFACE_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG objidx;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG objidx;
 };
 
 typedef struct tagCOM_QUERY_INTERFACE_REQ COM_QUERY_INTERFACE_REQ;
@@ -143,16 +143,16 @@ typedef struct tagCOM_QUERY_INTERFACE_RPL COM_QUERY_INTERFACE_RPL;
 
 struct tagCOM_ADD_REF_RELEASE_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    UCHAR op;
+	MSG_HEADER h;
+	ULONG objidx;
+	UCHAR op;
 };
 
 struct tagCOM_ADD_REF_RELEASE_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG refcount;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG refcount;
 };
 
 typedef struct tagCOM_ADD_REF_RELEASE_REQ COM_ADD_REF_RELEASE_REQ;
@@ -166,21 +166,21 @@ typedef struct tagCOM_ADD_REF_RELEASE_RPL COM_ADD_REF_RELEASE_RPL;
 
 struct tagCOM_INVOKE_METHOD_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    ULONG DataRepresentation;
-    ULONG ProcNum;
-    ULONG BufferLength;
-    WCHAR Buffer[1];
+	MSG_HEADER h;
+	ULONG objidx;
+	ULONG DataRepresentation;
+	ULONG ProcNum;
+	ULONG BufferLength;
+	WCHAR Buffer[1];
 };
 
 struct tagCOM_INVOKE_METHOD_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG DataRepresentation;
-    ULONG BufferLength;
-    WCHAR Buffer[1];
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG DataRepresentation;
+	ULONG BufferLength;
+	WCHAR Buffer[1];
 };
 
 typedef struct tagCOM_INVOKE_METHOD_REQ COM_INVOKE_METHOD_REQ;
@@ -194,17 +194,17 @@ typedef struct tagCOM_INVOKE_METHOD_RPL COM_INVOKE_METHOD_RPL;
 
 struct tagCOM_UNMARSHAL_INTERFACE_REQ
 {
-    MSG_HEADER h;
-    GUID iid;
-    ULONG BufferLength;
-    UCHAR Buffer[1];
+	MSG_HEADER h;
+	GUID iid;
+	ULONG BufferLength;
+	UCHAR Buffer[1];
 };
 
 struct tagCOM_UNMARSHAL_INTERFACE_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG objidx;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG objidx;
 };
 
 typedef struct tagCOM_UNMARSHAL_INTERFACE_REQ COM_UNMARSHAL_INTERFACE_REQ;
@@ -218,19 +218,19 @@ typedef struct tagCOM_UNMARSHAL_INTERFACE_RPL COM_UNMARSHAL_INTERFACE_RPL;
 
 struct tagCOM_MARSHAL_INTERFACE_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    GUID iid;
-    ULONG destctx;
-    ULONG mshlflags;
+	MSG_HEADER h;
+	ULONG objidx;
+	GUID iid;
+	ULONG destctx;
+	ULONG mshlflags;
 };
 
 struct tagCOM_MARSHAL_INTERFACE_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG BufferLength;
-    WCHAR Buffer[1];
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG BufferLength;
+	WCHAR Buffer[1];
 };
 
 typedef struct tagCOM_MARSHAL_INTERFACE_REQ COM_MARSHAL_INTERFACE_REQ;
@@ -244,20 +244,20 @@ typedef struct tagCOM_MARSHAL_INTERFACE_RPL COM_MARSHAL_INTERFACE_RPL;
 
 struct tagCOM_QUERY_BLANKET_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
+	MSG_HEADER h;
+	ULONG objidx;
 };
 
 struct tagCOM_QUERY_BLANKET_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG AuthnSvc;
-    ULONG AuthzSvc;
-    ULONG AuthnLevel;
-    ULONG ImpLevel;
-    ULONG Capabilities;
-    WCHAR ServerPrincName[128];
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG AuthnSvc;
+	ULONG AuthzSvc;
+	ULONG AuthnLevel;
+	ULONG ImpLevel;
+	ULONG Capabilities;
+	WCHAR ServerPrincName[128];
 };
 
 typedef struct tagCOM_QUERY_BLANKET_REQ COM_QUERY_BLANKET_REQ;
@@ -271,15 +271,15 @@ typedef struct tagCOM_QUERY_BLANKET_RPL COM_QUERY_BLANKET_RPL;
 
 struct tagCOM_COPY_PROXY_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
+	MSG_HEADER h;
+	ULONG objidx;
 };
 
 struct tagCOM_COPY_PROXY_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
-    ULONG objidx;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
+	ULONG objidx;
 };
 
 typedef struct tagCOM_COPY_PROXY_REQ COM_COPY_PROXY_REQ;
@@ -293,21 +293,21 @@ typedef struct tagCOM_COPY_PROXY_RPL COM_COPY_PROXY_RPL;
 
 struct tagCOM_SET_BLANKET_REQ
 {
-    MSG_HEADER h;
-    ULONG objidx;
-    ULONG AuthnSvc;
-    ULONG AuthzSvc;
-    ULONG AuthnLevel;
-    ULONG ImpLevel;
-    ULONG Capabilities;
-    WCHAR ServerPrincName[128];
-    BOOLEAN DefaultServerPrincName;
+	MSG_HEADER h;
+	ULONG objidx;
+	ULONG AuthnSvc;
+	ULONG AuthzSvc;
+	ULONG AuthnLevel;
+	ULONG ImpLevel;
+	ULONG Capabilities;
+	WCHAR ServerPrincName[128];
+	BOOLEAN DefaultServerPrincName;
 };
 
 struct tagCOM_SET_BLANKET_RPL
 {
-    MSG_HEADER h;                       // status is RPC exception
-    HRESULT hr;
+	MSG_HEADER h; // status is RPC exception
+	HRESULT hr;
 };
 
 typedef struct tagCOM_SET_BLANKET_REQ COM_SET_BLANKET_REQ;
@@ -321,27 +321,27 @@ typedef struct tagCOM_SET_BLANKET_RPL COM_SET_BLANKET_RPL;
 
 struct tagCOM_CRYPT_PROTECT_DATA_REQ
 {
-    MSG_HEADER h;
-    UCHAR mode;
-    ULONG flags;
-    ULONG data_len;
-    ULONG entropy_len;
-    ULONG descr_len;
-    ULONG prompt_flags;
-    ALIGNED ULONG64 prompt_hwnd;
-    WCHAR prompt_text[96];
-    UCHAR data[1];
-    // WCHAR entropy[1];
-    // WCHAR descr[1];
+	MSG_HEADER h;
+	UCHAR mode;
+	ULONG flags;
+	ULONG data_len;
+	ULONG entropy_len;
+	ULONG descr_len;
+	ULONG prompt_flags;
+	ALIGNED ULONG64 prompt_hwnd;
+	WCHAR prompt_text[96];
+	UCHAR data[1];
+	// WCHAR entropy[1];
+	// WCHAR descr[1];
 };
 
 struct tagCOM_CRYPT_PROTECT_DATA_RPL
 {
-    MSG_HEADER h;                       // status is win32 error
-    ULONG data_len;
-    ULONG descr_len;
-    UCHAR data[1];
-    // WCHAR descr[1];
+	MSG_HEADER h; // status is win32 error
+	ULONG data_len;
+	ULONG descr_len;
+	UCHAR data[1];
+	// WCHAR descr[1];
 };
 
 typedef struct tagCOM_CRYPT_PROTECT_DATA_REQ COM_CRYPT_PROTECT_DATA_REQ;
@@ -355,19 +355,19 @@ typedef struct tagCOM_CRYPT_PROTECT_DATA_RPL COM_CRYPT_PROTECT_DATA_RPL;
 
 struct tagCOM_INTERNET_COOKIE_REQ
 {
-    MSG_HEADER h;
-    ULONG data_len;                     // -1 for get, otherwise set
-    ULONG flags;
-    UCHAR url[256];
-    UCHAR data[1];
+	MSG_HEADER h;
+	ULONG data_len; // -1 for get, otherwise set
+	ULONG flags;
+	UCHAR url[256];
+	UCHAR data[1];
 };
 
 struct tagCOM_INTERNET_COOKIE_RPL
 {
-    MSG_HEADER h;                       // status is win32 error
-    ULONG ret_val;
-    ULONG data_len;
-    UCHAR data[1];
+	MSG_HEADER h; // status is win32 error
+	ULONG ret_val;
+	ULONG data_len;
+	UCHAR data[1];
 };
 
 typedef struct tagCOM_INTERNET_COOKIE_REQ COM_INTERNET_COOKIE_REQ;

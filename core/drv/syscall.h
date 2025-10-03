@@ -36,31 +36,26 @@ struct _SYSCALL_ENTRY;
 typedef struct _SYSCALL_ENTRY SYSCALL_ENTRY;
 
 
-typedef NTSTATUS (*P_Syscall_Handler1)(
-    PROCESS *proc, SYSCALL_ENTRY *syscall_entry, ULONG_PTR *user_args);
+typedef NTSTATUS (*P_Syscall_Handler1)(PROCESS* proc, SYSCALL_ENTRY* syscall_entry, ULONG_PTR* user_args);
 
 
-typedef NTSTATUS (*P_Syscall_Handler2)(
-    PROCESS *proc, void *Object, UNICODE_STRING *Name,
-    ACCESS_MASK GrantedAccess);
+typedef NTSTATUS (*P_Syscall_Handler2)(PROCESS* proc, void* Object, UNICODE_STRING* Name, ACCESS_MASK GrantedAccess);
 
-typedef BOOLEAN (*P_Syscall_Handler3_Support_Procmon_Stack)(
-    PROCESS *proc, SYSCALL_ENTRY *syscall_entry, ULONG_PTR *user_args);
+typedef BOOLEAN (*P_Syscall_Handler3_Support_Procmon_Stack)(PROCESS* proc, SYSCALL_ENTRY* syscall_entry, ULONG_PTR* user_args);
 
 
-struct _SYSCALL_ENTRY {
-
-    LIST_ELEM list_elem;
-    USHORT syscall_index;
-    USHORT param_count;
-    ULONG ntdll_offset;
-    void *ntos_func;
-    P_Syscall_Handler1 handler1_func;
-    P_Syscall_Handler2 handler2_func;
-    P_Syscall_Handler3_Support_Procmon_Stack handler3_func_support_procmon;
-    USHORT name_len;
-    UCHAR name[1];
-
+struct _SYSCALL_ENTRY
+{
+	LIST_ELEM list_elem;
+	USHORT syscall_index;
+	USHORT param_count;
+	ULONG ntdll_offset;
+	void* ntos_func;
+	P_Syscall_Handler1 handler1_func;
+	P_Syscall_Handler2 handler2_func;
+	P_Syscall_Handler3_Support_Procmon_Stack handler3_func_support_procmon;
+	USHORT name_len;
+	UCHAR name[1];
 };
 
 
@@ -69,19 +64,19 @@ struct _SYSCALL_ENTRY {
 //---------------------------------------------------------------------------
 
 
-void *Syscall_GetServiceTable(void);
+void* Syscall_GetServiceTable(void);
 
 BOOLEAN Syscall_Init(void);
 
-SYSCALL_ENTRY *Syscall_GetByName(const UCHAR *name);
+SYSCALL_ENTRY* Syscall_GetByName(const UCHAR* name);
 
-BOOLEAN Syscall_Set1(const UCHAR *name, P_Syscall_Handler1 handler_func);
+BOOLEAN Syscall_Set1(const UCHAR* name, P_Syscall_Handler1 handler_func);
 
-BOOLEAN Syscall_Set2(const UCHAR *name, P_Syscall_Handler2 handler_func);
+BOOLEAN Syscall_Set2(const UCHAR* name, P_Syscall_Handler2 handler_func);
 
-BOOLEAN Syscall_Set3(const UCHAR *name, P_Syscall_Handler3_Support_Procmon_Stack handler_func);
+BOOLEAN Syscall_Set3(const UCHAR* name, P_Syscall_Handler3_Support_Procmon_Stack handler_func);
 
-NTSTATUS Syscall_Invoke(SYSCALL_ENTRY *entry, ULONG_PTR *stack);
+NTSTATUS Syscall_Invoke(SYSCALL_ENTRY* entry, ULONG_PTR* stack);
 
 
 //---------------------------------------------------------------------------

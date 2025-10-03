@@ -24,80 +24,77 @@
 #define _MY_LIST_CTRL_H
 
 
-#include "MenuXP.h"
 #include "Box.h"
+#include "MenuXP.h"
 #include "TabbingComboBox.h"
 
 
 class CMyListCtrl : public CListCtrl
 {
-
 protected:
+	DECLARE_MESSAGE_MAP()
+	DECLARE_MENUXP()
 
-    DECLARE_MESSAGE_MAP()
-    DECLARE_MENUXP()
+	CMenu* m_pContextMenu;
 
-    CMenu *m_pContextMenu;
+	CMapPtrToWord m_iconmap;
+	int m_imgEmpty, m_imgMinus, m_imgPlus;
 
-    CMapPtrToWord m_iconmap;
-    int m_imgEmpty, m_imgMinus, m_imgPlus;
+	ULONG m_LastImageTicks;
+	int m_LastImageCount;
 
-    ULONG m_LastImageTicks;
-    int m_LastImageCount;
+	CTabbingComboBox m_combo;
 
-    CTabbingComboBox m_combo;
+	//
+	//
+	//
 
-    //
-    //
-    //
+	BOOL Create(CWnd* pParentWnd, int style, const WCHAR* prefix);
 
-    BOOL Create(CWnd *pParentWnd, int style, const WCHAR *prefix);
+	void CreateComboButton(void);
 
-    void CreateComboButton(void);
+	void ResizeComboButton(void);
 
-    void ResizeComboButton(void);
+	void InitImageList(const CString& prefix);
 
-    void InitImageList(const CString &prefix);
+	int AddToImageList(HICON icon);
 
-    int AddToImageList(HICON icon);
+	bool AddToImageList2(CBitmap* bmp, int w, int h, bool mask);
 
-    bool AddToImageList2(CBitmap *bmp, int w, int h, bool mask);
+	void RebuildImageList();
 
-    void RebuildImageList();
+	void SelectIndex(int ListIndex);
 
-    void SelectIndex(int ListIndex);
+	void PostRefresh(LPARAM lParam = 0);
 
-    void PostRefresh(LPARAM lParam = 0);
+	BOOL MyDeleteItem(int ListIndex);
 
-    BOOL MyDeleteItem(int ListIndex);
+	void GetOrderedBoxList(CStringList& BoxList, void* BoxOrder);
 
-    void GetOrderedBoxList(CStringList &BoxList, void *BoxOrder);
+	//
+	//
+	//
 
-    //
-    //
-    //
+	virtual afx_msg void OnRefreshPosted() = 0;
 
-    virtual afx_msg void OnRefreshPosted() = 0;
+	virtual afx_msg void OnClick(NMHDR* pNMHDR, LRESULT* pResult) = 0;
 
-    virtual afx_msg void OnClick(NMHDR *pNMHDR, LRESULT *pResult) = 0;
+	virtual afx_msg void OnSize(UINT nType, int cx, int cy) = 0;
 
-    virtual afx_msg void OnSize(UINT nType, int cx, int cy) = 0;
+	virtual afx_msg void OnComboSelect() = 0;
 
-    virtual afx_msg void OnComboSelect() = 0;
-
-    //
-    //
-    //
+	//
+	//
+	//
 
 public:
+	virtual CBox& GetSelectedBox(CWnd* pWnd, CPoint pt) const = 0;
+	virtual void GetSelectedItemPosition(CPoint& pt) const;
+	virtual void OnContextMenu(CWnd* pWnd, CPoint pt) = 0;
 
-    virtual CBox &GetSelectedBox(CWnd *pWnd, CPoint pt) const = 0;
-    virtual void GetSelectedItemPosition(CPoint &pt) const;
-    virtual void OnContextMenu(CWnd *pWnd, CPoint pt) = 0;
+	virtual void RefreshContent() = 0;
 
-    virtual void RefreshContent() = 0;
-
-    void ShowComboBox(bool visible);
+	void ShowComboBox(bool visible);
 };
 
 

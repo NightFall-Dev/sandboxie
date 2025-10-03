@@ -19,14 +19,14 @@
 // About Sandboxie Dialog Box
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "AboutDialog.h"
 
+#include "MyApp.h"
 #include "SbieIni.h"
-#include "common/my_version.h"
 #include "apps/common/MyGdi.h"
 #include "apps/common/RunBrowser.h"
+#include "common/my_version.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -36,7 +36,7 @@
 
 BEGIN_MESSAGE_MAP(CAboutDialog, CBaseDialog)
 
-    ON_COMMAND(ID_ABOUT_TUTORIAL,       OnTutorial)
+ON_COMMAND(ID_ABOUT_TUTORIAL, OnTutorial)
 
 END_MESSAGE_MAP()
 
@@ -54,24 +54,26 @@ HBITMAP CAboutDialog::m_bitmap = NULL;
 //---------------------------------------------------------------------------
 
 
-CAboutDialog::CAboutDialog(CWnd *pParentWnd)
-    : CBaseDialog(pParentWnd, NULL)
+CAboutDialog::CAboutDialog(CWnd* pParentWnd) :
+    CBaseDialog(pParentWnd, NULL)
 {
-    //
-    // prepare image
-    //
+	//
+	// prepare image
+	//
 
-    if (! m_bitmap)
-        m_bitmap = MyGdi_CreateFromResource(L"MASTHEADLOGO");
+	if (!m_bitmap)
+	{
+		m_bitmap = MyGdi_CreateFromResource(L"MASTHEADLOGO");
+	}
 
-    //
-    // display dialog
-    //
+	//
+	// display dialog
+	//
 
-    CString DialogTemplateName = L"ABOUT_DIALOG";
-    SetDialogTemplate(DialogTemplateName);
+	CString DialogTemplateName = L"ABOUT_DIALOG";
+	SetDialogTemplate(DialogTemplateName);
 
-    DoModal();
+	DoModal();
 }
 
 
@@ -92,72 +94,74 @@ CAboutDialog::~CAboutDialog()
 
 BOOL CAboutDialog::OnInitDialog()
 {
-    CStatic *pic = (CStatic *)GetDlgItem(ID_ABOUT_LOGO);
-    pic->SetBitmap(m_bitmap);
+	CStatic* pic = (CStatic*)GetDlgItem(ID_ABOUT_LOGO);
+	pic->SetBitmap(m_bitmap);
 
-    CRect rc;
-    GetClientRect(&rc);
-    ULONG wDlg = rc.right - rc.left;
+	CRect rc;
+	GetClientRect(&rc);
+	ULONG wDlg = rc.right - rc.left;
 
-    pic->GetClientRect(&rc);
-    ULONG wBtn = rc.right - rc.left;
-    ULONG hBtn = rc.bottom - rc.top;
+	pic->GetClientRect(&rc);
+	ULONG wBtn = rc.right - rc.left;
+	ULONG hBtn = rc.bottom - rc.top;
 
-    pic->GetWindowRect(&rc);
-    ScreenToClient((POINT *)&rc);
-    rc.left = (wDlg - wBtn) / 2;
-    pic->MoveWindow(rc.left, rc.top, wBtn, hBtn, TRUE);
+	pic->GetWindowRect(&rc);
+	ScreenToClient((POINT*)&rc);
+	rc.left = (wDlg - wBtn) / 2;
+	pic->MoveWindow(rc.left, rc.top, wBtn, hBtn, TRUE);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    pic->GetWindowRect(rc);
-    ScreenToClient(rc);
-    rc.left -= 5;
-    rc.top -= 10;
-    rc.right += 3 * 2;
-    rc.bottom += 3 * 2;
-    GetDlgItem(ID_ABOUT_FRAME)->MoveWindow(rc);
+	pic->GetWindowRect(rc);
+	ScreenToClient(rc);
+	rc.left -= 5;
+	rc.top -= 10;
+	rc.right += 3 * 2;
+	rc.bottom += 3 * 2;
+	GetDlgItem(ID_ABOUT_FRAME)->MoveWindow(rc);
 
-    CString text = CMyMsg(MSG_3601);
-    SetWindowText(text);
+	CString text = CMyMsg(MSG_3601);
+	SetWindowText(text);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    const ULONG _bitness =
+	const ULONG _bitness =
 #ifdef _WIN64
-                            64;
+	    64;
 #else
-                            32;
+	    32;
 #endif _WIN64
 
-    ULONG U_LRO, U_PDF;
-    if (CMyApp::m_LayoutRTL) {
-        U_LRO = 0x202D;   // Start of left-to-right override
-        U_PDF = 0x202C;   // Pop directional formatting
-    } else {
-        U_LRO = L' ';
-        U_PDF = L' ';
-    }
-    text.Format(L"%S %c(%d-bit)%c",
-        MY_VERSION_STRING, U_LRO, _bitness, U_PDF);
+	ULONG U_LRO, U_PDF;
+	if (CMyApp::m_LayoutRTL)
+	{
+		U_LRO = 0x202D; // Start of left-to-right override
+		U_PDF = 0x202C; // Pop directional formatting
+	}
+	else
+	{
+		U_LRO = L' ';
+		U_PDF = L' ';
+	}
+	text.Format(L"%S %c(%d-bit)%c", MY_VERSION_STRING, U_LRO, _bitness, U_PDF);
 
-    CString ver = CMyMsg(MSG_3302, text);
-    GetDlgItem(ID_ABOUT_VERSION)->SetWindowText(ver);
+	CString ver = CMyMsg(MSG_3302, text);
+	GetDlgItem(ID_ABOUT_VERSION)->SetWindowText(ver);
 
-    //
-    //
-    //
+	//
+	//
+	//
 
-    text.Format(L"%S", MY_COPYRIGHT_STRING);
-    GetDlgItem(ID_ABOUT_COPYRIGHT)->SetWindowText(text);
+	text.Format(L"%S", MY_COPYRIGHT_STRING);
+	GetDlgItem(ID_ABOUT_COPYRIGHT)->SetWindowText(text);
 
-    GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
+	GetDlgItem(IDOK)->SetWindowText(CMyMsg(MSG_3001));
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -178,8 +182,8 @@ void CAboutDialog::OnRegister()
 
 void CAboutDialog::OnTutorial()
 {
-    GetParent()->PostMessage(WM_COMMAND, ID_HELP_TUTORIAL, 0);
-    EndDialog(0);
+	GetParent()->PostMessage(WM_COMMAND, ID_HELP_TUTORIAL, 0);
+	EndDialog(0);
 }
 
 
@@ -190,5 +194,5 @@ void CAboutDialog::OnTutorial()
 
 void CAboutDialog::OnOK()
 {
-    EndDialog(0);
+	EndDialog(0);
 }

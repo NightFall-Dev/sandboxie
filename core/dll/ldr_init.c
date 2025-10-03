@@ -21,6 +21,7 @@
 
 
 #include "dll.h"
+
 #include <stdio.h>
 
 
@@ -32,46 +33,45 @@
 #ifdef _WIN64
 
 
-#define LDR_INJECT_SETTING_NAME             L"InjectDll64"
-#define LDR_HOST_INJECT_SETTING_NAME        L"HostInjectDll64"
-#define LDR_INJECT_NUM_SAVE_BYTES   12
+	#define LDR_INJECT_SETTING_NAME L"InjectDll64"
+	#define LDR_HOST_INJECT_SETTING_NAME L"HostInjectDll64"
+	#define LDR_INJECT_NUM_SAVE_BYTES 12
 
 
+#else !_WIN64
 
-#else ! _WIN64
 
-
-#define LDR_INJECT_SETTING_NAME             L"InjectDll"
-#define LDR_HOST_INJECT_SETTING_NAME        L"HostInjectDll"
-#define LDR_INJECT_NUM_SAVE_BYTES   5
+	#define LDR_INJECT_SETTING_NAME L"InjectDll"
+	#define LDR_HOST_INJECT_SETTING_NAME L"HostInjectDll"
+	#define LDR_INJECT_NUM_SAVE_BYTES 5
 
 
 #endif _WIN64
 
 
-#define LDRP_STATIC_LINK                        0x00000002
-#define LDRP_IMAGE_DLL                          0x00000004
-#define LDRP_ENTRY_PROCESSED                    0x00004000
-#define LDRP_DONT_CALL_FOR_THREADS              0x00040000
-#define LDRP_PROCESS_ATTACH_CALLED              0x00080000
+#define LDRP_STATIC_LINK 0x00000002
+#define LDRP_IMAGE_DLL 0x00000004
+#define LDRP_ENTRY_PROCESSED 0x00004000
+#define LDRP_DONT_CALL_FOR_THREADS 0x00040000
+#define LDRP_PROCESS_ATTACH_CALLED 0x00080000
 
-#define LDRP_LOAD_IN_PROGRESS                   0x00001000
-#define LDRP_UNLOAD_IN_PROGRESS                 0x00002000
-#define LDRP_ENTRY_INSERTED                     0x00008000
-#define LDRP_CURRENT_LOAD                       0x00010000
-#define LDRP_FAILED_BUILTIN_LOAD                0x00020000
-#define LDRP_DEBUG_SYMBOLS_LOADED               0x00100000
-#define LDRP_IMAGE_NOT_AT_BASE                  0x00200000
-#define LDRP_COR_IMAGE                          0x00400000
-#define LDR_COR_OWNS_UNMAP                      0x00800000
-#define LDRP_SYSTEM_MAPPED                      0x01000000
-#define LDRP_IMAGE_VERIFYING                    0x02000000
-#define LDRP_DRIVER_DEPENDENT_DLL               0x04000000
-#define LDRP_ENTRY_NATIVE                       0x08000000
-#define LDRP_REDIRECTED                         0x10000000
-#define LDRP_NON_PAGED_DEBUG_INFO               0x20000000
-#define LDRP_MM_LOADED                          0x40000000
-#define LDRP_COMPAT_DATABASE_PROCESSED          0x80000000
+#define LDRP_LOAD_IN_PROGRESS 0x00001000
+#define LDRP_UNLOAD_IN_PROGRESS 0x00002000
+#define LDRP_ENTRY_INSERTED 0x00008000
+#define LDRP_CURRENT_LOAD 0x00010000
+#define LDRP_FAILED_BUILTIN_LOAD 0x00020000
+#define LDRP_DEBUG_SYMBOLS_LOADED 0x00100000
+#define LDRP_IMAGE_NOT_AT_BASE 0x00200000
+#define LDRP_COR_IMAGE 0x00400000
+#define LDR_COR_OWNS_UNMAP 0x00800000
+#define LDRP_SYSTEM_MAPPED 0x01000000
+#define LDRP_IMAGE_VERIFYING 0x02000000
+#define LDRP_DRIVER_DEPENDENT_DLL 0x04000000
+#define LDRP_ENTRY_NATIVE 0x08000000
+#define LDRP_REDIRECTED 0x10000000
+#define LDRP_NON_PAGED_DEBUG_INFO 0x20000000
+#define LDRP_MM_LOADED 0x40000000
+#define LDRP_COMPAT_DATABASE_PROCESSED 0x80000000
 
 
 //---------------------------------------------------------------------------
@@ -79,36 +79,38 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct _PEB_LDR_DATA {
-    UCHAR Reserved1[8];
-    ULONG_PTR Reserved2;
-    /*
+typedef struct _PEB_LDR_DATA
+{
+	UCHAR Reserved1[8];
+	ULONG_PTR Reserved2;
+	/*
     LIST_ENTRY InLoadOrderModuleList;
     LIST_ENTRY InMemoryOrderModuleList;
     LIST_ENTRY InInitializationOrderModuleList;
     */
-    ULONG_PTR InLoadOrder;
-    ULONG_PTR InLoadOrder2;
-    ULONG_PTR InMemoryOrder;    // --> LDR_MODULE_IN_MEMORY_ORDER
-    ULONG_PTR InMemoryOrder2;
-    ULONG_PTR InInitOrder;      // --> LDR_MODULE
-    ULONG_PTR InInitOrder2;
+	ULONG_PTR InLoadOrder;
+	ULONG_PTR InLoadOrder2;
+	ULONG_PTR InMemoryOrder; // --> LDR_MODULE_IN_MEMORY_ORDER
+	ULONG_PTR InMemoryOrder2;
+	ULONG_PTR InInitOrder; // --> LDR_MODULE
+	ULONG_PTR InInitOrder2;
 } PEB_LDR_DATA;
 
 
-typedef struct _LDR_MODULE {
-    ULONG_PTR       Next;
-    ULONG_PTR       Prev;
-    ULONG_PTR       BaseAddress;
-    ULONG_PTR       EntryPoint;
-    ULONG           SizeOfImage;
-    UNICODE_STRING  FullDllName;
-    UNICODE_STRING  BaseDllName;
-    ULONG           Flags;
-    USHORT          LoadCount;
-    USHORT          TlsIndex;
-    LIST_ENTRY      HashTableEntry;
-    ULONG           TimeDateStamp;
+typedef struct _LDR_MODULE
+{
+	ULONG_PTR Next;
+	ULONG_PTR Prev;
+	ULONG_PTR BaseAddress;
+	ULONG_PTR EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+	ULONG Flags;
+	USHORT LoadCount;
+	USHORT TlsIndex;
+	LIST_ENTRY HashTableEntry;
+	ULONG TimeDateStamp;
 } LDR_MODULE;
 
 
@@ -119,15 +121,13 @@ typedef struct _LDR_MODULE {
 
 void Ldr_LoadInjectDlls(BOOLEAN bHostInject);
 
-IMAGE_OPTIONAL_HEADER *Ldr_OptionalHeader(ULONG_PTR ImageBase);
+IMAGE_OPTIONAL_HEADER* Ldr_OptionalHeader(ULONG_PTR ImageBase);
 
 static void Ldr_FixImagePath(void);
 
-static WCHAR *Ldr_FixImagePath_2(void);
+static WCHAR* Ldr_FixImagePath_2(void);
 
-static void Ldr_FixImagePath_3(
-    const WCHAR *ImageDosPath,
-    UNICODE_STRING *FullName, UNICODE_STRING *BaseName);
+static void Ldr_FixImagePath_3(const WCHAR* ImageDosPath, UNICODE_STRING* FullName, UNICODE_STRING* BaseName);
 
 static void Ldr_FixImagePath_DllPath(void);
 
@@ -136,7 +136,7 @@ void Ldr_Inject_Init(BOOLEAN bHostInject);
 
 #ifdef _WIN64
 extern void Ldr_Inject_Entry64(void);
-#else ! _WIN64
+#else !_WIN64
 extern void Ldr_Inject_Entry32(void);
 #endif _WIN64
 
@@ -149,15 +149,15 @@ extern void Ldr_Inject_Entry32(void);
 static UCHAR Ldr_Inject_SaveBytes[LDR_INJECT_NUM_SAVE_BYTES];
 static ULONG Ldr_Inject_OldProtect = 0;
 
-static const WCHAR *Ldr_InjectDll       = LDR_INJECT_SETTING_NAME;
-static const WCHAR *Ldr_HostInjectDll   = LDR_HOST_INJECT_SETTING_NAME;
+static const WCHAR* Ldr_InjectDll     = LDR_INJECT_SETTING_NAME;
+static const WCHAR* Ldr_HostInjectDll = LDR_HOST_INJECT_SETTING_NAME;
 
-static ULONG_PTR Ldr_ImageBase = 0;
+static ULONG_PTR Ldr_ImageBase        = 0;
 static ULONG_PTR Ldr_ImportDescriptor = 0;
 
 BOOLEAN Ldr_BoxedImage = FALSE;
 
-WCHAR *Ldr_ImageTruePath = NULL;
+WCHAR* Ldr_ImageTruePath = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -167,64 +167,68 @@ WCHAR *Ldr_ImageTruePath = NULL;
 
 _FX void Ldr_LoadInjectDlls(BOOLEAN bHostInject)
 {
-    //
-    // inject DLLs specified by the InjectDll setting
-    // for each DLL, we load it.  if it exports an InjectDllMain
-    // procedure, we also call that procedure
-    //
+	//
+	// inject DLLs specified by the InjectDll setting
+	// for each DLL, we load it.  if it exports an InjectDllMain
+	// procedure, we also call that procedure
+	//
 
-    NTSTATUS status;
-    HMODULE ModuleHandle;
-    UNICODE_STRING DllUni;
-    ULONG DllFlags;
+	NTSTATUS status;
+	HMODULE ModuleHandle;
+	UNICODE_STRING DllUni;
+	ULONG DllFlags;
 
-    WCHAR *dllname = Dll_AllocTemp(MAX_PATH * 2 * sizeof(WCHAR));
-    ULONG index = 0;
+	WCHAR* dllname = Dll_AllocTemp(MAX_PATH * 2 * sizeof(WCHAR));
+	ULONG index    = 0;
 
-    if (!__sys_LdrLoadDll)
-        __sys_LdrLoadDll = (P_LdrLoadDll)GetProcAddress(Dll_Ntdll, "LdrLoadDll");
+	if (!__sys_LdrLoadDll)
+	{
+		__sys_LdrLoadDll = (P_LdrLoadDll)GetProcAddress(Dll_Ntdll, "LdrLoadDll");
+	}
 
-    while (1) {
+	while (1)
+	{
+		status = SbieApi_QueryConfAsIs(NULL, (bHostInject ? Ldr_HostInjectDll : Ldr_InjectDll), index, dllname, (MAX_PATH * 2 - 2) * sizeof(WCHAR));
+		++index;
+		if (!NT_SUCCESS(status))
+		{
+			if (status == STATUS_BUFFER_TOO_SMALL)
+			{
+				continue;
+			}
+			break;
+		}
 
-        status = SbieApi_QueryConfAsIs(
-                        NULL, (bHostInject? Ldr_HostInjectDll:Ldr_InjectDll), index,
-                        dllname, (MAX_PATH * 2 - 2) * sizeof(WCHAR));
-        ++index;
-        if (! NT_SUCCESS(status)) {
-            if (status == STATUS_BUFFER_TOO_SMALL)
-                continue;
-            break;
-        }
+		//
+		// we have to prevent invocation of Ldr_CallDllCallbacks while
+		// loading the DLL here, otherwise we will end up our per-dll
+		// init functions (e.g. AdvApi_Init) which use GetProcAddress
+		// and this messes up the ntdll initial load sequence.
+		// we do this by bypassing Ldr_LdrLoadDll
+		//
 
-        //
-        // we have to prevent invocation of Ldr_CallDllCallbacks while
-        // loading the DLL here, otherwise we will end up our per-dll
-        // init functions (e.g. AdvApi_Init) which use GetProcAddress
-        // and this messes up the ntdll initial load sequence.
-        // we do this by bypassing Ldr_LdrLoadDll
-        //
+		ModuleHandle = 0;
+		DllFlags     = 0;
+		RtlInitUnicodeString(&DllUni, dllname);
+		status = __sys_LdrLoadDll(NULL, &DllFlags, &DllUni, &ModuleHandle);
 
-        ModuleHandle = 0;
-        DllFlags = 0;
-        RtlInitUnicodeString(&DllUni, dllname);
-        status = __sys_LdrLoadDll(NULL, &DllFlags, &DllUni, &ModuleHandle);
+		if (NT_SUCCESS(status) && ModuleHandle)
+		{
+			void* pInjectDllMain = Ldr_GetProcAddr_3((ULONG_PTR)ModuleHandle, L"InjectDllMain");
 
-        if (NT_SUCCESS(status) && ModuleHandle) {
+			if (!pInjectDllMain)
+			{
+				pInjectDllMain = Ldr_GetProcAddr_3((ULONG_PTR)ModuleHandle, L"_InjectDllMain@8");
+			}
 
-            void *pInjectDllMain = Ldr_GetProcAddr_3(
-                    (ULONG_PTR)ModuleHandle, L"InjectDllMain");
+			if (pInjectDllMain)
+			{
+				ProtectCall2(pInjectDllMain, (ULONG_PTR)Dll_Instance, 0);
+			}
+		}
+	}
 
-            if (! pInjectDllMain) {
-                pInjectDllMain = Ldr_GetProcAddr_3(
-                    (ULONG_PTR)ModuleHandle, L"_InjectDllMain@8");
-            }
-
-            if (pInjectDllMain)
-                ProtectCall2(pInjectDllMain, (ULONG_PTR)Dll_Instance, 0);
-        }
-    }
-
-    Dll_Free(dllname);
+	Dll_Free(dllname);
 }
 
 
@@ -233,18 +237,15 @@ _FX void Ldr_LoadInjectDlls(BOOLEAN bHostInject)
 //---------------------------------------------------------------------------
 
 
-_FX IMAGE_OPTIONAL_HEADER *Ldr_OptionalHeader(ULONG_PTR ImageBase)
+_FX IMAGE_OPTIONAL_HEADER* Ldr_OptionalHeader(ULONG_PTR ImageBase)
 {
-    IMAGE_DOS_HEADER *dos_hdr =
-        (IMAGE_DOS_HEADER *)ImageBase;
+	IMAGE_DOS_HEADER* dos_hdr = (IMAGE_DOS_HEADER*)ImageBase;
 
-    IMAGE_NT_HEADERS *nt_hdrs =
-        (IMAGE_NT_HEADERS *)(ImageBase + dos_hdr->e_lfanew);
+	IMAGE_NT_HEADERS* nt_hdrs = (IMAGE_NT_HEADERS*)(ImageBase + dos_hdr->e_lfanew);
 
-    IMAGE_OPTIONAL_HEADER *opt_hdr =
-        &nt_hdrs->OptionalHeader;
+	IMAGE_OPTIONAL_HEADER* opt_hdr = &nt_hdrs->OptionalHeader;
 
-    return opt_hdr;
+	return opt_hdr;
 }
 
 
@@ -255,17 +256,19 @@ _FX IMAGE_OPTIONAL_HEADER *Ldr_OptionalHeader(ULONG_PTR ImageBase)
 
 _FX BOOLEAN Ldr_MakeStaticDll(ULONG_PTR BaseAddress)
 {
-    ULONG_PTR InInitOrderList = GET_PEB_LDR_DATA->InInitOrder;
-    ULONG_PTR next = ((LDR_MODULE *)InInitOrderList)->Next;
-    while (next != InInitOrderList) {
-        LDR_MODULE *NtPtr = (LDR_MODULE *)next;
-        if (NtPtr->BaseAddress == BaseAddress) {
-            NtPtr->LoadCount = 0xFFFF;
-            return TRUE;
-        }
-        next = NtPtr->Next;
-    }
-    return FALSE;
+	ULONG_PTR InInitOrderList = GET_PEB_LDR_DATA->InInitOrder;
+	ULONG_PTR next            = ((LDR_MODULE*)InInitOrderList)->Next;
+	while (next != InInitOrderList)
+	{
+		LDR_MODULE* NtPtr = (LDR_MODULE*)next;
+		if (NtPtr->BaseAddress == BaseAddress)
+		{
+			NtPtr->LoadCount = 0xFFFF;
+			return TRUE;
+		}
+		next = NtPtr->Next;
+	}
+	return FALSE;
 }
 
 
@@ -276,59 +279,56 @@ _FX BOOLEAN Ldr_MakeStaticDll(ULONG_PTR BaseAddress)
 
 _FX ULONG Ldr_SetDdagState_W8(ULONG_PTR BaseAddress, ULONG NewState)
 {
-    //
-    // Windows 8 seems to use new node graph structures for managing
-    // modules.  the traditional LDR_MODULE entry points to a new
-    // LDR_DDAG_NODE structure, which contains an LDR_DDAG_STATE field.
-    //
-    // State is less than 9 during module initialization, at which time
-    // any use of GetModuleHandle or GetProcAddress on the corresponding
-    // module will cause ntdll to load dependent DLLs for that module
-    // and run their init routines.  this gets in the way of our DLL init
-    // routines invoked from Ldr_CallOneDllCallback
-    //
-    // to work around this, we have to force a value of 9 into that State
-    // field before and after running our init routines, see use in
-    // Ldr_CallDllCallbacks
-    //
+	//
+	// Windows 8 seems to use new node graph structures for managing
+	// modules.  the traditional LDR_MODULE entry points to a new
+	// LDR_DDAG_NODE structure, which contains an LDR_DDAG_STATE field.
+	//
+	// State is less than 9 during module initialization, at which time
+	// any use of GetModuleHandle or GetProcAddress on the corresponding
+	// module will cause ntdll to load dependent DLLs for that module
+	// and run their init routines.  this gets in the way of our DLL init
+	// routines invoked from Ldr_CallOneDllCallback
+	//
+	// to work around this, we have to force a value of 9 into that State
+	// field before and after running our init routines, see use in
+	// Ldr_CallDllCallbacks
+	//
 
 #ifdef _WIN64
-#define LDR_MODULE_BASE_ADDRESS_OFFSET      (0x30)
-#define LDR_MODULE_DDAG_NODE_OFFSET         (0x98)
-#define LDR_DDAG_STATE_OFFSET               (0x38)
-#else ! _WIN64
-#define LDR_MODULE_BASE_ADDRESS_OFFSET      (0x18)
-#define LDR_MODULE_DDAG_NODE_OFFSET         (0x50)
-#define LDR_DDAG_STATE_OFFSET               (0x20)
+	#define LDR_MODULE_BASE_ADDRESS_OFFSET (0x30)
+	#define LDR_MODULE_DDAG_NODE_OFFSET (0x98)
+	#define LDR_DDAG_STATE_OFFSET (0x38)
+#else !_WIN64
+	#define LDR_MODULE_BASE_ADDRESS_OFFSET (0x18)
+	#define LDR_MODULE_DDAG_NODE_OFFSET (0x50)
+	#define LDR_DDAG_STATE_OFFSET (0x20)
 #endif _WIN64
 
-    if (Dll_OsBuild >= 8400) {
+	if (Dll_OsBuild >= 8400)
+	{
+		ULONG_PTR InLoadOrderList = GET_PEB_LDR_DATA->InLoadOrder;
+		ULONG_PTR next            = ((LDR_MODULE*)InLoadOrderList)->Next;
+		while (next != InLoadOrderList)
+		{
+			ULONG_PTR LdrModuleBaseAddress = *(ULONG_PTR*)(next + LDR_MODULE_BASE_ADDRESS_OFFSET);
 
-        ULONG_PTR InLoadOrderList = GET_PEB_LDR_DATA->InLoadOrder;
-        ULONG_PTR next = ((LDR_MODULE *)InLoadOrderList)->Next;
-        while (next != InLoadOrderList) {
+			if (LdrModuleBaseAddress == BaseAddress)
+			{
+				ULONG_PTR DdagNode = *(ULONG_PTR*)(next + LDR_MODULE_DDAG_NODE_OFFSET);
 
-            ULONG_PTR LdrModuleBaseAddress =
-                *(ULONG_PTR *)(next + LDR_MODULE_BASE_ADDRESS_OFFSET);
+				ULONG OldState = *(ULONG*)(DdagNode + LDR_DDAG_STATE_OFFSET);
 
-            if (LdrModuleBaseAddress == BaseAddress) {
+				*(ULONG*)(DdagNode + LDR_DDAG_STATE_OFFSET) = NewState;
 
-                ULONG_PTR DdagNode =
-                    *(ULONG_PTR *)(next + LDR_MODULE_DDAG_NODE_OFFSET);
+				return OldState;
+			}
 
-                ULONG OldState =
-                    *(ULONG *)(DdagNode + LDR_DDAG_STATE_OFFSET);
+			next = ((LDR_MODULE*)next)->Next;
+		}
+	}
 
-                *(ULONG *)(DdagNode + LDR_DDAG_STATE_OFFSET) = NewState;
-
-                return OldState;
-            }
-
-            next = ((LDR_MODULE *)next)->Next;
-        }
-    }
-
-    return 0;
+	return 0;
 }
 
 
@@ -337,34 +337,40 @@ _FX ULONG Ldr_SetDdagState_W8(ULONG_PTR BaseAddress, ULONG NewState)
 //---------------------------------------------------------------------------
 
 
-_FX BOOLEAN Ldr_LoadAndFix_IsClosedFilePath(const WCHAR *DllName)
+_FX BOOLEAN Ldr_LoadAndFix_IsClosedFilePath(const WCHAR* DllName)
 {
-    WCHAR *ptr;
-    ULONG mp_flags;
+	WCHAR* ptr;
+	ULONG mp_flags;
 
-    //
-    // check if dll name matches any ClosedFilePath settings
-    // if no match, retry check with x\name.dll, so that we can
-    // match ClosedFilePath=*\name.dll settings
-    //
+	//
+	// check if dll name matches any ClosedFilePath settings
+	// if no match, retry check with x\name.dll, so that we can
+	// match ClosedFilePath=*\name.dll settings
+	//
 
-    mp_flags = SbieDll_MatchPath(L'f', DllName);
-    if (PATH_IS_CLOSED(mp_flags))
-        return TRUE;
+	mp_flags = SbieDll_MatchPath(L'f', DllName);
+	if (PATH_IS_CLOSED(mp_flags))
+	{
+		return TRUE;
+	}
 
-    ptr = wcschr(DllName, L'\\');
-    if (ptr)
-        return FALSE;
+	ptr = wcschr(DllName, L'\\');
+	if (ptr)
+	{
+		return FALSE;
+	}
 
-    ptr = Dll_AllocTemp((wcslen(DllName) + 8) * sizeof(WCHAR));
-    wcscpy(ptr, L"X\\");
-    wcscat(ptr, DllName);
-    mp_flags = SbieDll_MatchPath(L'f', ptr);
-    Dll_Free(ptr);
-    if (PATH_IS_CLOSED(mp_flags))
-        return TRUE;
+	ptr = Dll_AllocTemp((wcslen(DllName) + 8) * sizeof(WCHAR));
+	wcscpy(ptr, L"X\\");
+	wcscat(ptr, DllName);
+	mp_flags = SbieDll_MatchPath(L'f', ptr);
+	Dll_Free(ptr);
+	if (PATH_IS_CLOSED(mp_flags))
+	{
+		return TRUE;
+	}
 
-    return FALSE;
+	return FALSE;
 }
 
 
@@ -375,81 +381,85 @@ _FX BOOLEAN Ldr_LoadAndFix_IsClosedFilePath(const WCHAR *DllName)
 
 _FX void Ldr_FixImagePath(void)
 {
-    //
-    // first LDR entry in memory order represents the loaded image
-    //
+	//
+	// first LDR entry in memory order represents the loaded image
+	//
 
-    typedef struct _LDR_MODULE_IN_MEMORY_ORDER {
-        ULONG_PTR Next;
-        ULONG_PTR Prev;
-        LDR_MODULE LdrModule;
-    } LDR_MODULE_IN_MEMORY_ORDER;
+	typedef struct _LDR_MODULE_IN_MEMORY_ORDER
+	{
+		ULONG_PTR Next;
+		ULONG_PTR Prev;
+		LDR_MODULE LdrModule;
+	} LDR_MODULE_IN_MEMORY_ORDER;
 
-    LDR_MODULE_IN_MEMORY_ORDER *LdrModuleInMemoryOrder =
-        (LDR_MODULE_IN_MEMORY_ORDER *)(GET_PEB_LDR_DATA->InMemoryOrder);
+	LDR_MODULE_IN_MEMORY_ORDER* LdrModuleInMemoryOrder = (LDR_MODULE_IN_MEMORY_ORDER*)(GET_PEB_LDR_DATA->InMemoryOrder);
 
-    LDR_MODULE *LdrModule = &LdrModuleInMemoryOrder->LdrModule;
+	LDR_MODULE* LdrModule = &LdrModuleInMemoryOrder->LdrModule;
 
-    if (LdrModule->BaseAddress == Ldr_ImageBase) {
+	if (LdrModule->BaseAddress == Ldr_ImageBase)
+	{
+		WCHAR *KernelPath, *TruePathForBoxedPath;
 
-        WCHAR *KernelPath, *TruePathForBoxedPath;
+		UNICODE_STRING* FullName = &LdrModule->FullDllName;
+		UNICODE_STRING* BaseName = &LdrModule->BaseDllName;
 
-        UNICODE_STRING *FullName = &LdrModule->FullDllName;
-        UNICODE_STRING *BaseName = &LdrModule->BaseDllName;
+		//
+		// if this is a forced program, we need to get the image path from
+		// the kernel (i.e. NtQueryVirtualMemory with MemorySectionName),
+		// in case the image path contains symbolic links or reparse points.
+		// such links would have been translated by NtCreateFile if the
+		// program was started by another program in the sandbox.  so if
+		// this is a forced program, we want to have the same consistency,
+		// by asking the kernel for a fully reparsed path
+		//
 
-        //
-        // if this is a forced program, we need to get the image path from
-        // the kernel (i.e. NtQueryVirtualMemory with MemorySectionName),
-        // in case the image path contains symbolic links or reparse points.
-        // such links would have been translated by NtCreateFile if the
-        // program was started by another program in the sandbox.  so if
-        // this is a forced program, we want to have the same consistency,
-        // by asking the kernel for a fully reparsed path
-        //
+		if (Dll_ProcessFlags & SBIE_FLAG_FORCED_PROCESS)
+		{
+			KernelPath = Ldr_FixImagePath_2();
+		}
+		else
+		{
+			KernelPath = NULL;
+		}
 
-        if (Dll_ProcessFlags & SBIE_FLAG_FORCED_PROCESS)
-            KernelPath = Ldr_FixImagePath_2();
-        else
-            KernelPath = NULL;
+		//
+		// check if the image path is inside the sandbox.  if this isn't a
+		// forced program, we use the module path recorded by NTDLL
+		//
 
-        //
-        // check if the image path is inside the sandbox.  if this isn't a
-        // forced program, we use the module path recorded by NTDLL
-        //
+		TruePathForBoxedPath = File_GetTruePathForBoxedPath((KernelPath ? KernelPath : FullName->Buffer), TRUE);
 
-        TruePathForBoxedPath = File_GetTruePathForBoxedPath(
-                (KernelPath ? KernelPath : FullName->Buffer), TRUE);
+		if (TruePathForBoxedPath)
+		{
+			Ldr_FixImagePath_3(TruePathForBoxedPath, FullName, BaseName);
 
-        if (TruePathForBoxedPath) {
+			Dll_Free(TruePathForBoxedPath);
 
-            Ldr_FixImagePath_3(TruePathForBoxedPath, FullName, BaseName);
+			Ldr_BoxedImage = TRUE;
+		}
+		else if (KernelPath && _wcsicmp(KernelPath, FullName->Buffer) != 0)
+		{
+			//
+			// if we have a path from the kernel (i.e. forced program)
+			// which is different from the path stored by NTDLL, then
+			// this is probably due to reparse points, and we want to
+			// replace the stored path
+			//
 
-            Dll_Free(TruePathForBoxedPath);
+			Ldr_FixImagePath_3(KernelPath, FullName, BaseName);
+		}
+		else
+		{
+			Ldr_ImageTruePath = File_TranslateDosToNtPath(FullName->Buffer);
+		}
 
-            Ldr_BoxedImage = TRUE;
+		if (KernelPath)
+		{
+			Dll_Free(KernelPath);
+		}
+	}
 
-        } else if (KernelPath &&
-                        _wcsicmp(KernelPath, FullName->Buffer) != 0) {
-
-            //
-            // if we have a path from the kernel (i.e. forced program)
-            // which is different from the path stored by NTDLL, then
-            // this is probably due to reparse points, and we want to
-            // replace the stored path
-            //
-
-            Ldr_FixImagePath_3(KernelPath, FullName, BaseName);
-
-        } else {
-
-            Ldr_ImageTruePath = File_TranslateDosToNtPath(FullName->Buffer);
-        }
-
-        if (KernelPath)
-            Dll_Free(KernelPath);
-    }
-
-    Ldr_FixImagePath_DllPath();
+	Ldr_FixImagePath_DllPath();
 }
 
 
@@ -458,45 +468,44 @@ _FX void Ldr_FixImagePath(void)
 //---------------------------------------------------------------------------
 
 
-_FX WCHAR *Ldr_FixImagePath_2(void)
+_FX WCHAR* Ldr_FixImagePath_2(void)
 {
-    UNICODE_STRING *NameUni;
-    SIZE_T BufferLength;
-    NTSTATUS status;
+	UNICODE_STRING* NameUni;
+	SIZE_T BufferLength;
+	NTSTATUS status;
 
-    extern P_NtQueryVirtualMemory __sys_NtQueryVirtualMemory;
-    if (! __sys_NtQueryVirtualMemory)
-        return NULL;
+	extern P_NtQueryVirtualMemory __sys_NtQueryVirtualMemory;
+	if (!__sys_NtQueryVirtualMemory)
+	{
+		return NULL;
+	}
 
-    BufferLength = 256;
-    NameUni = Dll_AllocTemp((ULONG)BufferLength + sizeof(WCHAR) * 2);
-    status = __sys_NtQueryVirtualMemory(
-        NtCurrentProcess(), (void *)Ldr_ImageBase, MemorySectionName,
-        NameUni, BufferLength, &BufferLength);
+	BufferLength = 256;
+	NameUni      = Dll_AllocTemp((ULONG)BufferLength + sizeof(WCHAR) * 2);
+	status = __sys_NtQueryVirtualMemory(NtCurrentProcess(), (void*)Ldr_ImageBase, MemorySectionName, NameUni, BufferLength, &BufferLength);
 
-    if (status == STATUS_INFO_LENGTH_MISMATCH ||
-        status == STATUS_BUFFER_OVERFLOW) {
+	if (status == STATUS_INFO_LENGTH_MISMATCH || status == STATUS_BUFFER_OVERFLOW)
+	{
+		Dll_Free(NameUni);
+		NameUni = Dll_AllocTemp((ULONG)BufferLength + sizeof(WCHAR) * 2);
+		status = __sys_NtQueryVirtualMemory(NtCurrentProcess(), (void*)Ldr_ImageBase, MemorySectionName, NameUni, BufferLength, &BufferLength);
+	}
 
-        Dll_Free(NameUni);
-        NameUni = Dll_AllocTemp((ULONG)BufferLength + sizeof(WCHAR) * 2);
-        status = __sys_NtQueryVirtualMemory(
-            NtCurrentProcess(), (void *)Ldr_ImageBase, MemorySectionName,
-            NameUni, BufferLength, &BufferLength);
-    }
+	if (!NT_SUCCESS(status))
+	{
+		Dll_Free(NameUni);
+		return NULL;
+	}
 
-    if (! NT_SUCCESS(status)) {
-        Dll_Free(NameUni);
-        return NULL;
-    }
+	NameUni->Buffer[NameUni->Length / sizeof(WCHAR)] = L'\0';
+	if (!SbieDll_TranslateNtToDosPath(NameUni->Buffer))
+	{
+		Dll_Free(NameUni);
+		return NULL;
+	}
 
-    NameUni->Buffer[NameUni->Length / sizeof(WCHAR)] = L'\0';
-    if (! SbieDll_TranslateNtToDosPath(NameUni->Buffer)) {
-        Dll_Free(NameUni);
-        return NULL;
-    }
-
-    wmemmove((WCHAR *)NameUni, NameUni->Buffer, wcslen(NameUni->Buffer) + 1);
-    return (WCHAR *)NameUni;
+	wmemmove((WCHAR*)NameUni, NameUni->Buffer, wcslen(NameUni->Buffer) + 1);
+	return (WCHAR*)NameUni;
 }
 
 
@@ -505,57 +514,56 @@ _FX WCHAR *Ldr_FixImagePath_2(void)
 //---------------------------------------------------------------------------
 
 
-_FX void Ldr_FixImagePath_3(
-    const WCHAR *ImageDosPath,
-    UNICODE_STRING *FullName, UNICODE_STRING *BaseName)
+_FX void Ldr_FixImagePath_3(const WCHAR* ImageDosPath, UNICODE_STRING* FullName, UNICODE_STRING* BaseName)
 {
-    WCHAR *Backslash;
+	WCHAR* Backslash;
 
-    //
-    // update FullName/BaseName in LDR entry for first load module
-    //
+	//
+	// update FullName/BaseName in LDR entry for first load module
+	//
 
-    ULONG len1 = wcslen(ImageDosPath) * sizeof(WCHAR);
-    ULONG len2 = len1 + sizeof(WCHAR);
-    WCHAR *buf = (WCHAR *)HeapAlloc(
-                    GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, len2);
-    memcpy(buf, ImageDosPath, len2);
+	ULONG len1 = wcslen(ImageDosPath) * sizeof(WCHAR);
+	ULONG len2 = len1 + sizeof(WCHAR);
+	WCHAR* buf = (WCHAR*)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, len2);
+	memcpy(buf, ImageDosPath, len2);
 
-    FullName->Length        = (USHORT)len1;
-    FullName->MaximumLength = (USHORT)len2;
-    FullName->Buffer        = buf;
+	FullName->Length        = (USHORT)len1;
+	FullName->MaximumLength = (USHORT)len2;
+	FullName->Buffer        = buf;
 
-    Backslash = wcsrchr(buf, L'\\');
-    if (Backslash)
-        RtlInitUnicodeString(BaseName, Backslash + 1);
-    else
-        *BaseName = *FullName;
+	Backslash = wcsrchr(buf, L'\\');
+	if (Backslash)
+	{
+		RtlInitUnicodeString(BaseName, Backslash + 1);
+	}
+	else
+	{
+		*BaseName = *FullName;
+	}
 
-    //
-    // update ImagePathName in RTL_USER_PROCESS_PARAMETERS
-    //
+	//
+	// update ImagePathName in RTL_USER_PROCESS_PARAMETERS
+	//
 
-    if (1) {
+	if (1)
+	{
+		RTL_USER_PROCESS_PARAMETERS* ProcessParms = Proc_GetRtlUserProcessParameters();
+		if (ProcessParms)
+		{
+			buf = (WCHAR*)HeapAlloc(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, len2);
+			memcpy(buf, ImageDosPath, len2);
 
-        RTL_USER_PROCESS_PARAMETERS *ProcessParms =
-                                        Proc_GetRtlUserProcessParameters();
-        if (ProcessParms) {
+			ProcessParms->ImagePathName.Length        = (USHORT)len1;
+			ProcessParms->ImagePathName.MaximumLength = (USHORT)len2;
+			ProcessParms->ImagePathName.Buffer        = buf;
+		}
+	}
 
-            buf = (WCHAR *)HeapAlloc(
-                        GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, len2);
-            memcpy(buf, ImageDosPath, len2);
+	//
+	// keep a copy of the NT form of the true path to the image
+	//
 
-            ProcessParms->ImagePathName.Length        = (USHORT)len1;
-            ProcessParms->ImagePathName.MaximumLength = (USHORT)len2;
-            ProcessParms->ImagePathName.Buffer        = buf;
-        }
-    }
-
-    //
-    // keep a copy of the NT form of the true path to the image
-    //
-
-    Ldr_ImageTruePath = File_TranslateDosToNtPath(ImageDosPath);
+	Ldr_ImageTruePath = File_TranslateDosToNtPath(ImageDosPath);
 }
 
 
@@ -566,160 +574,161 @@ _FX void Ldr_FixImagePath_3(
 
 _FX void Ldr_FixImagePath_DllPath(void)
 {
-    //
-    // if the first entry in the DllPath for the process starts with the
-    // sandbox prefix, then we need to remove this prefix to prevent NTDLL
-    // from associating module path C:\Sandbox\drive\c\test.dll rather than
-    // just c:\test.dll during the initial load of static DLLs
-    //
+	//
+	// if the first entry in the DllPath for the process starts with the
+	// sandbox prefix, then we need to remove this prefix to prevent NTDLL
+	// from associating module path C:\Sandbox\drive\c\test.dll rather than
+	// just c:\test.dll during the initial load of static DLLs
+	//
 
-    RTL_USER_PROCESS_PARAMETERS *ProcessParms =
-                                    Proc_GetRtlUserProcessParameters();
-    if (ProcessParms) {
+	RTL_USER_PROCESS_PARAMETERS* ProcessParms = Proc_GetRtlUserProcessParameters();
+	if (ProcessParms)
+	{
+		WCHAR* DllPath_Buf = ProcessParms->DllPath.Buffer;
+		ULONG DllPath_Len  = ProcessParms->DllPath.Length / sizeof(WCHAR);
 
-        WCHAR *DllPath_Buf = ProcessParms->DllPath.Buffer;
-        ULONG DllPath_Len = ProcessParms->DllPath.Length / sizeof(WCHAR);
+		ULONG DosFilePath_Len;
+		WCHAR* DosFilePath = Dll_AllocTemp((Dll_BoxFilePathLen + 64) * sizeof(WCHAR));
+		wmemcpy(DosFilePath, Dll_BoxFilePath, Dll_BoxFilePathLen + 1);
 
-        ULONG DosFilePath_Len;
-        WCHAR *DosFilePath =
-                    Dll_AllocTemp((Dll_BoxFilePathLen + 64) * sizeof(WCHAR));
-        wmemcpy(DosFilePath, Dll_BoxFilePath, Dll_BoxFilePathLen + 1);
+		if (SbieDll_TranslateNtToDosPath(DosFilePath))
+		{
+			DosFilePath_Len = wcslen(DosFilePath);
+		}
+		else
+		{
+			DosFilePath_Len = 0;
+		}
 
-        if (SbieDll_TranslateNtToDosPath(DosFilePath))
-            DosFilePath_Len = wcslen(DosFilePath);
-        else
-            DosFilePath_Len = 0;
+		if (DosFilePath_Len && DllPath_Buf && DllPath_Len > DosFilePath_Len && _wcsnicmp(DllPath_Buf, DosFilePath, DosFilePath_Len) == 0 && DllPath_Buf[DosFilePath_Len] == L'\\')
+		{
+			//
+			// the dll path starts with the sandbox prefix,
+			// so extract the first component
+			//
 
-        if (DosFilePath_Len && DllPath_Buf && DllPath_Len > DosFilePath_Len
-            && _wcsnicmp(DllPath_Buf, DosFilePath, DosFilePath_Len) == 0
-            && DllPath_Buf[DosFilePath_Len] == L'\\') {
+			ULONG Prefix_Len;
+			WCHAR* Prefix_Buf;
+			WCHAR* TruePath;
 
-            //
-            // the dll path starts with the sandbox prefix,
-            // so extract the first component
-            //
+			WCHAR* EndPtr = wcschr(DllPath_Buf, L';');
+			if (EndPtr)
+			{
+				Prefix_Len = (ULONG)(EndPtr - DllPath_Buf);
+			}
+			else
+			{
+				Prefix_Len = DllPath_Len;
+				EndPtr     = DllPath_Buf + DllPath_Len;
+			}
 
-            ULONG Prefix_Len;
-            WCHAR *Prefix_Buf;
-            WCHAR *TruePath;
+			//
+			// copy the first component into a new buffer
+			// and get the true path for it
+			//
 
-            WCHAR *EndPtr = wcschr(DllPath_Buf, L';');
-            if (EndPtr)
-                Prefix_Len = (ULONG)(EndPtr - DllPath_Buf);
-            else {
-                Prefix_Len = DllPath_Len;
-                EndPtr = DllPath_Buf + DllPath_Len;
-            }
+			Prefix_Buf = Dll_AllocTemp((Prefix_Len + 1) * sizeof(WCHAR));
+			wmemcpy(Prefix_Buf, DllPath_Buf, Prefix_Len);
+			Prefix_Buf[Prefix_Len] = L'\0';
 
-            //
-            // copy the first component into a new buffer
-            // and get the true path for it
-            //
+			TruePath = File_GetTruePathForBoxedPath(Prefix_Buf, TRUE);
+			if (TruePath)
+			{
+				ULONG TruePath_Len = wcslen(TruePath);
+				ULONG Suffix_Len   = DllPath_Len + 1 - Prefix_Len;
+				ULONG NewPath_Len  = TruePath_Len + Suffix_Len;
 
-            Prefix_Buf = Dll_AllocTemp((Prefix_Len + 1) * sizeof(WCHAR));
-            wmemcpy(Prefix_Buf, DllPath_Buf, Prefix_Len);
-            Prefix_Buf[Prefix_Len] = L'\0';
+				WCHAR* NewPath;
 
-            TruePath = File_GetTruePathForBoxedPath(Prefix_Buf, TRUE);
-            if (TruePath) {
+				if (NewPath_Len <= DllPath_Len)
+				{
+					// new dll path fits in the original dll path buffer
 
-                ULONG TruePath_Len = wcslen(TruePath);
-                ULONG Suffix_Len = DllPath_Len + 1 - Prefix_Len;
-                ULONG NewPath_Len = TruePath_Len + Suffix_Len;
+					NewPath = DllPath_Buf;
+				}
+				else
+				{
+					// need to allocate a larger dll path buffer
 
-                WCHAR *NewPath;
+					NewPath = HeapAlloc(GetProcessHeap(), 0, (NewPath_Len + 1) * sizeof(WCHAR));
+				}
 
-                if (NewPath_Len <= DllPath_Len) {
+				if (NewPath)
+				{
+					wmemmove(NewPath + TruePath_Len, DllPath_Buf + Prefix_Len, Suffix_Len);
 
-                    // new dll path fits in the original dll path buffer
+					wmemcpy(NewPath, TruePath, TruePath_Len);
 
-                    NewPath = DllPath_Buf;
+					RtlInitUnicodeString(&ProcessParms->DllPath, NewPath);
+				}
 
-                } else {
+				Dll_Free(TruePath);
+			}
 
-                    // need to allocate a larger dll path buffer
+			Dll_Free(Prefix_Buf);
+		}
 
-                    NewPath = HeapAlloc(GetProcessHeap(), 0,
-                                    (NewPath_Len + 1) * sizeof(WCHAR));
-                }
-
-                if (NewPath) {
-
-                    wmemmove(NewPath + TruePath_Len,
-                             DllPath_Buf + Prefix_Len,
-                             Suffix_Len);
-
-                    wmemcpy(NewPath, TruePath, TruePath_Len);
-
-                    RtlInitUnicodeString(&ProcessParms->DllPath, NewPath);
-                }
-
-                Dll_Free(TruePath);
-            }
-
-            Dll_Free(Prefix_Buf);
-        }
-
-        Dll_Free(DosFilePath);
-    }
+		Dll_Free(DosFilePath);
+	}
 }
 
 
 //---------------------------------------------------------------------------
 // Ldr_Inject_Init
 //---------------------------------------------------------------------------
-BOOLEAN g_bHostInject = FALSE;
+BOOLEAN g_bHostInject  = FALSE;
 ULONG_PTR g_entrypoint = 0;
 
 _FX void Ldr_Inject_Init(BOOLEAN bHostInject)
 {
-    IMAGE_OPTIONAL_HEADER *opt_hdr;
-    UCHAR *entrypoint;
+	IMAGE_OPTIONAL_HEADER* opt_hdr;
+	UCHAR* entrypoint;
 
-    Ldr_ImageBase = (ULONG_PTR)GetModuleHandle(NULL);
-    opt_hdr = Ldr_OptionalHeader(Ldr_ImageBase);
-    g_bHostInject = bHostInject;
+	Ldr_ImageBase = (ULONG_PTR)GetModuleHandle(NULL);
+	opt_hdr       = Ldr_OptionalHeader(Ldr_ImageBase);
+	g_bHostInject = bHostInject;
 
-    //
-    // if the image is in the sandbox, adjust its LDR entry
-    //
-    if (!bHostInject)
-        Ldr_FixImagePath();
+	//
+	// if the image is in the sandbox, adjust its LDR entry
+	//
+	if (!bHostInject)
+	{
+		Ldr_FixImagePath();
+	}
 
-    //
-    // inject call to Ldr_Inject_Entry at the image entrypoint
-    //
-    // note that some .NET programs have a zero entrypoint address
-    //
+	//
+	// inject call to Ldr_Inject_Entry at the image entrypoint
+	//
+	// note that some .NET programs have a zero entrypoint address
+	//
 
-    if (! opt_hdr->AddressOfEntryPoint)
-        return;
+	if (!opt_hdr->AddressOfEntryPoint)
+	{
+		return;
+	}
 
-    entrypoint = (UCHAR *)(Ldr_ImageBase + opt_hdr->AddressOfEntryPoint);
-    g_entrypoint = (ULONG_PTR)entrypoint;
+	entrypoint   = (UCHAR*)(Ldr_ImageBase + opt_hdr->AddressOfEntryPoint);
+	g_entrypoint = (ULONG_PTR)entrypoint;
 
-    memcpy(Ldr_Inject_SaveBytes, entrypoint, LDR_INJECT_NUM_SAVE_BYTES);
+	memcpy(Ldr_Inject_SaveBytes, entrypoint, LDR_INJECT_NUM_SAVE_BYTES);
 
-    if (VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES,
-                       PAGE_EXECUTE_READWRITE, &Ldr_Inject_OldProtect)) {
-
+	if (VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES, PAGE_EXECUTE_READWRITE, &Ldr_Inject_OldProtect))
+	{
 #ifdef _WIN64
 
-        entrypoint[0] = 0x48;           // mov rax, Ldr_Inject_Entry64
-        entrypoint[1] = 0xB8;
-        *(ULONG_PTR *)(entrypoint + 2) = (ULONG_PTR)Ldr_Inject_Entry64;
-        entrypoint[10] = 0xFF;          // call rax
-        entrypoint[11] = 0xD0;
+		entrypoint[0]                 = 0x48; // mov rax, Ldr_Inject_Entry64
+		entrypoint[1]                 = 0xB8;
+		*(ULONG_PTR*)(entrypoint + 2) = (ULONG_PTR)Ldr_Inject_Entry64;
+		entrypoint[10]                = 0xFF; // call rax
+		entrypoint[11]                = 0xD0;
 
-#else ! _WIN64
+#else !_WIN64
 
-        *entrypoint = 0xE8;             // call Ldr_Inject_Entry
-        *(ULONG_PTR *)(entrypoint + 1) =
-            (UCHAR *)Ldr_Inject_Entry32 - (entrypoint + 5);
+		*entrypoint                   = 0xE8; // call Ldr_Inject_Entry
+		*(ULONG_PTR*)(entrypoint + 1) = (UCHAR*)Ldr_Inject_Entry32 - (entrypoint + 5);
 
 #endif _WIN64
-
-    }
+	}
 }
 
 
@@ -728,61 +737,60 @@ _FX void Ldr_Inject_Init(BOOLEAN bHostInject)
 //---------------------------------------------------------------------------
 
 
-_FX void Ldr_Inject_Entry(ULONG_PTR *pRetAddr)
+_FX void Ldr_Inject_Entry(ULONG_PTR* pRetAddr)
 {
-    UCHAR *entrypoint;
-    ULONG dummy_prot;
+	UCHAR* entrypoint;
+	ULONG dummy_prot;
 
-    //
-    // restore correct code sequence at the entrypoint
-    //
+	//
+	// restore correct code sequence at the entrypoint
+	//
 
-    entrypoint = ((UCHAR *)*pRetAddr) - LDR_INJECT_NUM_SAVE_BYTES;
-    *pRetAddr = (ULONG_PTR)entrypoint;
+	entrypoint = ((UCHAR*)*pRetAddr) - LDR_INJECT_NUM_SAVE_BYTES;
+	*pRetAddr  = (ULONG_PTR)entrypoint;
 
-    // If entrypoint hook is different, need to adjust offset. Copying the original byets won't have the correct offset.
-    // MS UEV also hooks exe entry.
-    if (g_entrypoint != (ULONG_PTR)entrypoint)
-    {
+	// If entrypoint hook is different, need to adjust offset. Copying the original byets won't have the correct offset.
+	// MS UEV also hooks exe entry.
+	if (g_entrypoint != (ULONG_PTR)entrypoint)
+	{
 #ifdef _WIN64
-        // We haven't seen the case yet. MS UEV may or may not have conflicts in this case.
+		// We haven't seen the case yet. MS UEV may or may not have conflicts in this case.
 #else
-        ULONG_PTR   nDiff = (ULONG_PTR)entrypoint - g_entrypoint;
-        ULONG_PTR*  pAddressOrig = (ULONG_PTR*)&Ldr_Inject_SaveBytes[1];
-        *pAddressOrig = (*pAddressOrig) - nDiff;
+		ULONG_PTR nDiff         = (ULONG_PTR)entrypoint - g_entrypoint;
+		ULONG_PTR* pAddressOrig = (ULONG_PTR*)&Ldr_Inject_SaveBytes[1];
+		*pAddressOrig           = (*pAddressOrig) - nDiff;
 #endif
-    }
+	}
 
-    VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES,
-                   PAGE_EXECUTE_READWRITE, &dummy_prot);
+	VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES, PAGE_EXECUTE_READWRITE, &dummy_prot);
 
-    memcpy(entrypoint, Ldr_Inject_SaveBytes, LDR_INJECT_NUM_SAVE_BYTES);
+	memcpy(entrypoint, Ldr_Inject_SaveBytes, LDR_INJECT_NUM_SAVE_BYTES);
 
-    VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES,
-                   Ldr_Inject_OldProtect, &dummy_prot);
+	VirtualProtect(entrypoint, LDR_INJECT_NUM_SAVE_BYTES, Ldr_Inject_OldProtect, &dummy_prot);
 
-    if (!g_bHostInject)
-    {
+	if (!g_bHostInject)
+	{
+		// if we caused PEB.ReadImageFileExecOptions to be non-zero then restore
+		// the zero value here
+		if (Dll_OsBuild < 8400)
+		{
+			UCHAR* ReadImageFileExecOptions = (UCHAR*)(NtCurrentPeb() + 1);
+			if (*ReadImageFileExecOptions == '*')
+			{
+				*ReadImageFileExecOptions = 0;
+			}
+		}
 
-        // if we caused PEB.ReadImageFileExecOptions to be non-zero then restore
-        // the zero value here
-        if (Dll_OsBuild < 8400) {
+		//
+		// do some post-LDR initialization
+		//
 
-            UCHAR *ReadImageFileExecOptions = (UCHAR *)(NtCurrentPeb() + 1);
-            if (*ReadImageFileExecOptions == '*')
-                *ReadImageFileExecOptions = 0;
-        }
+		Ldr_LoadInjectDlls(g_bHostInject);
 
-        //
-        // do some post-LDR initialization
-        //
-
-        Ldr_LoadInjectDlls(g_bHostInject);
-        
-        Dll_InitExeEntry();
-    }
-    else
-    {
-        Ldr_LoadInjectDlls(g_bHostInject);
-    }
+		Dll_InitExeEntry();
+	}
+	else
+	{
+		Ldr_LoadInjectDlls(g_bHostInject);
+	}
 }

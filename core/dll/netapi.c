@@ -23,10 +23,11 @@
 #if 0
 
 
-#include <windows.h>
-#include <wincrypt.h>
-#include "core/svc/NetApiWire.h"
-#include "dll.h"
+	#include "core/svc/NetApiWire.h"
+	#include "dll.h"
+
+	#include <wincrypt.h>
+	#include <windows.h>
 
 
 //---------------------------------------------------------------------------

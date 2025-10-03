@@ -24,13 +24,13 @@
 #define _MY_API_H
 
 
-#include "driver.h"
 #include "api_defs.h"
+#include "driver.h"
 
 // There is a problem with a 32 bit app running in 64 bit Windows.  In a 32 bit app, the process handle passed via one of the API_ARGS structures
 // is a HANDLE, which is a VOID*, which is 32 bits.  The 64 bit driver will compare this against NtCurrentProcess(), which is a 64 bit -1.
 // So it never matches.  This macro solves that problem.
-#define IS_ARG_CURRENT_PROCESS(h) ((ULONG)h == 0xffffffff)      // -1
+#define IS_ARG_CURRENT_PROCESS(h) ((ULONG)h == 0xffffffff) // -1
 
 
 //---------------------------------------------------------------------------
@@ -38,36 +38,36 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct _API_WORK_ITEM {
+typedef struct _API_WORK_ITEM
+{
+	LIST_ELEM list_elem;
+	ULONG length; // length includes both header and data
+	ULONG session_id;
+	ULONG type;
 
-    LIST_ELEM list_elem;
-    ULONG length;           // length includes both header and data
-    ULONG session_id;
-    ULONG type;
-
-    ULONG data[1];
+	ULONG data[1];
 
 } API_WORK_ITEM;
 
 typedef struct _Sbie_SeFilterTokenArg
 {
-    PACCESS_TOKEN       ExistingToken;
-    ULONG               Flags;
-    PTOKEN_GROUPS       SidsToDisable;
-    PTOKEN_PRIVILEGES   PrivilegesToDelete;
-    PTOKEN_GROUPS       RestrictedSids;
-    PACCESS_TOKEN       *NewToken;
-    NTSTATUS            *status;
+	PACCESS_TOKEN ExistingToken;
+	ULONG Flags;
+	PTOKEN_GROUPS SidsToDisable;
+	PTOKEN_PRIVILEGES PrivilegesToDelete;
+	PTOKEN_GROUPS RestrictedSids;
+	PACCESS_TOKEN* NewToken;
+	NTSTATUS* status;
 } Sbie_SeFilterTokenArg;
 
 typedef struct _Sbie_SepFilterTokenArg
 {
-    void*           TokenObject;
-    ULONG_PTR       SidCount;
-    ULONG_PTR       SidPtr;
-    ULONG_PTR       LengthIncrease;
-    void            **NewToken;
-    NTSTATUS        *status;
+	void* TokenObject;
+	ULONG_PTR SidCount;
+	ULONG_PTR SidPtr;
+	ULONG_PTR LengthIncrease;
+	void** NewToken;
+	NTSTATUS* status;
 } Sbie_SepFilterTokenArg;
 
 //---------------------------------------------------------------------------
@@ -89,7 +89,7 @@ BOOLEAN Api_Disable(void);
 // Adds an API function
 //
 
-typedef NTSTATUS(*P_Api_Function)(PROCESS *, ULONG64 *parms);
+typedef NTSTATUS (*P_Api_Function)(PROCESS*, ULONG64* parms);
 
 void Api_SetFunction(ULONG func_code, P_Api_Function func_ptr);
 
@@ -103,28 +103,26 @@ void Api_ResetServiceProcess(void);
 // Send a request kernel to the user mode service
 //
 
-BOOLEAN Api_SendServiceMessage(ULONG msgid, ULONG data_len, void *data);
+BOOLEAN Api_SendServiceMessage(ULONG msgid, ULONG data_len, void* data);
 
 //
 // Publish WORK_ITEM to be consumed by SandboxieService.  Caller must
 // allocate work_item from Driver_Pool, and initialize type, length and data
 //
 
-BOOLEAN Api_AddWork(API_WORK_ITEM *work_item);
+BOOLEAN Api_AddWork(API_WORK_ITEM* work_item);
 
 //
 // Copies boxname parameter from user
 //
 
-BOOLEAN Api_CopyBoxNameFromUser(
-    WCHAR *boxname34, const WCHAR *user_boxname);
+BOOLEAN Api_CopyBoxNameFromUser(WCHAR* boxname34, const WCHAR* user_boxname);
 
 //
 // Copies SID string parameter from user
 //
 
-BOOLEAN Api_CopySidStringFromUser(
-    WCHAR *sidstring96, const WCHAR *user_sidstring);
+BOOLEAN Api_CopySidStringFromUser(WCHAR* sidstring96, const WCHAR* user_sidstring);
 
 //
 // Copies the 'len' bytes from the kernel mode buffer at 'str',
@@ -132,15 +130,9 @@ BOOLEAN Api_CopySidStringFromUser(
 // May raise STATUS_BUFFER_TOO_SMALL or STATUS_ACCESS_VIOLATION
 //
 
-void Api_CopyStringToUser(
-    UNICODE_STRING64 *uni, WCHAR *str, size_t len);
+void Api_CopyStringToUser(UNICODE_STRING64* uni, WCHAR* str, size_t len);
 
-NTSTATUS Sbie_SepFilterTokenHandler(
-    void*       TokenObject,
-    ULONG_PTR   SidCount,
-    ULONG_PTR   SidPtr,
-    ULONG_PTR   LengthIncrease,
-    void        **NewToken);
+NTSTATUS Sbie_SepFilterTokenHandler(void* TokenObject, ULONG_PTR SidCount, ULONG_PTR SidPtr, ULONG_PTR LengthIncrease, void** NewToken);
 
 //---------------------------------------------------------------------------
 // Variables

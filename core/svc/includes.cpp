@@ -15,11 +15,9 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "stdafx.h"
-
-#include "common/win32_ntddk.h"
-
 #include "common/list.c"
+#include "common/win32_ntddk.h"
+#include "stdafx.h"
 
 extern "C" const ULONG tzuk;
 #define POOL_TAG tzuk
@@ -29,7 +27,8 @@ extern "C" const ULONG tzuk;
 //
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include "common/pool.c"

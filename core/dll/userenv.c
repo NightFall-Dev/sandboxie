@@ -32,9 +32,7 @@ static BOOL UserEnv_RegisterGPNotification(HANDLE hEvent, BOOL bMachine);
 
 static BOOL UserEnv_UnregisterGPNotification(HANDLE hEvent);
 
-static ULONG UserEnv_GetAppliedGPOList(
-    ULONG dwFlags, const WCHAR *pMachineName, PSID pSidUser,
-    GUID *pGuidExtension, void *ppGPOList);
+static ULONG UserEnv_GetAppliedGPOList(ULONG dwFlags, const WCHAR* pMachineName, PSID pSidUser, GUID* pGuidExtension, void* ppGPOList);
 
 static BOOL UserEnv_GetVersionExW(LPOSVERSIONINFOEXW lpVersionInfo);
 static BOOL UserEnv_GetVersionExA(LPOSVERSIONINFOEXA lpVersionInfo);
@@ -46,9 +44,7 @@ typedef BOOL (*P_RegisterGPNotification)(HANDLE hEvent, BOOL bMachine);
 
 typedef BOOL (*P_UnregisterGPNotification)(HANDLE hEvent, BOOL bMachine);
 
-typedef ULONG (*P_GetAppliedGPOList)(
-    ULONG dwFlags, const WCHAR *pMachineName, PSID pSidUser,
-    GUID *pGuidExtension, void *ppGPOList);
+typedef ULONG (*P_GetAppliedGPOList)(ULONG dwFlags, const WCHAR* pMachineName, PSID pSidUser, GUID* pGuidExtension, void* ppGPOList);
 
 typedef BOOL (*P_GetVersionExW)(LPOSVERSIONINFOEXW lpVersionInfo);
 typedef BOOL (*P_GetVersionExA)(LPOSVERSIONINFOEXA lpVersionInfo);
@@ -56,11 +52,11 @@ typedef BOOL (*P_GetVersionExA)(LPOSVERSIONINFOEXA lpVersionInfo);
 //---------------------------------------------------------------------------
 
 
-static P_RegisterGPNotification     __sys_RegisterGPNotification    = NULL;
-static P_UnregisterGPNotification   __sys_UnregisterGPNotification  = NULL;
-static P_GetAppliedGPOList          __sys_GetAppliedGPOList         = NULL;
-static P_GetVersionExW              __sys_GetVersionExW             = NULL;
-static P_GetVersionExA              __sys_GetVersionExA             = NULL;
+static P_RegisterGPNotification __sys_RegisterGPNotification     = NULL;
+static P_UnregisterGPNotification __sys_UnregisterGPNotification = NULL;
+static P_GetAppliedGPOList __sys_GetAppliedGPOList               = NULL;
+static P_GetVersionExW __sys_GetVersionExW                       = NULL;
+static P_GetVersionExA __sys_GetVersionExA                       = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -70,46 +66,44 @@ static P_GetVersionExA              __sys_GetVersionExA             = NULL;
 
 _FX BOOLEAN UserEnv_Init(HMODULE module)
 {
-    void *RegisterGPNotification;
-    void *UnregisterGPNotification;
-    void *GetAppliedGPOList;
+	void* RegisterGPNotification;
+	void* UnregisterGPNotification;
+	void* GetAppliedGPOList;
 
-    if (module == Dll_KernelBase) {
-        void *GetVersionExW;
-        void *GetVersionExA;
+	if (module == Dll_KernelBase)
+	{
+		void* GetVersionExW;
+		void* GetVersionExA;
 
-        //
-        // on Windows 8.1, UserEnv!GetAppliedGPOList calls
-        // KernelBase!GetAppliedGPOListInternalW, which just hangs
-        //
+		//
+		// on Windows 8.1, UserEnv!GetAppliedGPOList calls
+		// KernelBase!GetAppliedGPOListInternalW, which just hangs
+		//
 
-        GetAppliedGPOList = (P_GetAppliedGPOList)
-            GetProcAddress(module, "GetAppliedGPOListInternalW");
+		GetAppliedGPOList = (P_GetAppliedGPOList)GetProcAddress(module, "GetAppliedGPOListInternalW");
 
-        SBIEDLL_HOOK(UserEnv_,GetAppliedGPOList);
+		SBIEDLL_HOOK(UserEnv_, GetAppliedGPOList);
 
-        GetVersionExW = (P_GetVersionExW) GetProcAddress(module, "GetVersionExW");
-        GetVersionExA = (P_GetVersionExA) GetProcAddress(module, "GetVersionExA");
-        SBIEDLL_HOOK(UserEnv_,GetVersionExW);
-        SBIEDLL_HOOK(UserEnv_,GetVersionExA);
+		GetVersionExW = (P_GetVersionExW)GetProcAddress(module, "GetVersionExW");
+		GetVersionExA = (P_GetVersionExA)GetProcAddress(module, "GetVersionExA");
+		SBIEDLL_HOOK(UserEnv_, GetVersionExW);
+		SBIEDLL_HOOK(UserEnv_, GetVersionExA);
+	}
+	else
+	{
+		//
+		// hook UserEnv entrypoints
+		//
 
-    } else {
+		RegisterGPNotification = (P_RegisterGPNotification)GetProcAddress(module, "RegisterGPNotification");
 
-        //
-        // hook UserEnv entrypoints
-        //
+		UnregisterGPNotification = (P_UnregisterGPNotification)GetProcAddress(module, "UnregisterGPNotification");
 
-        RegisterGPNotification = (P_RegisterGPNotification)
-            GetProcAddress(module, "RegisterGPNotification");
+		SBIEDLL_HOOK(UserEnv_, RegisterGPNotification);
+		SBIEDLL_HOOK(UserEnv_, UnregisterGPNotification);
+	}
 
-        UnregisterGPNotification = (P_UnregisterGPNotification)
-            GetProcAddress(module, "UnregisterGPNotification");
-
-        SBIEDLL_HOOK(UserEnv_,RegisterGPNotification);
-        SBIEDLL_HOOK(UserEnv_,UnregisterGPNotification);
-    }
-
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -120,8 +114,8 @@ _FX BOOLEAN UserEnv_Init(HMODULE module)
 
 _FX BOOL UserEnv_RegisterGPNotification(HANDLE hEvent, BOOL bMachine)
 {
-    SetLastError(ERROR_SUCCESS);
-    return TRUE;
+	SetLastError(ERROR_SUCCESS);
+	return TRUE;
 }
 
 
@@ -132,8 +126,8 @@ _FX BOOL UserEnv_RegisterGPNotification(HANDLE hEvent, BOOL bMachine)
 
 _FX BOOL UserEnv_UnregisterGPNotification(HANDLE hEvent)
 {
-    SetLastError(ERROR_SUCCESS);
-    return TRUE;
+	SetLastError(ERROR_SUCCESS);
+	return TRUE;
 }
 
 
@@ -142,13 +136,11 @@ _FX BOOL UserEnv_UnregisterGPNotification(HANDLE hEvent)
 //---------------------------------------------------------------------------
 
 
-ULONG UserEnv_GetAppliedGPOList(
-    ULONG dwFlags, const WCHAR *pMachineName, PSID pSidUser,
-    GUID *pGuidExtension, void *ppGPOList)
+ULONG UserEnv_GetAppliedGPOList(ULONG dwFlags, const WCHAR* pMachineName, PSID pSidUser, GUID* pGuidExtension, void* ppGPOList)
 {
-    // emulate error return code from KernelBase!GetAppliedGPOListInternalW
-    SetLastError(ERROR_INVALID_FUNCTION);
-    return ERROR_PROC_NOT_FOUND;
+	// emulate error return code from KernelBase!GetAppliedGPOListInternalW
+	SetLastError(ERROR_INVALID_FUNCTION);
+	return ERROR_PROC_NOT_FOUND;
 }
 
 //---------------------------------------------------------------------------
@@ -157,27 +149,27 @@ ULONG UserEnv_GetAppliedGPOList(
 
 _FX BOOL UserEnv_GetVersionExW(LPOSVERSIONINFOEXW lpVersionInfo)
 {
-    // Get the version from the kernel
-    NTSTATUS (WINAPI *RtlGetVersion)(LPOSVERSIONINFOEXW);
-    *(FARPROC*)&RtlGetVersion = GetProcAddress(GetModuleHandleW(L"ntdll"), "RtlGetVersion");
+	// Get the version from the kernel
+	NTSTATUS(WINAPI * RtlGetVersion)(LPOSVERSIONINFOEXW);
+	*(FARPROC*)&RtlGetVersion = GetProcAddress(GetModuleHandleW(L"ntdll"), "RtlGetVersion");
 
-    if (RtlGetVersion != NULL)
-    {
-        RtlGetVersion(lpVersionInfo);
+	if (RtlGetVersion != NULL)
+	{
+		RtlGetVersion(lpVersionInfo);
 
-        // RtlGetVersion always returns STATUS_SUCCESS
-        return TRUE;
-    }
+		// RtlGetVersion always returns STATUS_SUCCESS
+		return TRUE;
+	}
 
-    // Error
-    return FALSE;
+	// Error
+	return FALSE;
 }
 
 _FX BOOL UserEnv_GetVersionExA(LPOSVERSIONINFOEXA lpVersionInfo)
 {
-    BOOL rc;
-    rc = __sys_GetVersionExA(lpVersionInfo);
-    lpVersionInfo->dwMajorVersion = GET_PEB_MAJOR_VERSION;
-    lpVersionInfo->dwMinorVersion = GET_PEB_MINOR_VERSION;
-    return rc;
+	BOOL rc;
+	rc                            = __sys_GetVersionExA(lpVersionInfo);
+	lpVersionInfo->dwMajorVersion = GET_PEB_MAJOR_VERSION;
+	lpVersionInfo->dwMinorVersion = GET_PEB_MINOR_VERSION;
+	return rc;
 }

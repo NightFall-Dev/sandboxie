@@ -26,62 +26,57 @@
 
 class CUserSettings
 {
-    static CUserSettings *m_instance;
+	static CUserSettings* m_instance;
 
-    CString m_SettingPrefix;
-    CString m_Section;
-    CString m_UserName;
-    BOOL    m_IsAdmin;
-    BOOL    m_CanEdit;
-    BOOL    m_CanDisableForce;
+	CString m_SettingPrefix;
+	CString m_Section;
+	CString m_UserName;
+	BOOL m_IsAdmin;
+	BOOL m_CanEdit;
+	BOOL m_CanDisableForce;
 
-    CUserSettings();
+	CUserSettings();
 
-    CString WithPrefix(const CString &Setting) const;
+	CString WithPrefix(const CString& Setting) const;
 
-    CString GetUserSectionName(const CString &Setting) const;
+	CString GetUserSectionName(const CString& Setting) const;
 
 public:
+	~CUserSettings();
 
-    ~CUserSettings();
+	static CUserSettings& GetInstance();
 
-    static CUserSettings &GetInstance();
+	CString GetUserName() const;
 
-    CString GetUserName() const;
+	BOOL IsAdmin() const;
 
-    BOOL IsAdmin() const;
+	BOOL CanEdit() const;
 
-    BOOL CanEdit() const;
+	BOOL CanDisableForce() const;
 
-    BOOL CanDisableForce() const;
+	//CString Get(const CString &Setting);
 
-    //CString Get(const CString &Setting);
+	BOOL SetText(const CString& Setting, const CString& Value);
+	BOOL SetNum(const CString& Setting, int Value);
+	BOOL SetNum64(const CString& Setting, __int64 Value);
+	BOOL SetBool(const CString& Setting, BOOL Value);
 
-    BOOL SetText(const CString &Setting, const CString &Value);
-    BOOL SetNum(const CString &Setting, int Value);
-    BOOL SetNum64(const CString &Setting, __int64 Value);
-    BOOL SetBool(const CString &Setting, BOOL Value);
+	void GetText(const CString& Setting, CString& Value, const CString& Default = CString()) const;
+	void GetNum(const CString& Setting, int& Value, int Default = 0) const;
+	void GetNum64(const CString& Setting, __int64& Value, __int64 Default = 0) const;
+	void GetBool(const CString& Setting, BOOL& Value, BOOL Default = 0) const;
 
-    void GetText(const CString &Setting, CString &Value,
-                 const CString &Default = CString()) const;
-    void GetNum(
-        const CString &Setting, int &Value, int Default = 0) const;
-    void GetNum64(
-        const CString &Setting, __int64 &Value, __int64 Default = 0) const;
-    void GetBool(
-        const CString &Setting, BOOL &Value, BOOL Default = 0) const;
+	void GetTextList(const CString& Setting, CStringList& Value) const;
 
-    void GetTextList(const CString &Setting, CStringList &Value) const;
+	BOOL SetTextCsv(const CString& Setting, const CStringList& ValueList);
+	void GetTextCsv(const CString& Setting, CStringList& ValueList) const;
 
-    BOOL SetTextCsv(const CString &Setting, const CStringList &ValueList);
-    void GetTextCsv(const CString &Setting, CStringList &ValueList) const;
+	BOOL InsertText(const CString& Setting, const CString& Value);
+	BOOL AppendText(const CString& Setting, const CString& Value);
 
-    BOOL InsertText(const CString &Setting, const CString &Value);
-    BOOL AppendText(const CString &Setting, const CString &Value);
+	BOOL DelText(const CString& Setting, const CString& Value);
 
-    BOOL DelText(const CString &Setting, const CString &Value);
-
-    void GetSettingsNames(CStringList &Names);
+	void GetSettingsNames(CStringList& Names);
 };
 
 

@@ -36,50 +36,48 @@
 
 
 #if !defined(AFX_PROPPAGEFRAMEDEFAULT_H__5C5B7AC9_2DF5_4E8C_8F5E_DE2CC04BBED7__INCLUDED_)
-#define AFX_PROPPAGEFRAMEDEFAULT_H__5C5B7AC9_2DF5_4E8C_8F5E_DE2CC04BBED7__INCLUDED_
+	#define AFX_PROPPAGEFRAMEDEFAULT_H__5C5B7AC9_2DF5_4E8C_8F5E_DE2CC04BBED7__INCLUDED_
 
-#if _MSC_VER > 1000
-#pragma once
-#endif // _MSC_VER > 1000
+	#if _MSC_VER > 1000
+		#pragma once
+	#endif // _MSC_VER > 1000
 
-#include "PropPageFrame.h"
+	#include "PropPageFrame.h"
 
 
 namespace TreePropSheet
 {
 
 
-/**
+	/**
 An implementation of CPropPageFrame, that works well for Windows XP
 styled systems and older windows versions (without themes).
 
 @author Sven Wiegand
 */
-class /*AFX_EXT_CLASS*/ CPropPageFrameDefault : public CWnd,
-                                            public CPropPageFrame
-{
-// construction/destruction
-public:
-	CPropPageFrameDefault();
-	virtual ~CPropPageFrameDefault();
+	class /*AFX_EXT_CLASS*/ CPropPageFrameDefault : public CWnd, public CPropPageFrame
+	{
+		// construction/destruction
+	public:
+		CPropPageFrameDefault();
+		virtual ~CPropPageFrameDefault();
 
-// operations
-public:
+		// operations
+	public:
+		// overridings
+	public:
+		virtual BOOL Create(DWORD dwWindowStyle, const RECT& rect, CWnd* pwndParent, UINT nID);
+		virtual CWnd* GetWnd();
+		virtual void SetCaption(LPCTSTR lpszCaption, HICON hIcon = NULL);
 
-// overridings
-public:
-	virtual BOOL Create(DWORD dwWindowStyle, const RECT &rect, CWnd *pwndParent, UINT nID);
-	virtual CWnd* GetWnd();
-	virtual void SetCaption(LPCTSTR lpszCaption, HICON hIcon = NULL);
-	
-protected:
-	virtual CRect CalcMsgArea();
-	virtual CRect CalcCaptionArea();
-	virtual void DrawCaption(CDC *pDc, CRect rect, LPCTSTR lpszCaption, HICON hIcon);
+	protected:
+		virtual CRect CalcMsgArea();
+		virtual CRect CalcCaptionArea();
+		virtual void DrawCaption(CDC* pDc, CRect rect, LPCTSTR lpszCaption, HICON hIcon);
 
-// Implementation helpers
-protected:
-	/**
+		// Implementation helpers
+	protected:
+		/**
 	Fills a rectangular area with a gradient color starting at the left
 	side with the color clrLeft and ending at the right sight with the
 	color clrRight.
@@ -93,34 +91,34 @@ protected:
 	@param clrRight
 		Color on the right side.
 	*/
-	void FillGradientRectH(CDC *pDc, const RECT &rect, COLORREF clrLeft, COLORREF clrRight);
+		void FillGradientRectH(CDC* pDc, const RECT& rect, COLORREF clrLeft, COLORREF clrRight);
 
-	/**
+		/**
 	Returns TRUE if Windows XP theme support is available, FALSE 
 	otherwise.
 	*/
-	BOOL ThemeSupport() const;
+		BOOL ThemeSupport() const;
 
-protected:
-	//{{AFX_VIRTUAL(CPropPageFrameDefault)
-	//}}AFX_VIRTUAL
+	protected:
+		//{{AFX_VIRTUAL(CPropPageFrameDefault)
+		//}}AFX_VIRTUAL
 
-// message handlers
-protected:
-	//{{AFX_MSG(CPropPageFrameDefault)
-	afx_msg void OnPaint();
-	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
-	//}}AFX_MSG
-	DECLARE_MESSAGE_MAP()
+		// message handlers
+	protected:
+		//{{AFX_MSG(CPropPageFrameDefault)
+		afx_msg void OnPaint();
+		afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+		//}}AFX_MSG
+		DECLARE_MESSAGE_MAP()
 
-// attributes
-protected:
-	/** 
+		// attributes
+	protected:
+		/** 
 	Image list that contains only the current icon or nothing if there
 	is no icon.
 	*/
-	CImageList m_Images;
-};
+		CImageList m_Images;
+	};
 
 
 } //namespace TreePropSheet

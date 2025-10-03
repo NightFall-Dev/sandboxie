@@ -26,42 +26,40 @@
 
 class CProcSettingsDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CString m_boxname, m_process, m_internet_list, m_startrun_list;
-    BOOL m_alert, m_force, m_linger, m_leader, m_internet, m_startrun;
+	CString m_boxname, m_process, m_internet_list, m_startrun_list;
+	BOOL m_alert, m_force, m_linger, m_leader, m_internet, m_startrun;
 
-    BOOL RemoveProgramFromList(CString &list);
+	BOOL RemoveProgramFromList(CString& list);
 
-    BOOL CheckIfBrackets(WCHAR type, UINT idButton);
+	BOOL CheckIfBrackets(WCHAR type, UINT idButton);
 
-    virtual BOOL OnInitDialog();
-    virtual void OnOK();
+	virtual BOOL OnInitDialog();
+	virtual void OnOK();
 
-    void ShowPage1(int nCmdShow);
-    void ShowPage2(int nCmdShow);
+	void ShowPage1(int nCmdShow);
+	void ShowPage2(int nCmdShow);
 
-    void UpdateAccess(const CString &list, ULONG idList, ULONG idButton,
-                      ULONG msgidAll, ULONG msgidSome);
-    void UpdateInternetAccess(void);
-    void UpdateStartRunAccess(void);
+	void UpdateAccess(const CString& list, ULONG idList, ULONG idButton, ULONG msgidAll, ULONG msgidSome);
+	void UpdateInternetAccess(void);
+	void UpdateStartRunAccess(void);
 
-    afx_msg void OnViewPage1();
-    afx_msg void OnViewPage2();
+	afx_msg void OnViewPage1();
+	afx_msg void OnViewPage2();
 
-    afx_msg void OnCmdAlert();
-    afx_msg void OnCmdForce();
+	afx_msg void OnCmdAlert();
+	afx_msg void OnCmdForce();
 
-    afx_msg void OnCmdLinger();
-    afx_msg void OnCmdLeader();
+	afx_msg void OnCmdLinger();
+	afx_msg void OnCmdLeader();
 
-    afx_msg void OnCmdInternetAccess();
-    afx_msg void OnCmdStartRunAccess();
+	afx_msg void OnCmdInternetAccess();
+	afx_msg void OnCmdStartRunAccess();
 
 public:
-
-    CProcSettingsDialog(CWnd *pParentWnd, ULONG pid);
-    ~CProcSettingsDialog();
+	CProcSettingsDialog(CWnd* pParentWnd, ULONG pid);
+	~CProcSettingsDialog();
 };
 
 

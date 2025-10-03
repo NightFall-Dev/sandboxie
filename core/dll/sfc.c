@@ -28,29 +28,29 @@
 //---------------------------------------------------------------------------
 
 
-static BOOL Sfc_SfcIsFileProtected(HANDLE RpcHandle, LPCWSTR *FileName);
+static BOOL Sfc_SfcIsFileProtected(HANDLE RpcHandle, LPCWSTR* FileName);
 
 static BOOL Sfc_SfcIsKeyProtected(HKEY hKey, LPCWSTR lpSubKey, REGSAM sam);
 
-static BOOL Sfc_SfcGetNextProtectedFile(HANDLE RpcHandle, void *FileData);
+static BOOL Sfc_SfcGetNextProtectedFile(HANDLE RpcHandle, void* FileData);
 
 
 //---------------------------------------------------------------------------
 
 
-typedef BOOL (*P_SfcIsFileProtected)(HANDLE RpcHandle, LPCWSTR *FileName);
+typedef BOOL (*P_SfcIsFileProtected)(HANDLE RpcHandle, LPCWSTR* FileName);
 
 typedef BOOL (*P_SfcIsKeyProtected)(HKEY hKey, LPCWSTR lpSubKey, REGSAM sam);
 
-typedef BOOL (*P_SfcGetNextProtectedFile)(HANDLE RpcHandle, void *FileData);
+typedef BOOL (*P_SfcGetNextProtectedFile)(HANDLE RpcHandle, void* FileData);
 
 
 //---------------------------------------------------------------------------
 
 
-static P_SfcIsFileProtected         __sys_SfcIsFileProtected        = NULL;
-static P_SfcIsKeyProtected          __sys_SfcIsKeyProtected         = NULL;
-static P_SfcGetNextProtectedFile    __sys_SfcGetNextProtectedFile   = NULL;
+static P_SfcIsFileProtected __sys_SfcIsFileProtected           = NULL;
+static P_SfcIsKeyProtected __sys_SfcIsKeyProtected             = NULL;
+static P_SfcGetNextProtectedFile __sys_SfcGetNextProtectedFile = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -60,30 +60,30 @@ static P_SfcGetNextProtectedFile    __sys_SfcGetNextProtectedFile   = NULL;
 
 _FX BOOLEAN Sfc_Init(HMODULE module)
 {
-    void *SfcIsFileProtected, *SfcIsKeyProtected, *SfcGetNextProtectedFile;
+	void *SfcIsFileProtected, *SfcIsKeyProtected, *SfcGetNextProtectedFile;
 
-    //
-    // intercept SECUR32 entry points
-    //
+	//
+	// intercept SECUR32 entry points
+	//
 
-    SfcIsFileProtected = (P_SfcIsFileProtected)
-        GetProcAddress(module, "SfcIsFileProtected");
-    SfcIsKeyProtected = (P_SfcIsKeyProtected)
-        GetProcAddress(module, "SfcIsKeyProtected");
-    SfcGetNextProtectedFile = (P_SfcGetNextProtectedFile)
-        GetProcAddress(module, "SfcGetNextProtectedFile");
+	SfcIsFileProtected      = (P_SfcIsFileProtected)GetProcAddress(module, "SfcIsFileProtected");
+	SfcIsKeyProtected       = (P_SfcIsKeyProtected)GetProcAddress(module, "SfcIsKeyProtected");
+	SfcGetNextProtectedFile = (P_SfcGetNextProtectedFile)GetProcAddress(module, "SfcGetNextProtectedFile");
 
-    if (SfcIsFileProtected) {
-        SBIEDLL_HOOK(Sfc_,SfcIsFileProtected);
-    }
-    if (SfcIsKeyProtected) {
-        SBIEDLL_HOOK(Sfc_,SfcIsKeyProtected);
-    }
-    if (SfcGetNextProtectedFile) {
-        SBIEDLL_HOOK(Sfc_,SfcGetNextProtectedFile);
-    }
+	if (SfcIsFileProtected)
+	{
+		SBIEDLL_HOOK(Sfc_, SfcIsFileProtected);
+	}
+	if (SfcIsKeyProtected)
+	{
+		SBIEDLL_HOOK(Sfc_, SfcIsKeyProtected);
+	}
+	if (SfcGetNextProtectedFile)
+	{
+		SBIEDLL_HOOK(Sfc_, SfcGetNextProtectedFile);
+	}
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -92,10 +92,10 @@ _FX BOOLEAN Sfc_Init(HMODULE module)
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Sfc_SfcIsFileProtected(HANDLE RpcHandle, LPCWSTR *FileName)
+_FX BOOL Sfc_SfcIsFileProtected(HANDLE RpcHandle, LPCWSTR* FileName)
 {
-    SetLastError(ERROR_FILE_NOT_FOUND);
-    return FALSE;
+	SetLastError(ERROR_FILE_NOT_FOUND);
+	return FALSE;
 }
 
 
@@ -106,8 +106,8 @@ _FX BOOL Sfc_SfcIsFileProtected(HANDLE RpcHandle, LPCWSTR *FileName)
 
 _FX BOOL Sfc_SfcIsKeyProtected(HKEY hKey, LPCWSTR lpSubKey, REGSAM sam)
 {
-    SetLastError(ERROR_FILE_NOT_FOUND);
-    return FALSE;
+	SetLastError(ERROR_FILE_NOT_FOUND);
+	return FALSE;
 }
 
 
@@ -116,8 +116,8 @@ _FX BOOL Sfc_SfcIsKeyProtected(HKEY hKey, LPCWSTR lpSubKey, REGSAM sam)
 //---------------------------------------------------------------------------
 
 
-_FX BOOL Sfc_SfcGetNextProtectedFile(HANDLE RpcHandle, void *FileData)
+_FX BOOL Sfc_SfcGetNextProtectedFile(HANDLE RpcHandle, void* FileData)
 {
-    SetLastError(ERROR_NO_MORE_FILES);
-    return FALSE;
+	SetLastError(ERROR_NO_MORE_FILES);
+	return FALSE;
 }

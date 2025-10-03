@@ -27,13 +27,13 @@
 
 ULONG CALLBACK Acscmonitor_LoadLibrary(LPVOID lpParam)
 {
-    // Acscmonitor is a plugin to Firefox which create a thread on initialize.
-    // Firefox has a habit of initializing the module right before it's about
-    // to unload the DLL, which is causing the crash.
-    // Our solution is to prevent the library from ever being removed by holding
-    // a reference to it.
-    LoadLibraryW(L"acscmonitor.dll");
-    return 0;
+	// Acscmonitor is a plugin to Firefox which create a thread on initialize.
+	// Firefox has a habit of initializing the module right before it's about
+	// to unload the DLL, which is causing the crash.
+	// Our solution is to prevent the library from ever being removed by holding
+	// a reference to it.
+	LoadLibraryW(L"acscmonitor.dll");
+	return 0;
 }
 
 //---------------------------------------------------------------------------
@@ -42,6 +42,6 @@ ULONG CALLBACK Acscmonitor_LoadLibrary(LPVOID lpParam)
 
 _FX BOOLEAN Acscmonitor_Init(HMODULE hDll)
 {
-    CreateThread(NULL, 0, Acscmonitor_LoadLibrary, (LPVOID)0, 0, NULL);
-    return TRUE;
+	CreateThread(NULL, 0, Acscmonitor_LoadLibrary, (LPVOID)0, 0, NULL);
+	return TRUE;
 }

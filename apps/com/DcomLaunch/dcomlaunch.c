@@ -23,24 +23,25 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "common/defines.h"
 #include "common/my_version.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
 // Variables
 //---------------------------------------------------------------------------
 
-const WCHAR *ServiceTitle = SANDBOXIE L" DcomLaunch";
+const WCHAR* ServiceTitle = SANDBOXIE L" DcomLaunch";
 #include "../common.h"
 #include "../privs.h"
 
 HANDLE RotHintTable = NULL;
 
-const WCHAR *RotHintTable_Name = L"Global\\RotHintTable";
+const WCHAR* RotHintTable_Name = L"Global\\RotHintTable";
 
 
 //---------------------------------------------------------------------------
@@ -48,34 +49,23 @@ const WCHAR *RotHintTable_Name = L"Global\\RotHintTable";
 //---------------------------------------------------------------------------
 
 
-_FX HANDLE my_CreateFileMappingW(
-    HANDLE hFile,
-    LPSECURITY_ATTRIBUTES lpAttributes,
-    DWORD flProtect,
-    DWORD dwMaximumSizeHigh,
-    DWORD dwMaximumSizeLow,
-    LPCWSTR lpName)
+_FX HANDLE my_CreateFileMappingW(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName)
 {
-    typedef HANDLE (__stdcall *P_CreateFileMappingW)(
-        HANDLE hFile,
-        LPSECURITY_ATTRIBUTES lpAttributes,
-        DWORD flProtect,
-        DWORD dwMaximumSizeHigh,
-        DWORD dwMaximumSizeLow,
-        LPCWSTR lpName);
+	typedef HANDLE(__stdcall * P_CreateFileMappingW)(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName);
 
-    HANDLE handle = 0;
+	HANDLE handle = 0;
 
-    if (lpName && _wcsicmp(lpName, RotHintTable_Name) == 0)
-        handle = RotHintTable;
+	if (lpName && _wcsicmp(lpName, RotHintTable_Name) == 0)
+	{
+		handle = RotHintTable;
+	}
 
-    if (! handle) {
-        handle = ((P_CreateFileMappingW)__sys_CreateFileMappingW)(
-            hFile, lpAttributes, flProtect,
-            dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
-    }
+	if (!handle)
+	{
+		handle = ((P_CreateFileMappingW)__sys_CreateFileMappingW)(hFile, lpAttributes, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+	}
 
-    return handle;
+	return handle;
 }
 
 
@@ -84,31 +74,35 @@ _FX HANDLE my_CreateFileMappingW(
 //---------------------------------------------------------------------------
 
 
-_FX ULONG ExitWhenParentDies(void *arg)
+_FX ULONG ExitWhenParentDies(void* arg)
 {
-    NTSTATUS status;
-    ULONG len;
-    PROCESS_BASIC_INFORMATION info;
-    HANDLE hParentProcess;
+	NTSTATUS status;
+	ULONG len;
+	PROCESS_BASIC_INFORMATION info;
+	HANDLE hParentProcess;
 
-    status = NtQueryInformationProcess(
-        NtCurrentProcess(), ProcessBasicInformation,
-        &info, sizeof(PROCESS_BASIC_INFORMATION), &len);
+	status = NtQueryInformationProcess(NtCurrentProcess(), ProcessBasicInformation, &info, sizeof(PROCESS_BASIC_INFORMATION), &len);
 
-    if (! NT_SUCCESS(status))
-        hParentProcess = NULL;
-    else {
-        hParentProcess = OpenProcess(
-            SYNCHRONIZE, FALSE, (ULONG)info.InheritedFromUniqueProcessId);
-    }
-    if (! hParentProcess)
-        hParentProcess = NtCurrentProcess();
+	if (!NT_SUCCESS(status))
+	{
+		hParentProcess = NULL;
+	}
+	else
+	{
+		hParentProcess = OpenProcess(SYNCHRONIZE, FALSE, (ULONG)info.InheritedFromUniqueProcessId);
+	}
+	if (!hParentProcess)
+	{
+		hParentProcess = NtCurrentProcess();
+	}
 
-    status = WaitForSingleObject(hParentProcess, INFINITE);
-    if (status == WAIT_OBJECT_0)
-        ExitProcess(0);
+	status = WaitForSingleObject(hParentProcess, INFINITE);
+	if (status == WAIT_OBJECT_0)
+	{
+		ExitProcess(0);
+	}
 
-    return 0;
+	return 0;
 }
 
 
@@ -117,34 +111,37 @@ _FX ULONG ExitWhenParentDies(void *arg)
 //---------------------------------------------------------------------------
 
 
-int __stdcall WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine, int nCmdShow)
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    WCHAR ServiceName[16];
-    BOOL ok;
-    HANDLE hThreadEvent;
+	WCHAR ServiceName[16];
+	BOOL ok;
+	HANDLE hThreadEvent;
 
-    SetupExceptionHandler();
+	SetupExceptionHandler();
 
-    Check_Windows_7();
+	Check_Windows_7();
 
-    // pretend we are the SCM
-    if (! Hook_Service_Control_Manager())
-        return EXIT_FAILURE;
+	// pretend we are the SCM
+	if (!Hook_Service_Control_Manager())
+	{
+		return EXIT_FAILURE;
+	}
 
-    // hook privilege-related functions
-    if (! Hook_Privilege())
-        return EXIT_FAILURE;
+	// hook privilege-related functions
+	if (!Hook_Privilege())
+	{
+		return EXIT_FAILURE;
+	}
 
-    hThreadEvent = CreateThread(NULL, 0, ExitWhenParentDies, 0, 0, NULL);
+	hThreadEvent = CreateThread(NULL, 0, ExitWhenParentDies, 0, 0, NULL);
 
-    // start dcom launcher service
-    wcscpy(ServiceName, L"DCOMLAUNCH");
-    ok = Service_Start_ServiceMain( ServiceName, L"rpcss.dll", "ServiceMain", TRUE);
-    if (! ok)
-        return EXIT_FAILURE;
-    WaitForSingleObject(hThreadEvent, INFINITE);
-    return 0;
+	// start dcom launcher service
+	wcscpy(ServiceName, L"DCOMLAUNCH");
+	ok = Service_Start_ServiceMain(ServiceName, L"rpcss.dll", "ServiceMain", TRUE);
+	if (!ok)
+	{
+		return EXIT_FAILURE;
+	}
+	WaitForSingleObject(hThreadEvent, INFINITE);
+	return 0;
 }

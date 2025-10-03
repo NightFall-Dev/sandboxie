@@ -20,10 +20,11 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "MyWizard.h"
+
+#include "MyApp.h"
 #include "apps/common/FontStore.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -33,8 +34,8 @@
 
 BEGIN_MESSAGE_MAP(CMyWizard, CPropertySheet)
 
-    ON_WM_SIZE()
-    ON_WM_NCLBUTTONDOWN()
+ON_WM_SIZE()
+ON_WM_NCLBUTTONDOWN()
 
 END_MESSAGE_MAP()
 
@@ -44,14 +45,14 @@ END_MESSAGE_MAP()
 //---------------------------------------------------------------------------
 
 
-CMyWizard::CMyWizard(CWnd *pParentWnd, ULONG title_msgid)
+CMyWizard::CMyWizard(CWnd* pParentWnd, ULONG title_msgid)
 {
-    m_pBaseDialog = new CBaseDialog(NULL);
+	m_pBaseDialog = new CBaseDialog(NULL);
 
-    CommonConstruct(pParentWnd, 0);
-    m_psh.dwFlags |= PSH_WIZARD | PSH_WIZARD_LITE;
+	CommonConstruct(pParentWnd, 0);
+	m_psh.dwFlags |= PSH_WIZARD | PSH_WIZARD_LITE;
 
-    m_title_msgid = title_msgid;
+	m_title_msgid = title_msgid;
 }
 
 
@@ -62,12 +63,13 @@ CMyWizard::CMyWizard(CWnd *pParentWnd, ULONG title_msgid)
 
 CMyWizard::~CMyWizard()
 {
-    while (! m_pages.IsEmpty()) {
-        CMyWizardPage *page = (CMyWizardPage *)m_pages.RemoveHead();
-        delete page;
-    }
+	while (!m_pages.IsEmpty())
+	{
+		CMyWizardPage* page = (CMyWizardPage*)m_pages.RemoveHead();
+		delete page;
+	}
 
-    delete m_pBaseDialog;
+	delete m_pBaseDialog;
 }
 
 
@@ -76,10 +78,10 @@ CMyWizard::~CMyWizard()
 //---------------------------------------------------------------------------
 
 
-void CMyWizard::AddPage(CMyWizardPage *page)
+void CMyWizard::AddPage(CMyWizardPage* page)
 {
-    m_pages.AddTail(page);
-    CPropertySheet::AddPage(page);
+	m_pages.AddTail(page);
+	CPropertySheet::AddPage(page);
 }
 
 
@@ -90,19 +92,21 @@ void CMyWizard::AddPage(CMyWizardPage *page)
 
 BOOL CMyWizard::OnInitDialog()
 {
-    m_pBaseDialog->m_hWnd = m_hWnd;
-    m_pBaseDialog->AddMinimizeButton();
+	m_pBaseDialog->m_hWnd = m_hWnd;
+	m_pBaseDialog->AddMinimizeButton();
 
-    if (CMyApp::m_LayoutRTL)
-        ModifyStyleEx(0, WS_EX_LAYOUTRTL, SWP_NOACTIVATE);
+	if (CMyApp::m_LayoutRTL)
+	{
+		ModifyStyleEx(0, WS_EX_LAYOUTRTL, SWP_NOACTIVATE);
+	}
 
-    CenterWindow(GetDesktopWindow());
+	CenterWindow(GetDesktopWindow());
 
-    SetWindowText(CMyMsg(m_title_msgid));
+	SetWindowText(CMyMsg(m_title_msgid));
 
-    SetDlgItemText(IDCANCEL, CMyMsg(MSG_3004));
+	SetDlgItemText(IDCANCEL, CMyMsg(MSG_3004));
 
-    return CPropertySheet::OnInitDialog();
+	return CPropertySheet::OnInitDialog();
 }
 
 
@@ -113,8 +117,10 @@ BOOL CMyWizard::OnInitDialog()
 
 void CMyWizard::OnSize(UINT nType, int cx, int cy)
 {
-    if (m_pBaseDialog)
-        m_pBaseDialog->OnSize(nType, cx, cy);
+	if (m_pBaseDialog)
+	{
+		m_pBaseDialog->OnSize(nType, cx, cy);
+	}
 }
 
 
@@ -125,8 +131,10 @@ void CMyWizard::OnSize(UINT nType, int cx, int cy)
 
 void CMyWizard::OnNcLButtonDown(UINT nHitTest, CPoint point)
 {
-    if (m_pBaseDialog)
-        m_pBaseDialog->OnNcLButtonDown(nHitTest, point);
+	if (m_pBaseDialog)
+	{
+		m_pBaseDialog->OnNcLButtonDown(nHitTest, point);
+	}
 }
 
 
@@ -135,13 +143,10 @@ void CMyWizard::OnNcLButtonDown(UINT nHitTest, CPoint point)
 //---------------------------------------------------------------------------
 
 
-CMyWizardPage::CMyWizardPage(int page_num)
-    : CLayoutPropertyPage(page_num)
+CMyWizardPage::CMyWizardPage(int page_num) :
+    CLayoutPropertyPage(page_num)
 {
-    CLayoutPropertyPage::InitPage(
-            0,
-            CSize(50, 50), CSize(640, 384), CSize(0, 0),
-            CMyApp::m_background);
+	CLayoutPropertyPage::InitPage(0, CSize(50, 50), CSize(640, 384), CSize(0, 0), CMyApp::m_background);
 }
 
 
@@ -150,17 +155,17 @@ CMyWizardPage::CMyWizardPage(int page_num)
 //---------------------------------------------------------------------------
 
 
-void CMyWizardPage::SetPageTitle(const CString &text)
+void CMyWizardPage::SetPageTitle(const CString& text)
 {
-    CStatic *title = CreateStatic(text, CPoint(5, 5), CSize(80, 10));
-    title->SetFont(CFontStore::Get(L"Tahoma", 12, FW_BOLD));
+	CStatic* title = CreateStatic(text, CPoint(5, 5), CSize(80, 10));
+	title->SetFont(CFontStore::Get(L"Tahoma", 12, FW_BOLD));
 
-    CString num;
-    CMyWizard *wizard = (CMyWizard *)GetParent();
-    num.Format(L"%d/%d", m_page_num, wizard->GetPageCount());
+	CString num;
+	CMyWizard* wizard = (CMyWizard*)GetParent();
+	num.Format(L"%d/%d", m_page_num, wizard->GetPageCount());
 
-    CStatic *page = CreateStatic(num, CPoint(90, 5), CSize(5, 10));
-    page->SetFont(CFontStore::Get(L"Tahoma", 10));
+	CStatic* page = CreateStatic(num, CPoint(90, 5), CSize(5, 10));
+	page->SetFont(CFontStore::Get(L"Tahoma", 10));
 }
 
 
@@ -171,7 +176,7 @@ void CMyWizardPage::SetPageTitle(const CString &text)
 
 void CMyWizardPage::SetPageTitle(ULONG msgid)
 {
-    return SetPageTitle(CMyMsg(msgid));
+	return SetPageTitle(CMyMsg(msgid));
 }
 
 
@@ -180,13 +185,12 @@ void CMyWizardPage::SetPageTitle(ULONG msgid)
 //---------------------------------------------------------------------------
 
 
-CStatic *CMyWizardPage::CreateStatic(
-    const CString &text, const CPoint &pos, const CPoint &size)
+CStatic* CMyWizardPage::CreateStatic(const CString& text, const CPoint& pos, const CPoint& size)
 {
-    CStatic *wnd = (CStatic *)CreateChild(-1, L"STATIC", 0, 0, pos, size);
-    wnd->SetWindowText(text);
-    wnd->SetFont(CFontStore::Get(L"Tahoma", 12));
-    return wnd;
+	CStatic* wnd = (CStatic*)CreateChild(-1, L"STATIC", 0, 0, pos, size);
+	wnd->SetWindowText(text);
+	wnd->SetFont(CFontStore::Get(L"Tahoma", 12));
+	return wnd;
 }
 
 
@@ -195,8 +199,7 @@ CStatic *CMyWizardPage::CreateStatic(
 //---------------------------------------------------------------------------
 
 
-CStatic *CMyWizardPage::CreateStatic(
-    ULONG msgid, const CPoint &pos, const CPoint &size)
+CStatic* CMyWizardPage::CreateStatic(ULONG msgid, const CPoint& pos, const CPoint& size)
 {
-    return CreateStatic(CMyMsg(msgid), pos, size);
+	return CreateStatic(CMyMsg(msgid), pos, size);
 }

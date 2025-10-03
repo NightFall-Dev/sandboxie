@@ -34,54 +34,29 @@ typedef struct STREAM STREAM;
 
 #ifndef KERNEL_MODE
 
-NTSTATUS Stream_Open(
-    OUT STREAM **out_stream,
-    IN  HANDLE FileHandle);
+NTSTATUS Stream_Open(OUT STREAM** out_stream, IN HANDLE FileHandle);
 
-#else   // kernel mode stream
+#else // kernel mode stream
 
-NTSTATUS Stream_Open(
-    OUT STREAM **out_stream,
-    IN  const WCHAR *FullPath,
-    IN  ACCESS_MASK DesiredAccess,
-    IN  ULONG FileAttributes,
-    IN  ULONG ShareAccess,
-    IN  ULONG CreateDisposition,
-    IN  ULONG CreateOptions);
+NTSTATUS Stream_Open(OUT STREAM** out_stream, IN const WCHAR* FullPath, IN ACCESS_MASK DesiredAccess, IN ULONG FileAttributes, IN ULONG ShareAccess, IN ULONG CreateDisposition, IN ULONG CreateOptions);
 
 #endif
 
-void Stream_Close(
-    IN  STREAM *stream);
+void Stream_Close(IN STREAM* stream);
 
-NTSTATUS Stream_Flush(
-    IN  STREAM *stream);
+NTSTATUS Stream_Flush(IN STREAM* stream);
 
-NTSTATUS Stream_Read_Bytes(
-    IN  STREAM *stream,
-    IN  ULONG len,
-    OUT UCHAR *v);
+NTSTATUS Stream_Read_Bytes(IN STREAM* stream, IN ULONG len, OUT UCHAR* v);
 
-NTSTATUS Stream_Write_Bytes(
-    IN  STREAM *stream,
-    IN  ULONG len,
-    IN  UCHAR *v);
+NTSTATUS Stream_Write_Bytes(IN STREAM* stream, IN ULONG len, IN UCHAR* v);
 
-NTSTATUS Stream_Read_Short(
-    IN  STREAM *stream,
-    OUT USHORT *v);
+NTSTATUS Stream_Read_Short(IN STREAM* stream, OUT USHORT* v);
 
-NTSTATUS Stream_Write_Short(
-    IN  STREAM *stream,
-    IN  USHORT v);
+NTSTATUS Stream_Write_Short(IN STREAM* stream, IN USHORT v);
 
-NTSTATUS Stream_Read_Long(
-    IN  STREAM *stream,
-    OUT ULONG *v);
+NTSTATUS Stream_Read_Long(IN STREAM* stream, OUT ULONG* v);
 
-NTSTATUS Stream_Write_Long(
-    IN  STREAM *stream,
-    IN  ULONG v);
+NTSTATUS Stream_Write_Long(IN STREAM* stream, IN ULONG v);
 
 //---------------------------------------------------------------------------
 

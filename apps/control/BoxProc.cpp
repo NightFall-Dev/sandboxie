@@ -20,8 +20,9 @@
 //---------------------------------------------------------------------------
 
 
-#include "MyApp.h"
 #include "BoxProc.h"
+
+#include "MyApp.h"
 #include "WindowTitleMap.h"
 
 
@@ -40,16 +41,16 @@ CStringList CBoxProc::m_RecentExes;
 //---------------------------------------------------------------------------
 
 
-CBoxProc::CBoxProc(const CString &name)
-    : m_name(name)
+CBoxProc::CBoxProc(const CString& name) :
+    m_name(name)
 {
-    memzero(m_pids, sizeof(m_pids));
-    m_images = NULL;
-    m_titles = NULL;
-    m_icons  = NULL;
-    m_num = 0;
-    m_max = 0;
-    m_old_num = 0;
+	memzero(m_pids, sizeof(m_pids));
+	m_images  = NULL;
+	m_titles  = NULL;
+	m_icons   = NULL;
+	m_num     = 0;
+	m_max     = 0;
+	m_old_num = 0;
 }
 
 
@@ -60,12 +61,18 @@ CBoxProc::CBoxProc(const CString &name)
 
 CBoxProc::~CBoxProc()
 {
-    if (m_images)
-        delete[] m_images;
-    if (m_titles)
-        delete[] m_titles;
-    if (m_icons)
-        delete[] m_icons;
+	if (m_images)
+	{
+		delete[] m_images;
+	}
+	if (m_titles)
+	{
+		delete[] m_titles;
+	}
+	if (m_icons)
+	{
+		delete[] m_icons;
+	}
 }
 
 
@@ -76,84 +83,100 @@ CBoxProc::~CBoxProc()
 
 void CBoxProc::RefreshProcesses(void)
 {
-    if (m_name.IsEmpty())
-        return;
+	if (m_name.IsEmpty())
+	{
+		return;
+	}
 
-    m_old_num = m_num;
+	m_old_num = m_num;
 
-    WCHAR name[256];
-    wcscpy(name, m_name);
-    SbieApi_EnumProcess(name, m_pids);
+	WCHAR name[256];
+	wcscpy(name, m_name);
+	SbieApi_EnumProcess(name, m_pids);
 
-    m_num = m_pids[0];
+	m_num = m_pids[0];
 
-    //
-    // shortcut case:  no processes found
-    //
+	//
+	// shortcut case:  no processes found
+	//
 
-    if (m_num == 0)
-        return;
+	if (m_num == 0)
+	{
+		return;
+	}
 
-    //
-    // allocate buffers for process names, if needed
-    //
+	//
+	// allocate buffers for process names, if needed
+	//
 
-    if (m_num >= m_max) {
+	if (m_num >= m_max)
+	{
+		if (m_images)
+		{
+			delete[] m_images;
+		}
+		if (m_titles)
+		{
+			delete[] m_titles;
+		}
+		if (m_icons)
+		{
+			delete[] m_icons;
+		}
 
-        if (m_images)
-            delete[] m_images;
-        if (m_titles)
-            delete[] m_titles;
-        if (m_icons)
-            delete[] m_icons;
+		m_max    = m_num + 8;
+		m_images = new CString[m_max];
+		m_titles = new CString[m_max];
+		m_icons  = new HICON[m_max];
+	}
 
-        m_max    = m_num + 8;
-        m_images = new CString[m_max];
-        m_titles = new CString[m_max];
-        m_icons  = new HICON[m_max];
-    }
+	//
+	// get the image name and window name for each process
+	//
 
-    //
-    // get the image name and window name for each process
-    //
+	CWindowTitleMap& theWindowTitleMap = CWindowTitleMap::GetInstance();
 
-    CWindowTitleMap &theWindowTitleMap = CWindowTitleMap::GetInstance();
+	int i = 1;
+	for (i = 1; i <= m_num; ++i)
+	{
+		SbieApi_QueryProcessEx((HANDLE)(ULONG_PTR)m_pids[i], 255, NULL, name, NULL, NULL);
 
-    int i = 1;
-    for (i = 1; i <= m_num; ++i) {
+		if (name[0])
+		{
+			m_images[i] = name;
+		}
+		else
+		{
+			m_images[i] = _unknown;
+		}
 
-        SbieApi_QueryProcessEx(
-                (HANDLE)(ULONG_PTR)m_pids[i], 255, NULL, name, NULL, NULL);
+		HICON icon;
+		const WCHAR* title = theWindowTitleMap.Get(m_pids[i], icon);
+		if (title)
+		{
+			m_titles[i] = title;
+		}
+		else
+		{
+			m_titles[i] = CString();
+		}
 
-        if (name[0])
-            m_images[i] = name;
-        else
-            m_images[i] = _unknown;
+		m_icons[i] = icon;
+	}
 
-        HICON icon;
-        const WCHAR *title = theWindowTitleMap.Get(m_pids[i], icon);
-        if (title)
-            m_titles[i] = title;
-        else
-            m_titles[i] = CString();
+	//
+	// collect images into the list of recent EXEs
+	//
 
-        m_icons[i] = icon;
-    }
-
-    //
-    // collect images into the list of recent EXEs
-    //
-
-    for (i = 1; i <= m_num; ++i) {
-
-        ULONG64 ProcessFlags =
-            SbieApi_QueryProcessInfo((HANDLE)(ULONG_PTR)m_pids[i], 0);
-        if (! (ProcessFlags & SBIE_FLAG_IMAGE_FROM_SBIE_DIR)) {
-
-            CString &exe1 = m_images[i];
-            AddToRecentExes(exe1);
-        }
-    }
+	for (i = 1; i <= m_num; ++i)
+	{
+		ULONG64 ProcessFlags = SbieApi_QueryProcessInfo((HANDLE)(ULONG_PTR)m_pids[i], 0);
+		if (!(ProcessFlags & SBIE_FLAG_IMAGE_FROM_SBIE_DIR))
+		{
+			CString& exe1 = m_images[i];
+			AddToRecentExes(exe1);
+		}
+	}
 }
 
 
@@ -164,7 +187,7 @@ void CBoxProc::RefreshProcesses(void)
 
 int CBoxProc::GetOldProcessCount() const
 {
-    return m_old_num;
+	return m_old_num;
 }
 
 
@@ -175,7 +198,7 @@ int CBoxProc::GetOldProcessCount() const
 
 int CBoxProc::GetProcessCount() const
 {
-    return m_num;
+	return m_num;
 }
 
 
@@ -186,9 +209,11 @@ int CBoxProc::GetProcessCount() const
 
 int CBoxProc::GetProcessId(int index) const
 {
-    if (index < 0 || index >= m_num)
-        return 0;
-    return m_pids[index + 1];
+	if (index < 0 || index >= m_num)
+	{
+		return 0;
+	}
+	return m_pids[index + 1];
 }
 
 
@@ -197,11 +222,13 @@ int CBoxProc::GetProcessId(int index) const
 //---------------------------------------------------------------------------
 
 
-const CString &CBoxProc::GetProcessImageName(int index) const
+const CString& CBoxProc::GetProcessImageName(int index) const
 {
-    if (index < 0 || index >= m_num)
-        return _unknown;
-    return m_images[index + 1];
+	if (index < 0 || index >= m_num)
+	{
+		return _unknown;
+	}
+	return m_images[index + 1];
 }
 
 
@@ -210,11 +237,13 @@ const CString &CBoxProc::GetProcessImageName(int index) const
 //---------------------------------------------------------------------------
 
 
-const CString &CBoxProc::GetProcessWindowTitle(int index) const
+const CString& CBoxProc::GetProcessWindowTitle(int index) const
 {
-    if (index < 0 || index >= m_num)
-        return _unknown;
-    return m_titles[index + 1];
+	if (index < 0 || index >= m_num)
+	{
+		return _unknown;
+	}
+	return m_titles[index + 1];
 }
 
 
@@ -225,9 +254,11 @@ const CString &CBoxProc::GetProcessWindowTitle(int index) const
 
 HICON CBoxProc::GetProcessWindowIcon(int index) const
 {
-    if (index < 0 || index >= m_num)
-        return NULL;
-    return m_icons[index + 1];
+	if (index < 0 || index >= m_num)
+	{
+		return NULL;
+	}
+	return m_icons[index + 1];
 }
 
 
@@ -238,10 +269,14 @@ HICON CBoxProc::GetProcessWindowIcon(int index) const
 
 int CBoxProc::GetIndexForProcessId(ULONG pid) const
 {
-    for (int index = 0; index < m_num; ++index)
-        if (m_pids[index + 1] == pid)
-            return index;
-    return -1;
+	for (int index = 0; index < m_num; ++index)
+	{
+		if (m_pids[index + 1] == pid)
+		{
+			return index;
+		}
+	}
+	return -1;
 }
 
 
@@ -250,28 +285,35 @@ int CBoxProc::GetIndexForProcessId(ULONG pid) const
 //---------------------------------------------------------------------------
 
 
-void CBoxProc::AddToRecentExes(const CString &exe1)
+void CBoxProc::AddToRecentExes(const CString& exe1)
 {
-    if (exe1.CompareNoCase(L"unknown executable image") == 0)
-        return;
-    if (exe1.CompareNoCase(_unknown) == 0)
-        return;
+	if (exe1.CompareNoCase(L"unknown executable image") == 0)
+	{
+		return;
+	}
+	if (exe1.CompareNoCase(_unknown) == 0)
+	{
+		return;
+	}
 
-    bool found = false;
-    POSITION pos = m_RecentExes.GetHeadPosition();
-    while (pos) {
-        CString &exe2 = m_RecentExes.GetNext(pos);
-        if (exe2.CompareNoCase(exe1) == 0) {
-            found = true;
-            break;
-        }
-    }
+	bool found   = false;
+	POSITION pos = m_RecentExes.GetHeadPosition();
+	while (pos)
+	{
+		CString& exe2 = m_RecentExes.GetNext(pos);
+		if (exe2.CompareNoCase(exe1) == 0)
+		{
+			found = true;
+			break;
+		}
+	}
 
-    if (! found) {
-        CString exe2(exe1);
-        exe2.MakeLower();
-        m_RecentExes.AddTail(exe2);
-    }
+	if (!found)
+	{
+		CString exe2(exe1);
+		exe2.MakeLower();
+		m_RecentExes.AddTail(exe2);
+	}
 }
 
 
@@ -280,7 +322,7 @@ void CBoxProc::AddToRecentExes(const CString &exe1)
 //---------------------------------------------------------------------------
 
 
-void CBoxProc::AddRecentExesToList(CStringList &list1)
+void CBoxProc::AddRecentExesToList(CStringList& list1)
 {
-    list1.AddTail(&m_RecentExes);
+	list1.AddTail(&m_RecentExes);
 }

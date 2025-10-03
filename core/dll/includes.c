@@ -19,10 +19,10 @@
 // Includes
 //---------------------------------------------------------------------------
 
+#include "common/win32_ntddk.h"
 #include "dll.h"
 
 #include <windows.h>
-#include "common/win32_ntddk.h"
 
 /* List */
 

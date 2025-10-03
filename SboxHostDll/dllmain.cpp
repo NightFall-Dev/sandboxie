@@ -16,63 +16,57 @@
  */
 
 // dllmain.cpp : Defines the entry point for the DLL application.
-#include "stdafx.h"
 #include "SboxHostDll.h"
+#include "stdafx.h"
 
 using namespace std;
 
-HANDLE  g_hInjectedGlobalNameObj = NULL;
+HANDLE g_hInjectedGlobalNameObj = NULL;
 
-BOOLEAN InitHook( HINSTANCE hSbieDll );
+BOOLEAN InitHook(HINSTANCE hSbieDll);
 
 extern "C" __declspec(dllexport) void InjectDllMain(HINSTANCE hSbieDll, ULONG_PTR UnusedParameter)
 {
-    InitHook(hSbieDll);
+	InitHook(hSbieDll);
 }
 
 
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-                     )
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
-    BOOL bRet = TRUE;
+	BOOL bRet = TRUE;
 
-    switch (ul_reason_for_call)
-    {
-    case DLL_PROCESS_ATTACH:
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
 
-        WCHAR wszDLLPath[MAX_PATH + 1];
-        if (GetModuleFileName(GetModuleHandle(NULL), wszDLLPath, MAX_PATH))
-        {
-            if (wcsstr(wszDLLPath, L"OfficeClickToRun.exe"))
-            {
-                // You can use this global name object to check if the dll loaded.
-                g_hInjectedGlobalNameObj = CreateMutex(NULL, FALSE, SBOX_HOST_DLL_LOADED);
+		WCHAR wszDLLPath[MAX_PATH + 1];
+		if (GetModuleFileName(GetModuleHandle(NULL), wszDLLPath, MAX_PATH))
+		{
+			if (wcsstr(wszDLLPath, L"OfficeClickToRun.exe"))
+			{
+				// You can use this global name object to check if the dll loaded.
+				g_hInjectedGlobalNameObj = CreateMutex(NULL, FALSE, SBOX_HOST_DLL_LOADED);
 
-                bRet = TRUE;
-            }
-            else
-            {
-                // injected to wrong process.
-                bRet = FALSE;
-            }
-        }
-        break;
+				bRet = TRUE;
+			}
+			else
+			{
+				// injected to wrong process.
+				bRet = FALSE;
+			}
+		}
+		break;
 
-    case DLL_THREAD_ATTACH:
-        break;
-    case DLL_THREAD_DETACH:
-        break;
+	case DLL_THREAD_ATTACH: break;
+	case DLL_THREAD_DETACH: break;
 
-    case DLL_PROCESS_DETACH:
+	case DLL_PROCESS_DETACH:
 
-        if (g_hInjectedGlobalNameObj)
-        {
-            CloseHandle(g_hInjectedGlobalNameObj);
-        }
-        break;
-    }
-    return bRet;
+		if (g_hInjectedGlobalNameObj)
+		{
+			CloseHandle(g_hInjectedGlobalNameObj);
+		}
+		break;
+	}
+	return bRet;
 }
-

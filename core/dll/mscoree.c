@@ -15,66 +15,66 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "dll.h"
 #include "common/my_version.h"
+#include "dll.h"
+
 #include <stdio.h>
 
 void Ldr_LoadInjectDlls(BOOLEAN bHostInject);
 extern BOOLEAN g_bHostInject;
 
-typedef DWORD (__stdcall *P__CorExeMain)();
+typedef DWORD(__stdcall* P__CorExeMain)();
 
 P__CorExeMain __sys__CorExeMain = NULL;
 
 _FX DWORD MsCorEE__CorExeMain()
 {
-    static BOOL bFirstCall = TRUE;
-    DWORD ret = 0;
+	static BOOL bFirstCall = TRUE;
+	DWORD ret              = 0;
 
-    // Load inject dlls just once
-    if (bFirstCall)
-    {
-        // if we caused PEB.ReadImageFileExecOptions to be non-zero then restore
-        // the zero value here
-        if (Dll_OsBuild < 8400) {
+	// Load inject dlls just once
+	if (bFirstCall)
+	{
+		// if we caused PEB.ReadImageFileExecOptions to be non-zero then restore
+		// the zero value here
+		if (Dll_OsBuild < 8400)
+		{
+			UCHAR* ReadImageFileExecOptions = (UCHAR*)(NtCurrentPeb() + 1);
+			if (*ReadImageFileExecOptions == '*')
+			{
+				*ReadImageFileExecOptions = 0;
+			}
+		}
 
-            UCHAR *ReadImageFileExecOptions = (UCHAR *)(NtCurrentPeb() + 1);
-            if (*ReadImageFileExecOptions == '*')
-                *ReadImageFileExecOptions = 0;
-        }
+		//
+		// do some post-LDR initialization
+		//
+		Ldr_LoadInjectDlls(g_bHostInject);
 
-        //
-        // do some post-LDR initialization
-        //
-        Ldr_LoadInjectDlls(g_bHostInject);
+		bFirstCall = FALSE;
+	}
 
-        bFirstCall = FALSE;
-    }
+	ret = __sys__CorExeMain();
 
-    ret = __sys__CorExeMain();
-
-    return ret;
+	return ret;
 }
 
 
 // Load inject dlls in .Net process' entry (_CorExeMain).
 _FX BOOLEAN MsCorEE_Init(HMODULE hmodule)
 {
+	// Use the code from AdvApi_Init
+#define GETPROC(x, s) __sys_##x##s = (P_##x)Ldr_GetProcAddrNew(DllName_mscoree, L#x L#s, #x #s);
 
-    // Use the code from AdvApi_Init
-#define GETPROC(x,s) __sys_##x##s = (P_##x) Ldr_GetProcAddrNew(DllName_mscoree, L#x L#s,#x #s);
-    
-    P__CorExeMain _CorExeMain = NULL;
+	P__CorExeMain _CorExeMain = NULL;
 
-    GETPROC(_CorExeMain,);
+	GETPROC(_CorExeMain, );
 
 #undef GETPROC
 
-    _CorExeMain = __sys__CorExeMain;
+	_CorExeMain = __sys__CorExeMain;
 
-    SBIEDLL_HOOK(MsCorEE_,_CorExeMain);
-    
-    return TRUE;
+	SBIEDLL_HOOK(MsCorEE_, _CorExeMain);
+
+	return TRUE;
 }
-
-

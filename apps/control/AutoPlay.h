@@ -29,42 +29,38 @@
 
 class CAutoPlay : public IQueryCancelAutoPlay
 {
-
 private:
+	static CAutoPlay* m_instance;
 
-    static CAutoPlay *m_instance;
+	ULONG m_refcount;
 
-    ULONG m_refcount;
+	IMoniker* m_pMoniker;
+	IRunningObjectTable* m_pRunningObjectTable;
+	ULONG m_cookie;
 
-    IMoniker *m_pMoniker;
-    IRunningObjectTable *m_pRunningObjectTable;
-    ULONG m_cookie;
-
-    void LogAutoPlay(const WCHAR *boxname, WCHAR drive);
+	void LogAutoPlay(const WCHAR* boxname, WCHAR drive);
 
 public:
+	//
+	// IUnknown methods
+	//
 
-    //
-    // IUnknown methods
-    //
+	STDMETHOD(QueryInterface)(REFIID riid, void** ppv);
+	STDMETHOD_(ULONG, AddRef)();
+	STDMETHOD_(ULONG, Release)();
 
-    STDMETHOD(QueryInterface)(REFIID riid, void **ppv);
-    STDMETHOD_(ULONG, AddRef)();
-    STDMETHOD_(ULONG, Release)();
+	//
+	// IQueryCancelAutoPlay methods
+	//
 
-    //
-    // IQueryCancelAutoPlay methods
-    //
+	STDMETHOD(AllowAutoPlay)(const WCHAR* path, ULONG cttype, const WCHAR* label, ULONG sn);
 
-    STDMETHOD(AllowAutoPlay)(
-        const WCHAR *path, ULONG cttype, const WCHAR *label, ULONG sn);
+	//
+	// static methods
+	//
 
-    //
-    // static methods
-    //
-
-    static void Install();
-    static void Remove();
+	static void Install();
+	static void Remove();
 };
 
 

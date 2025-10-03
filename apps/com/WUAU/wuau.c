@@ -23,11 +23,12 @@
 #define WIN32_NO_STATUS
 typedef long NTSTATUS;
 
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "common/defines.h"
 #include "common/my_version.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
 
 
 //---------------------------------------------------------------------------
@@ -35,7 +36,7 @@ typedef long NTSTATUS;
 //---------------------------------------------------------------------------
 
 
-const WCHAR *ServiceTitle = SANDBOXIE L" WUAUSERV";
+const WCHAR* ServiceTitle = SANDBOXIE L" WUAUSERV";
 #include "../common.h"
 
 
@@ -44,25 +45,11 @@ const WCHAR *ServiceTitle = SANDBOXIE L" WUAUSERV";
 //---------------------------------------------------------------------------
 
 
-HANDLE my_CreateFileMappingW(
-    HANDLE hFile,
-    LPSECURITY_ATTRIBUTES lpAttributes,
-    DWORD flProtect,
-    DWORD dwMaximumSizeHigh,
-    DWORD dwMaximumSizeLow,
-    LPCWSTR lpName)
+HANDLE my_CreateFileMappingW(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName)
 {
-    typedef HANDLE (__stdcall *P_CreateFileMappingW)(
-        HANDLE hFile,
-        LPSECURITY_ATTRIBUTES lpAttributes,
-        DWORD flProtect,
-        DWORD dwMaximumSizeHigh,
-        DWORD dwMaximumSizeLow,
-        LPCWSTR lpName);
+	typedef HANDLE(__stdcall * P_CreateFileMappingW)(HANDLE hFile, LPSECURITY_ATTRIBUTES lpAttributes, DWORD flProtect, DWORD dwMaximumSizeHigh, DWORD dwMaximumSizeLow, LPCWSTR lpName);
 
-    return ((P_CreateFileMappingW)__sys_CreateFileMappingW)(
-        hFile, lpAttributes, flProtect,
-        dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
+	return ((P_CreateFileMappingW)__sys_CreateFileMappingW)(hFile, lpAttributes, flProtect, dwMaximumSizeHigh, dwMaximumSizeLow, lpName);
 }
 
 
@@ -73,64 +60,43 @@ HANDLE my_CreateFileMappingW(
 
 ULONG_PTR __sys_CreateProcessW = 0;
 
-BOOL my_CreateProcessW(
-    LPVOID lpApplicationName,
-    LPVOID lpCommandLine,
-    LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    BOOL bInheritHandles,
-    DWORD dwCreationFlags,
-    LPVOID lpEnvironment,
-    LPVOID lpCurrentDirectory,
-    LPSTARTUPINFOW lpStartupInfo,
-    LPPROCESS_INFORMATION lpProcessInformation)
+BOOL my_CreateProcessW(LPVOID lpApplicationName, LPVOID lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPVOID lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation)
 {
-    typedef BOOL (*P_CreateProcess)(
-        LPVOID lpApplicationName,
-        LPVOID lpCommandLine,
-        LPSECURITY_ATTRIBUTES lpProcessAttributes,
-        LPSECURITY_ATTRIBUTES lpThreadAttributes,
-        BOOL bInheritHandles,
-        DWORD dwCreationFlags,
-        LPVOID lpEnvironment,
-        LPVOID lpCurrentDirectory,
-        LPSTARTUPINFOW lpStartupInfo,
-        LPPROCESS_INFORMATION lpProcessInformation);
+	typedef BOOL (*P_CreateProcess)(LPVOID lpApplicationName, LPVOID lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPVOID lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 
-    //
-    // make sure SandboxieWUAU only launches one copy of WUAUCLT.EXE
-    // at a time.  the sequence is SandboxieWUAU launching WUAUCLT.
-    // then WUAUCLT calls CoRegisterClassObject for some unregistered
-    // CLSID and signals SandboxieWUAU.  then SandboxieWUAU tries
-    // CoCreateInstance on that CLSID.  It fails REGDB_E_CLASSNOTREG,
-    // and then retries from the top, spawning another instance of
-    // WUAUCLT.  this hack prevents more than one instance of WUAUCLT.
-    //
+	//
+	// make sure SandboxieWUAU only launches one copy of WUAUCLT.EXE
+	// at a time.  the sequence is SandboxieWUAU launching WUAUCLT.
+	// then WUAUCLT calls CoRegisterClassObject for some unregistered
+	// CLSID and signals SandboxieWUAU.  then SandboxieWUAU tries
+	// CoCreateInstance on that CLSID.  It fails REGDB_E_CLASSNOTREG,
+	// and then retries from the top, spawning another instance of
+	// WUAUCLT.  this hack prevents more than one instance of WUAUCLT.
+	//
 
-    WCHAR *ptr = lpCommandLine;
+	WCHAR* ptr = lpCommandLine;
 
-    while (ptr) {
-        ptr = wcschr(ptr, L'\\');
-        if (ptr) {
-            ++ptr;
-            if (_wcsnicmp(ptr, L"system32\\wuauclt.exe", 20) == 0) {
+	while (ptr)
+	{
+		ptr = wcschr(ptr, L'\\');
+		if (ptr)
+		{
+			++ptr;
+			if (_wcsnicmp(ptr, L"system32\\wuauclt.exe", 20) == 0)
+			{
+				ULONG pid = FindProcessId(L"wuauclt.exe", FALSE);
+				if (!pid)
+				{
+					break;
+				}
 
-                ULONG pid = FindProcessId(L"wuauclt.exe", FALSE);
-                if (! pid)
-                    break;
+				SetLastError(ERROR_ACCESS_DENIED);
+				return FALSE;
+			}
+		}
+	}
 
-                SetLastError(ERROR_ACCESS_DENIED);
-                return FALSE;
-            }
-        }
-    }
-
-    return ((P_CreateProcess)__sys_CreateProcessW)(
-        lpApplicationName, lpCommandLine,
-        lpProcessAttributes, lpThreadAttributes,
-        bInheritHandles, dwCreationFlags,
-        lpEnvironment, lpCurrentDirectory,
-        lpStartupInfo, lpProcessInformation);
+	return ((P_CreateProcess)__sys_CreateProcessW)(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 }
 
 
@@ -141,41 +107,28 @@ BOOL my_CreateProcessW(
 
 ULONG_PTR __sys_NtAlpcConnectPort = 0;
 
-_FX NTSTATUS my_NtAlpcConnectPort(
-    HANDLE *PortHandle, UNICODE_STRING *PortName, void *ObjectAttributes,
-    void *AlpcConnectInfo, ULONG ConnectionFlags, void *ServerSid,
-    void *ConnectionInfo, void *ConnectionInfoLength,
-    void *InMessageBuffer, void *OutMessageBuffer, void *Timeout)
+_FX NTSTATUS my_NtAlpcConnectPort(HANDLE* PortHandle, UNICODE_STRING* PortName, void* ObjectAttributes, void* AlpcConnectInfo, ULONG ConnectionFlags, void* ServerSid, void* ConnectionInfo, void* ConnectionInfoLength, void* InMessageBuffer, void* OutMessageBuffer, void* Timeout)
 {
-    NTSTATUS status;
+	NTSTATUS status;
 
-    if (PortName->Length == 8 * sizeof(WCHAR) &&
-            _wcsnicmp(PortName->Buffer, L"\\PdcPort", 8) == 0) {
+	if (PortName->Length == 8 * sizeof(WCHAR) && _wcsnicmp(PortName->Buffer, L"\\PdcPort", 8) == 0)
+	{
+		//
+		// on Windows 8 the service tries to connect to an undocumented port
+		// provided by a driver pdc.sys.  work around this by faking success
+		//
 
-        //
-        // on Windows 8 the service tries to connect to an undocumented port
-        // provided by a driver pdc.sys.  work around this by faking success
-        //
+		*PortHandle = NULL;
+		status      = STATUS_SUCCESS;
+	}
+	else
+	{
+		typedef NTSTATUS (*P_NtAlpcConnectPort)(HANDLE* PortHandle, UNICODE_STRING* PortName, void* ObjectAttributes, void* AlpcConnectInfo, ULONG ConnectionFlags, void* ServerSid, void* ConnectionInfo, void* ConnectionInfoLength, void* InMessageBuffer, void* OutMessageBuffer, void* Timeout);
 
-        *PortHandle = NULL;
-        status = STATUS_SUCCESS;
+		status = ((P_NtAlpcConnectPort)__sys_NtAlpcConnectPort)(PortHandle, PortName, ObjectAttributes, AlpcConnectInfo, ConnectionFlags, ServerSid, ConnectionInfo, ConnectionInfoLength, InMessageBuffer, OutMessageBuffer, Timeout);
+	}
 
-    } else {
-
-        typedef NTSTATUS (*P_NtAlpcConnectPort)(
-            HANDLE *PortHandle, UNICODE_STRING *PortName,
-            void *ObjectAttributes, void *AlpcConnectInfo,
-            ULONG ConnectionFlags, void *ServerSid,
-            void *ConnectionInfo, void *ConnectionInfoLength,
-            void *InMessageBuffer, void *OutMessageBuffer, void *Timeout);
-
-        status = ((P_NtAlpcConnectPort)__sys_NtAlpcConnectPort)(
-            PortHandle, PortName, ObjectAttributes, AlpcConnectInfo,
-            ConnectionFlags, ServerSid, ConnectionInfo, ConnectionInfoLength,
-            InMessageBuffer, OutMessageBuffer, Timeout);
-    }
-
-    return status;
+	return status;
 }
 
 
@@ -184,49 +137,49 @@ _FX NTSTATUS my_NtAlpcConnectPort(
 //---------------------------------------------------------------------------
 
 
-int __stdcall WinMain(
-    HINSTANCE hInstance,
-    HINSTANCE hPrevInstance,
-    LPSTR lpCmdLine, int nCmdShow)
+int __stdcall WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-    UCHAR WUAU_ServiceMain[64];
-    WCHAR ServiceName[16];
-    WCHAR ServiceDll[64];
-    BOOL hook_success = TRUE;
-    OSVERSIONINFO osvi;
-    //BOOL ok;
+	UCHAR WUAU_ServiceMain[64];
+	WCHAR ServiceName[16];
+	WCHAR ServiceDll[64];
+	BOOL hook_success = TRUE;
+	OSVERSIONINFO osvi;
+	//BOOL ok;
 
-    SetupExceptionHandler();
+	SetupExceptionHandler();
 
-    HOOK_WIN32(CreateProcessW);
+	HOOK_WIN32(CreateProcessW);
 
-    memzero(&osvi, sizeof(OSVERSIONINFO));
-    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx((OSVERSIONINFO *)&osvi);
-    if (osvi.dwMajorVersion >= 6) {
-        wcscpy(ServiceDll, L"wuaueng.dll");
-        strcpy(WUAU_ServiceMain, "WUServiceMain");
-    } else {
-        wcscpy(ServiceDll, L"wuauserv.dll");
-        strcpy(WUAU_ServiceMain, "ServiceMain");
-    }
+	memzero(&osvi, sizeof(OSVERSIONINFO));
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx((OSVERSIONINFO*)&osvi);
+	if (osvi.dwMajorVersion >= 6)
+	{
+		wcscpy(ServiceDll, L"wuaueng.dll");
+		strcpy(WUAU_ServiceMain, "WUServiceMain");
+	}
+	else
+	{
+		wcscpy(ServiceDll, L"wuauserv.dll");
+		strcpy(WUAU_ServiceMain, "ServiceMain");
+	}
 
-    if ((osvi.dwMajorVersion == 10) || (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 2)) {
-        // Windows 10, Windows 8, or Windows 8.1
-        void *NtAlpcConnectPort = GetProcAddress(
-            GetModuleHandle(L"ntdll.dll"), "NtAlpcConnectPort");
-        HOOK_WIN32(NtAlpcConnectPort);
-    }
+	if ((osvi.dwMajorVersion == 10) || (osvi.dwMajorVersion == 6 && osvi.dwMinorVersion >= 2))
+	{
+		// Windows 10, Windows 8, or Windows 8.1
+		void* NtAlpcConnectPort = GetProcAddress(GetModuleHandle(L"ntdll.dll"), "NtAlpcConnectPort");
+		HOOK_WIN32(NtAlpcConnectPort);
+	}
 
-    wcscpy(ServiceName, L"wuauserv");
+	wcscpy(ServiceName, L"wuauserv");
 
-    // We NEVER want updates to run in the sandbox.  Commenting
-    // out the next lines means the update service is not started
-    // in the sandbox, so all updates will fail.
+	// We NEVER want updates to run in the sandbox.  Commenting
+	// out the next lines means the update service is not started
+	// in the sandbox, so all updates will fail.
 
-    // ok = Service_Start_ServiceMain(
-    //            ServiceName, ServiceDll, WUAU_ServiceMain, FALSE);
-    //return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+	// ok = Service_Start_ServiceMain(
+	//            ServiceName, ServiceDll, WUAU_ServiceMain, FALSE);
+	//return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
 
-    return EXIT_SUCCESS;
+	return EXIT_SUCCESS;
 }

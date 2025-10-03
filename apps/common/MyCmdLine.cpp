@@ -19,11 +19,12 @@
 // Command Line Parser Utility
 //---------------------------------------------------------------------------
 
+#include "MyCmdLine.h"
+
+#include "common/defines.h"
 #include "stdafx.h"
 
 #include <windows.h>
-#include "MyCmdLine.h"
-#include "common/defines.h"
 
 
 //---------------------------------------------------------------------------
@@ -31,16 +32,22 @@
 //---------------------------------------------------------------------------
 
 
-CMyCmdLine::CMyCmdLine(const WCHAR *CommandLineString)
+CMyCmdLine::CMyCmdLine(const WCHAR* CommandLineString)
 {
-    if (CommandLineString)
-        m_Next = CommandLineString;
-    else
-        m_Next = GetCommandLine();
-    if (! m_Next)
-        m_Next = L"";
+	if (CommandLineString)
+	{
+		m_Next = CommandLineString;
+	}
+	else
+	{
+		m_Next = GetCommandLine();
+	}
+	if (!m_Next)
+	{
+		m_Next = L"";
+	}
 
-    m_Prev = NULL;
+	m_Prev = NULL;
 }
 
 
@@ -51,8 +58,10 @@ CMyCmdLine::CMyCmdLine(const WCHAR *CommandLineString)
 
 CMyCmdLine::~CMyCmdLine()
 {
-    if (m_Prev)
-        HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, m_Prev);
+	if (m_Prev)
+	{
+		HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, m_Prev);
+	}
 }
 
 
@@ -61,25 +70,34 @@ CMyCmdLine::~CMyCmdLine()
 //---------------------------------------------------------------------------
 
 
-const WCHAR *CMyCmdLine::EatString(const WCHAR *str)
+const WCHAR* CMyCmdLine::EatString(const WCHAR* str)
 {
-    bool quoted = false;
+	bool quoted = false;
 
-    while (*str == L' ')
-        ++str;
+	while (*str == L' ')
+	{
+		++str;
+	}
 
-    while (*str) {
-        if (*str == L'\"')
-            quoted = !quoted;
-        else if (*str == L' ' && (! quoted))
-            break;
-        ++str;
-    }
+	while (*str)
+	{
+		if (*str == L'\"')
+		{
+			quoted = !quoted;
+		}
+		else if (*str == L' ' && (!quoted))
+		{
+			break;
+		}
+		++str;
+	}
 
-    while (*str == L' ')
-        ++str;
+	while (*str == L' ')
+	{
+		++str;
+	}
 
-    return str;
+	return str;
 }
 
 
@@ -90,13 +108,14 @@ const WCHAR *CMyCmdLine::EatString(const WCHAR *str)
 
 int CMyCmdLine::Count()
 {
-    const WCHAR *ptr = m_Next;
-    int n = 0;
-    do {
-        ++n;
-        ptr = EatString(ptr);
-    } while (*ptr);
-    return (n - 1);
+	const WCHAR* ptr = m_Next;
+	int n            = 0;
+	do
+	{
+		++n;
+		ptr = EatString(ptr);
+	} while (*ptr);
+	return (n - 1);
 }
 
 
@@ -105,28 +124,31 @@ int CMyCmdLine::Count()
 //---------------------------------------------------------------------------
 
 
-const WCHAR *CMyCmdLine::Next()
+const WCHAR* CMyCmdLine::Next()
 {
-    if (m_Prev) {
-        HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, m_Prev);
-        m_Prev = NULL;
-    }
+	if (m_Prev)
+	{
+		HeapFree(GetProcessHeap(), HEAP_GENERATE_EXCEPTIONS, m_Prev);
+		m_Prev = NULL;
+	}
 
-    m_Next = EatString(m_Next);
-    if (*m_Next) {
+	m_Next = EatString(m_Next);
+	if (*m_Next)
+	{
+		const WCHAR* Next2 = m_Next;
+		while (*Next2 && *Next2 != L' ')
+		{
+			++Next2;
+		}
 
-        const WCHAR *Next2 = m_Next;
-        while (*Next2 && *Next2 != L' ')
-            ++Next2;
+		ULONG len = (ULONG)(Next2 - m_Next);
+		m_Prev    = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, (len + 1) * sizeof(WCHAR));
+		if (m_Prev)
+		{
+			wmemcpy(m_Prev, m_Next, len);
+			m_Prev[len] = L'\0';
+		}
+	}
 
-        ULONG len = (ULONG)(Next2 - m_Next);
-        m_Prev = (WCHAR *)HeapAlloc(GetProcessHeap(), 0,
-                                    (len + 1) * sizeof(WCHAR));
-        if (m_Prev) {
-            wmemcpy(m_Prev, m_Next, len);
-            m_Prev[len] = L'\0';
-        }
-    }
-
-    return m_Prev;
+	return m_Prev;
 }

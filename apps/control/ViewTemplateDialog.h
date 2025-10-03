@@ -26,20 +26,19 @@
 
 class CViewTemplateDialog : public CBaseDialog
 {
-    DECLARE_MESSAGE_MAP()
+	DECLARE_MESSAGE_MAP()
 
-    CString m_TemplateName;
+	CString m_TemplateName;
 
-    virtual BOOL OnInitDialog();
+	virtual BOOL OnInitDialog();
 
-    virtual void OnOK();
+	virtual void OnOK();
 
-    BOOL VerifyAndAddTemplate();
+	BOOL VerifyAndAddTemplate();
 
 public:
-
-    CViewTemplateDialog(CWnd *pParentWnd, const CString &Template);
-    ~CViewTemplateDialog();
+	CViewTemplateDialog(CWnd* pParentWnd, const CString& Template);
+	~CViewTemplateDialog();
 };
 
 

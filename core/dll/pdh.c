@@ -23,24 +23,14 @@
 
 static _FX UINT Pdh_PdhConnectMachineW(LPCWSTR lpwsMachine);
 
-static _FX UINT Pdh_PdhLookupPerfNameByIndexW(
-    LPCWSTR szMachineName,
-    DWORD dwNameIndex,
-    LPTSTR szNameBuffer,
-    LPDWORD pcchNameBufferSize
-);
+static _FX UINT Pdh_PdhLookupPerfNameByIndexW(LPCWSTR szMachineName, DWORD dwNameIndex, LPTSTR szNameBuffer, LPDWORD pcchNameBufferSize);
 
-typedef UINT(*P_PdhConnectMachineW)(
-    LPCWSTR lpwsMachine);
+typedef UINT (*P_PdhConnectMachineW)(LPCWSTR lpwsMachine);
 
-typedef UINT(*P_PdhLookupPerfNameByIndexW)(
-    LPCWSTR szMachineName,
-    DWORD dwNameIndex,
-    LPTSTR szNameBuffer,
-    LPDWORD pcchNameBufferSize);
+typedef UINT (*P_PdhLookupPerfNameByIndexW)(LPCWSTR szMachineName, DWORD dwNameIndex, LPTSTR szNameBuffer, LPDWORD pcchNameBufferSize);
 
-static P_PdhConnectMachineW           __sys_PdhConnectMachineW = NULL;
-static P_PdhLookupPerfNameByIndexW    __sys_PdhLookupPerfNameByIndexW = NULL;
+static P_PdhConnectMachineW __sys_PdhConnectMachineW               = NULL;
+static P_PdhLookupPerfNameByIndexW __sys_PdhLookupPerfNameByIndexW = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -49,20 +39,24 @@ static P_PdhLookupPerfNameByIndexW    __sys_PdhLookupPerfNameByIndexW = NULL;
 
 _FX BOOLEAN Pdh_Init(HMODULE hDll)
 {
-    void * PdhConnectMachineW;
-    void * PdhLookupPerfNameByIndexW;
+	void* PdhConnectMachineW;
+	void* PdhLookupPerfNameByIndexW;
 
-    PdhConnectMachineW = (void*)GetProcAddress(hDll, "PdhConnectMachineW");
-    if (PdhConnectMachineW == NULL)
-        return FALSE;
+	PdhConnectMachineW = (void*)GetProcAddress(hDll, "PdhConnectMachineW");
+	if (PdhConnectMachineW == NULL)
+	{
+		return FALSE;
+	}
 
-    PdhLookupPerfNameByIndexW = (void*)GetProcAddress(hDll, "PdhLookupPerfNameByIndexW");
-    if (PdhLookupPerfNameByIndexW == NULL)
-        return FALSE;
+	PdhLookupPerfNameByIndexW = (void*)GetProcAddress(hDll, "PdhLookupPerfNameByIndexW");
+	if (PdhLookupPerfNameByIndexW == NULL)
+	{
+		return FALSE;
+	}
 
-    SBIEDLL_HOOK(Pdh_, PdhConnectMachineW);
-    SBIEDLL_HOOK(Pdh_, PdhLookupPerfNameByIndexW);
-    return TRUE;
+	SBIEDLL_HOOK(Pdh_, PdhConnectMachineW);
+	SBIEDLL_HOOK(Pdh_, PdhLookupPerfNameByIndexW);
+	return TRUE;
 }
 
 //---------------------------------------------------------------------------
@@ -71,19 +65,14 @@ _FX BOOLEAN Pdh_Init(HMODULE hDll)
 
 static _FX UINT Pdh_PdhConnectMachineW(LPCWSTR lpwsMachine)
 {
-    return ERROR_ACCESS_DENIED;
+	return ERROR_ACCESS_DENIED;
 }
 
 //---------------------------------------------------------------------------
 // Pdh_PdhLookupPerfNameByIndexW
 //---------------------------------------------------------------------------
 
-static _FX UINT Pdh_PdhLookupPerfNameByIndexW(
-    LPCWSTR szMachineName,
-    DWORD dwNameIndex,
-    LPTSTR szNameBuffer,
-    LPDWORD pcchNameBufferSize
-)
+static _FX UINT Pdh_PdhLookupPerfNameByIndexW(LPCWSTR szMachineName, DWORD dwNameIndex, LPTSTR szNameBuffer, LPDWORD pcchNameBufferSize)
 {
-    return ERROR_ACCESS_DENIED;
+	return ERROR_ACCESS_DENIED;
 }

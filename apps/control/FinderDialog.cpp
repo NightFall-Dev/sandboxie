@@ -20,12 +20,12 @@
 //---------------------------------------------------------------------------
 
 
-#include "stdafx.h"
-#include "MyApp.h"
 #include "FinderDialog.h"
 
-#include "FindTool.h"
 #include "Boxes.h"
+#include "FindTool.h"
+#include "MyApp.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -33,7 +33,7 @@
 //---------------------------------------------------------------------------
 
 
-CFinderDialog *CFinderDialog::m_instance = NULL;
+CFinderDialog* CFinderDialog::m_instance = NULL;
 
 
 //---------------------------------------------------------------------------
@@ -41,28 +41,31 @@ CFinderDialog *CFinderDialog::m_instance = NULL;
 //---------------------------------------------------------------------------
 
 
-CFinderDialog::CFinderDialog(CWnd *pParentWnd, int id)
-    : CBaseDialog(pParentWnd, L"FINDER_TOOL")
+CFinderDialog::CFinderDialog(CWnd* pParentWnd, int id) :
+    CBaseDialog(pParentWnd, L"FINDER_TOOL")
 {
-    m_instance = this;
-    m_pid = 0;
+	m_instance = this;
+	m_pid      = 0;
 
-    m_wndClose = pParentWnd;
-    m_idClose = id;
+	m_wndClose = pParentWnd;
+	m_idClose  = id;
 
-    if (CBaseDialog::m_template_copy)
-        CDialog::CreateIndirect(m_template_copy, pParentWnd);
-    else
-        CDialog::Create(m_lpszTemplateName, pParentWnd);
+	if (CBaseDialog::m_template_copy)
+	{
+		CDialog::CreateIndirect(m_template_copy, pParentWnd);
+	}
+	else
+	{
+		CDialog::Create(m_lpszTemplateName, pParentWnd);
+	}
 
-    MakeFinderTool(GetDlgItem(ID_FINDER_TARGET)->m_hWnd, FindProc);
+	MakeFinderTool(GetDlgItem(ID_FINDER_TARGET)->m_hWnd, FindProc);
 
-    CRect rc;
-    GetWindowRect(&rc);
-    m_InitialSize = CSize(rc.right - rc.left, rc.bottom - rc.top);
+	CRect rc;
+	GetWindowRect(&rc);
+	m_InitialSize = CSize(rc.right - rc.left, rc.bottom - rc.top);
 
-    SetWindowPos(
-        &wndTopMost, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
+	SetWindowPos(&wndTopMost, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOSIZE | SWP_NOMOVE);
 }
 
 
@@ -73,7 +76,7 @@ CFinderDialog::CFinderDialog(CWnd *pParentWnd, int id)
 
 CFinderDialog::~CFinderDialog()
 {
-    DestroyWindow();
+	DestroyWindow();
 }
 
 
@@ -84,13 +87,13 @@ CFinderDialog::~CFinderDialog()
 
 BOOL CFinderDialog::OnInitDialog()
 {
-    SetWindowText(CMyMsg(MSG_3661));
+	SetWindowText(CMyMsg(MSG_3661));
 
-    GetDlgItem(ID_FINDER_EXPLAIN)->SetWindowText(CMyMsg(MSG_3662));
+	GetDlgItem(ID_FINDER_EXPLAIN)->SetWindowText(CMyMsg(MSG_3662));
 
-    GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
+	GetDlgItem(IDCANCEL)->SetWindowText(CMyMsg(MSG_3004));
 
-    return TRUE;
+	return TRUE;
 }
 
 
@@ -101,22 +104,32 @@ BOOL CFinderDialog::OnInitDialog()
 
 UINT CALLBACK CFinderDialog::FindProc(HWND hwndTool, UINT uCode, HWND hwnd)
 {
-    if (uCode == WFN_CANCELLED)
-        m_instance->OnCancel();
-    else {
+	if (uCode == WFN_CANCELLED)
+	{
+		m_instance->OnCancel();
+	}
+	else
+	{
+		ULONG pid;
+		if (uCode == WFN_END)
+		{
+			GetWindowThreadProcessId(hwnd, &pid);
+		}
+		else
+		{
+			pid = 0;
+		}
+		if (pid)
+		{
+			m_instance->ShowInfo(pid);
+		}
+		else
+		{
+			m_instance->HideInfo();
+		}
+	}
 
-        ULONG pid;
-        if (uCode == WFN_END)
-            GetWindowThreadProcessId(hwnd, &pid);
-        else
-            pid = 0;
-        if (pid)
-            m_instance->ShowInfo(pid);
-        else
-            m_instance->HideInfo();
-    }
-
-    return 0;
+	return 0;
 }
 
 
@@ -127,38 +140,36 @@ UINT CALLBACK CFinderDialog::FindProc(HWND hwndTool, UINT uCode, HWND hwnd)
 
 void CFinderDialog::ShowInfo(ULONG pid)
 {
-    m_pid = pid;
-    if (pid == GetCurrentProcessId()) {
-        HideInfo();
-        return;
-    }
+	m_pid = pid;
+	if (pid == GetCurrentProcessId())
+	{
+		HideInfo();
+		return;
+	}
 
-    SetWindowPos(
-        &wndTopMost, 0, 0, m_InitialSize.cx, m_InitialSize.cy + 160,
-        SWP_SHOWWINDOW | SWP_NOMOVE);
+	SetWindowPos(&wndTopMost, 0, 0, m_InitialSize.cx, m_InitialSize.cy + 160, SWP_SHOWWINDOW | SWP_NOMOVE);
 
-    CBoxes &boxes = CBoxes::GetInstance();
-    CBox &box = boxes.GetBoxByProcessId(pid);
-    const CString &boxName = box.GetName();
-    if (! boxName.IsEmpty()) {
+	CBoxes& boxes          = CBoxes::GetInstance();
+	CBox& box              = boxes.GetBoxByProcessId(pid);
+	const CString& boxName = box.GetName();
+	if (!boxName.IsEmpty())
+	{
+		CBoxProc& boxproc        = box.GetBoxProc();
+		int index                = boxproc.GetIndexForProcessId(pid);
+		const CString& imageName = boxproc.GetProcessImageName(index);
+		GetDlgItem(ID_FINDER_RESULT)->SetWindowText(CMyMsg(MSG_3663, imageName, boxName));
 
-        CBoxProc &boxproc = box.GetBoxProc();
-        int index = boxproc.GetIndexForProcessId(pid);
-        const CString &imageName = boxproc.GetProcessImageName(index);
-        GetDlgItem(ID_FINDER_RESULT)->SetWindowText(
-            CMyMsg(MSG_3663, imageName, boxName));
+		::ShowWindow(GetDlgItem(ID_FINDER_YES_BOXED)->m_hWnd, SW_SHOW);
+	}
+	else
+	{
+		GetDlgItem(ID_FINDER_RESULT)->SetWindowText(CMyMsg(MSG_3664));
 
-        ::ShowWindow(GetDlgItem(ID_FINDER_YES_BOXED)->m_hWnd, SW_SHOW);
+		::ShowWindow(GetDlgItem(ID_FINDER_NOT_BOXED)->m_hWnd, SW_SHOW);
+	}
 
-    } else {
-
-        GetDlgItem(ID_FINDER_RESULT)->SetWindowText(CMyMsg(MSG_3664));
-
-        ::ShowWindow(GetDlgItem(ID_FINDER_NOT_BOXED)->m_hWnd, SW_SHOW);
-    }
-
-    ::ShowWindow(GetDlgItem(ID_FINDER_RESULT)->m_hWnd, SW_SHOW);
-    ::ShowWindow(GetDlgItem(IDCANCEL)->m_hWnd, SW_SHOW);
+	::ShowWindow(GetDlgItem(ID_FINDER_RESULT)->m_hWnd, SW_SHOW);
+	::ShowWindow(GetDlgItem(IDCANCEL)->m_hWnd, SW_SHOW);
 }
 
 
@@ -169,19 +180,19 @@ void CFinderDialog::ShowInfo(ULONG pid)
 
 void CFinderDialog::HideInfo()
 {
-    if (! m_pid)
-        return;
+	if (!m_pid)
+	{
+		return;
+	}
 
-    m_pid = 0;
+	m_pid = 0;
 
-    SetWindowPos(
-        &wndTopMost, 0, 0, m_InitialSize.cx, m_InitialSize.cy,
-        SWP_SHOWWINDOW | SWP_NOMOVE);
+	SetWindowPos(&wndTopMost, 0, 0, m_InitialSize.cx, m_InitialSize.cy, SWP_SHOWWINDOW | SWP_NOMOVE);
 
-    ::ShowWindow(GetDlgItem(ID_FINDER_YES_BOXED)->m_hWnd, SW_HIDE);
-    ::ShowWindow(GetDlgItem(ID_FINDER_NOT_BOXED)->m_hWnd, SW_HIDE);
-    ::ShowWindow(GetDlgItem(ID_FINDER_RESULT)->m_hWnd, SW_HIDE);
-    ::ShowWindow(GetDlgItem(IDCANCEL)->m_hWnd, SW_HIDE);
+	::ShowWindow(GetDlgItem(ID_FINDER_YES_BOXED)->m_hWnd, SW_HIDE);
+	::ShowWindow(GetDlgItem(ID_FINDER_NOT_BOXED)->m_hWnd, SW_HIDE);
+	::ShowWindow(GetDlgItem(ID_FINDER_RESULT)->m_hWnd, SW_HIDE);
+	::ShowWindow(GetDlgItem(IDCANCEL)->m_hWnd, SW_HIDE);
 }
 
 
@@ -192,7 +203,7 @@ void CFinderDialog::HideInfo()
 
 void CFinderDialog::OnCancel()
 {
-    ::SendMessage(m_wndClose->m_hWnd, WM_COMMAND, m_idClose, 0);
+	::SendMessage(m_wndClose->m_hWnd, WM_COMMAND, m_idClose, 0);
 }
 
 
@@ -203,5 +214,5 @@ void CFinderDialog::OnCancel()
 
 ULONG CFinderDialog::GetProcessId()
 {
-    return m_pid;
+	return m_pid;
 }

@@ -19,10 +19,10 @@
 // Proxy Handle
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
+#include "ProxyHandle.h"
 
 #include "common/list.h"
-#include "ProxyHandle.h"
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -30,14 +30,14 @@
 //---------------------------------------------------------------------------
 
 
-typedef struct _PROXY_HANDLE {
-
-    LIST_ELEM list_elem;
-    HANDLE process_id;
-    ULONG unique_id;
-    ULONG refcount;
-    struct _PROXY_HANDLE *p_proxy_handle;
-    ULONG_PTR data;
+typedef struct _PROXY_HANDLE
+{
+	LIST_ELEM list_elem;
+	HANDLE process_id;
+	ULONG unique_id;
+	ULONG refcount;
+	struct _PROXY_HANDLE* p_proxy_handle;
+	ULONG_PTR data;
 
 } PROXY_HANDLE;
 
@@ -47,23 +47,23 @@ typedef struct _PROXY_HANDLE {
 //---------------------------------------------------------------------------
 
 
-ProxyHandle::ProxyHandle(HANDLE heap, ULONG size_of_data,
-                         P_ProxyHandle_CloseCallback close_callback,
-                         void *context_for_callback)
+ProxyHandle::ProxyHandle(HANDLE heap, ULONG size_of_data, P_ProxyHandle_CloseCallback close_callback, void* context_for_callback)
 {
-    InitializeCriticalSectionAndSpinCount(&m_lock, 1000);
-    List_Init(&m_list);
+	InitializeCriticalSectionAndSpinCount(&m_lock, 1000);
+	List_Init(&m_list);
 
-    m_close_callback = close_callback;
-    m_context_for_callback = context_for_callback;
+	m_close_callback       = close_callback;
+	m_context_for_callback = context_for_callback;
 
-    if (! heap)
-        heap = GetProcessHeap();
-    m_heap = heap;
+	if (!heap)
+	{
+		heap = GetProcessHeap();
+	}
+	m_heap = heap;
 
-    m_size_of_data = size_of_data;
+	m_size_of_data = size_of_data;
 
-    m_unique_id = 'sbox';
+	m_unique_id = 'sbox';
 }
 
 
@@ -72,37 +72,39 @@ ProxyHandle::ProxyHandle(HANDLE heap, ULONG size_of_data,
 //---------------------------------------------------------------------------
 
 
-ULONG ProxyHandle::Create(HANDLE process_id, void *model_data)
+ULONG ProxyHandle::Create(HANDLE process_id, void* model_data)
 {
-    PROXY_HANDLE *proxy = (PROXY_HANDLE *)HeapAlloc(
-        m_heap, 0, sizeof(PROXY_HANDLE) + m_size_of_data);
+	PROXY_HANDLE* proxy = (PROXY_HANDLE*)HeapAlloc(m_heap, 0, sizeof(PROXY_HANDLE) + m_size_of_data);
 
-    if (! proxy) {
-        m_close_callback(m_context_for_callback, model_data);
-        return 0;
-    }
+	if (!proxy)
+	{
+		m_close_callback(m_context_for_callback, model_data);
+		return 0;
+	}
 
-    proxy->process_id = process_id;
+	proxy->process_id = process_id;
 
-    proxy->unique_id = 0;
-    while (! proxy->unique_id)
-        proxy->unique_id = InterlockedIncrement(&m_unique_id);
+	proxy->unique_id = 0;
+	while (!proxy->unique_id)
+	{
+		proxy->unique_id = InterlockedIncrement(&m_unique_id);
+	}
 
-    proxy->refcount = 1;
+	proxy->refcount = 1;
 
-    proxy->p_proxy_handle = proxy;
+	proxy->p_proxy_handle = proxy;
 
-    memcpy(&proxy->data, model_data, m_size_of_data);
+	memcpy(&proxy->data, model_data, m_size_of_data);
 
-    EnterCriticalSection(&m_lock);
+	EnterCriticalSection(&m_lock);
 
-    List_Insert_After(&m_list, NULL, proxy);
+	List_Insert_After(&m_list, NULL, proxy);
 
-    LeaveCriticalSection(&m_lock);
+	LeaveCriticalSection(&m_lock);
 
-    // WCHAR msg[128];wsprintf(msg, L"Proxy Handle Created With Process = %d Index = %d\n", process_id, proxy->unique_id); OutputDebugString(msg);
+	// WCHAR msg[128];wsprintf(msg, L"Proxy Handle Created With Process = %d Index = %d\n", process_id, proxy->unique_id); OutputDebugString(msg);
 
-    return proxy->unique_id;
+	return proxy->unique_id;
 }
 
 
@@ -111,31 +113,30 @@ ULONG ProxyHandle::Create(HANDLE process_id, void *model_data)
 //---------------------------------------------------------------------------
 
 
-void *ProxyHandle::Find(HANDLE process_id, ULONG unique_id)
+void* ProxyHandle::Find(HANDLE process_id, ULONG unique_id)
 {
-    void *proxy_data = NULL;
+	void* proxy_data = NULL;
 
-    if (process_id && unique_id) {
+	if (process_id && unique_id)
+	{
+		EnterCriticalSection(&m_lock);
 
-        EnterCriticalSection(&m_lock);
+		PROXY_HANDLE* proxy = (PROXY_HANDLE*)List_Head(&m_list);
+		while (proxy)
+		{
+			if (proxy->process_id == process_id && proxy->unique_id == unique_id)
+			{
+				++proxy->refcount;
+				proxy_data = (void*)&proxy->data;
+			}
 
-        PROXY_HANDLE *proxy = (PROXY_HANDLE *)List_Head(&m_list);
-        while (proxy) {
+			proxy = (PROXY_HANDLE*)List_Next(proxy);
+		}
 
-            if (proxy->process_id == process_id  &&
-                proxy->unique_id  == unique_id) {
+		LeaveCriticalSection(&m_lock);
+	}
 
-                ++proxy->refcount;
-                proxy_data = (void *)&proxy->data;
-            }
-
-            proxy = (PROXY_HANDLE *)List_Next(proxy);
-        }
-
-        LeaveCriticalSection(&m_lock);
-    }
-
-    return proxy_data;
+	return proxy_data;
 }
 
 
@@ -144,27 +145,27 @@ void *ProxyHandle::Find(HANDLE process_id, ULONG unique_id)
 //---------------------------------------------------------------------------
 
 
-void ProxyHandle::Close(void *proxy_data)
+void ProxyHandle::Close(void* proxy_data)
 {
-    ULONG_PTR p_p_proxy_handle = (ULONG_PTR)proxy_data - sizeof(ULONG_PTR);
-    PROXY_HANDLE *proxy = *(PROXY_HANDLE **)p_p_proxy_handle;
+	ULONG_PTR p_p_proxy_handle = (ULONG_PTR)proxy_data - sizeof(ULONG_PTR);
+	PROXY_HANDLE* proxy        = *(PROXY_HANDLE**)p_p_proxy_handle;
 
-    EnterCriticalSection(&m_lock);
+	EnterCriticalSection(&m_lock);
 
-    // WCHAR msg[128];wsprintf(msg, L"Proxy Handle Closing With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
+	// WCHAR msg[128];wsprintf(msg, L"Proxy Handle Closing With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
 
-    proxy->unique_id = 0;
+	proxy->unique_id = 0;
 
-    //
-    // first, release the ref count added by the Find call that lead
-    // to this Close call.  then, release the ref count added by the
-    // Create call that created this PROXY_HANDLE
-    //
+	//
+	// first, release the ref count added by the Find call that lead
+	// to this Close call.  then, release the ref count added by the
+	// Create call that created this PROXY_HANDLE
+	//
 
-    Release(proxy_data);
-    Release(proxy_data);
+	Release(proxy_data);
+	Release(proxy_data);
 
-    LeaveCriticalSection(&m_lock);
+	LeaveCriticalSection(&m_lock);
 }
 
 
@@ -173,27 +174,29 @@ void ProxyHandle::Close(void *proxy_data)
 //---------------------------------------------------------------------------
 
 
-void ProxyHandle::Release(void *proxy_data)
+void ProxyHandle::Release(void* proxy_data)
 {
-    ULONG_PTR p_p_proxy_handle = (ULONG_PTR)proxy_data - sizeof(ULONG_PTR);
-    PROXY_HANDLE *proxy = *(PROXY_HANDLE **)p_p_proxy_handle;
+	ULONG_PTR p_p_proxy_handle = (ULONG_PTR)proxy_data - sizeof(ULONG_PTR);
+	PROXY_HANDLE* proxy        = *(PROXY_HANDLE**)p_p_proxy_handle;
 
-    EnterCriticalSection(&m_lock);
+	EnterCriticalSection(&m_lock);
 
-    if (proxy->refcount != 0)
-        --proxy->refcount;
+	if (proxy->refcount != 0)
+	{
+		--proxy->refcount;
+	}
 
-    if (proxy->refcount == 0) {
+	if (proxy->refcount == 0)
+	{
+		// WCHAR msg[128];wsprintf(msg, L"Proxy Handle Deleting1 With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
 
-        // WCHAR msg[128];wsprintf(msg, L"Proxy Handle Deleting1 With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
+		m_close_callback(m_context_for_callback, &proxy->data);
 
-        m_close_callback(m_context_for_callback, &proxy->data);
+		List_Remove(&m_list, proxy);
+		HeapFree(m_heap, 0, proxy);
+	}
 
-        List_Remove(&m_list, proxy);
-        HeapFree(m_heap, 0, proxy);
-    }
-
-    LeaveCriticalSection(&m_lock);
+	LeaveCriticalSection(&m_lock);
 }
 
 
@@ -204,30 +207,32 @@ void ProxyHandle::Release(void *proxy_data)
 
 void ProxyHandle::ReleaseProcess(HANDLE process_id)
 {
-    EnterCriticalSection(&m_lock);
+	EnterCriticalSection(&m_lock);
 
-    PROXY_HANDLE *proxy = (PROXY_HANDLE *)List_Head(&m_list);
-    while (proxy) {
+	PROXY_HANDLE* proxy = (PROXY_HANDLE*)List_Head(&m_list);
+	while (proxy)
+	{
+		PROXY_HANDLE* proxy_next = (PROXY_HANDLE*)List_Next(proxy);
+		if (proxy->process_id == process_id)
+		{
+			if (proxy->refcount != 0)
+			{
+				--proxy->refcount;
+			}
 
-        PROXY_HANDLE *proxy_next = (PROXY_HANDLE *)List_Next(proxy);
-        if (proxy->process_id == process_id) {
+			if (proxy->refcount == 0)
+			{
+				// WCHAR msg[128];wsprintf(msg, L"Proxy Handle Deleting2 With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
 
-            if (proxy->refcount != 0)
-                --proxy->refcount;
+				m_close_callback(m_context_for_callback, &proxy->data);
 
-            if (proxy->refcount == 0) {
+				List_Remove(&m_list, proxy);
+				HeapFree(m_heap, 0, proxy);
+			}
+		}
 
-                // WCHAR msg[128];wsprintf(msg, L"Proxy Handle Deleting2 With Process = %d Index = %d\n", proxy->process_id, proxy->unique_id); OutputDebugString(msg);
+		proxy = proxy_next;
+	}
 
-                m_close_callback(m_context_for_callback, &proxy->data);
-
-                List_Remove(&m_list, proxy);
-                HeapFree(m_heap, 0, proxy);
-            }
-        }
-
-        proxy = proxy_next;
-    }
-
-    LeaveCriticalSection(&m_lock);
+	LeaveCriticalSection(&m_lock);
 }

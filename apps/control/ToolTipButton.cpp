@@ -19,8 +19,9 @@
 // ToolTip Button
 //---------------------------------------------------------------------------
 
-#include "stdafx.h"
 #include "ToolTipButton.h"
+
+#include "stdafx.h"
 
 
 //---------------------------------------------------------------------------
@@ -30,7 +31,7 @@
 
 BEGIN_MESSAGE_MAP(CToolTipButton, CButton)
 
-    ON_WM_LBUTTONUP()
+ON_WM_LBUTTONUP()
 
 END_MESSAGE_MAP()
 
@@ -42,7 +43,7 @@ END_MESSAGE_MAP()
 
 CToolTipButton::CToolTipButton()
 {
-    m_tip_active = FALSE;
+	m_tip_active = FALSE;
 }
 
 
@@ -61,11 +62,11 @@ CToolTipButton::~CToolTipButton()
 //---------------------------------------------------------------------------
 
 
-bool CToolTipButton::Init(CDialog *dlg, UINT id, const CString &text)
+bool CToolTipButton::Init(CDialog* dlg, UINT id, const CString& text)
 {
-    HWND hwndButton;
-    dlg->GetDlgItem(id, &hwndButton);
-    return Init(hwndButton, text);
+	HWND hwndButton;
+	dlg->GetDlgItem(id, &hwndButton);
+	return Init(hwndButton, text);
 }
 
 
@@ -74,15 +75,17 @@ bool CToolTipButton::Init(CDialog *dlg, UINT id, const CString &text)
 //---------------------------------------------------------------------------
 
 
-bool CToolTipButton::Init(HWND hwndButton, const CString &text)
+bool CToolTipButton::Init(HWND hwndButton, const CString& text)
 {
-    if (hwndButton) {
-        if (SubclassWindow(hwndButton)) {
-            SetText(text);
-            return true;
-        }
-    }
-    return false;
+	if (hwndButton)
+	{
+		if (SubclassWindow(hwndButton))
+		{
+			SetText(text);
+			return true;
+		}
+	}
+	return false;
 }
 
 
@@ -91,26 +94,28 @@ bool CToolTipButton::Init(HWND hwndButton, const CString &text)
 //---------------------------------------------------------------------------
 
 
-void CToolTipButton::SetText(const CString &text)
+void CToolTipButton::SetText(const CString& text)
 {
-    if (! m_tip.m_hWnd) {
+	if (!m_tip.m_hWnd)
+	{
+		if (text.IsEmpty())
+		{
+			return;
+		}
 
-        if (text.IsEmpty())
-            return;
+		CRect rc;
+		GetClientRect(&rc);
 
-        CRect rc;
-        GetClientRect(&rc);
+		m_tip.Create(this);
+		m_tip.AddTool(this, text, rc, 1);
+	}
+	else
+	{
+		m_tip.UpdateTipText(text, this, 1);
+	}
 
-        m_tip.Create(this);
-        m_tip.AddTool(this, text, rc, 1);
-
-    } else {
-
-        m_tip.UpdateTipText(text, this, 1);
-    }
-
-    m_tip_active = ! text.IsEmpty();
-    m_tip.Activate(m_tip_active);
+	m_tip_active = !text.IsEmpty();
+	m_tip.Activate(m_tip_active);
 }
 
 
@@ -119,12 +124,14 @@ void CToolTipButton::SetText(const CString &text)
 //---------------------------------------------------------------------------
 
 
-BOOL CToolTipButton::PreTranslateMessage(MSG *msg)
+BOOL CToolTipButton::PreTranslateMessage(MSG* msg)
 {
-    if (m_tip.m_hWnd)
-        m_tip.RelayEvent(msg);
+	if (m_tip.m_hWnd)
+	{
+		m_tip.RelayEvent(msg);
+	}
 
-    return CButton::PreTranslateMessage(msg);
+	return CButton::PreTranslateMessage(msg);
 }
 
 
@@ -135,16 +142,16 @@ BOOL CToolTipButton::PreTranslateMessage(MSG *msg)
 
 void CToolTipButton::OnLButtonUp(UINT nFlags, CPoint point)
 {
-    CButton::OnLButtonUp(nFlags, point);
-    if (m_tip_active) {
+	CButton::OnLButtonUp(nFlags, point);
+	if (m_tip_active)
+	{
+		//
+		// if a dialog box has only one control with a tool tip then
+		// the tool tip stops appearing after the control is used,
+		// the following workaround fixes that
+		//
 
-        //
-        // if a dialog box has only one control with a tool tip then
-        // the tool tip stops appearing after the control is used,
-        // the following workaround fixes that
-        //
-
-        m_tip.Activate(FALSE);
-        m_tip.Activate(TRUE);
-    }
+		m_tip.Activate(FALSE);
+		m_tip.Activate(TRUE);
+	}
 }

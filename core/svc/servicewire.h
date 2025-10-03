@@ -34,14 +34,14 @@
 
 struct tagSERVICE_START_REQ
 {
-    MSG_HEADER h;
-    ULONG name_len;
-    WCHAR name[1];
+	MSG_HEADER h;
+	ULONG name_len;
+	WCHAR name[1];
 };
 
 struct tagSERVICE_START_RPL
 {
-    MSG_HEADER h;                       // status is Win32 error
+	MSG_HEADER h; // status is Win32 error
 };
 
 typedef struct tagSERVICE_START_REQ SERVICE_START_REQ;
@@ -58,19 +58,19 @@ typedef struct tagSERVICE_START_RPL SERVICE_STOP_RPL;
 
 struct tagSERVICE_QUERY_REQ
 {
-    MSG_HEADER h;
-    USHORT with_service_status;
-    USHORT with_service_config;
-    ULONG name_len;
-    WCHAR name[1];
+	MSG_HEADER h;
+	USHORT with_service_status;
+	USHORT with_service_config;
+	ULONG name_len;
+	WCHAR name[1];
 };
 
 struct tagSERVICE_QUERY_RPL
 {
-    MSG_HEADER h;                       // status is Win32 error
-    SERVICE_STATUS_PROCESS service_status;
-    ULONG service_config_len;
-    QUERY_SERVICE_CONFIG service_config;
+	MSG_HEADER h; // status is Win32 error
+	SERVICE_STATUS_PROCESS service_status;
+	ULONG service_config_len;
+	QUERY_SERVICE_CONFIG service_config;
 };
 
 typedef struct tagSERVICE_QUERY_REQ SERVICE_QUERY_REQ;
@@ -84,15 +84,15 @@ typedef struct tagSERVICE_QUERY_RPL SERVICE_QUERY_RPL;
 
 struct tagSERVICE_LIST_REQ
 {
-    MSG_HEADER h;
-    ULONG type_filter;
-    ULONG state_filter;
+	MSG_HEADER h;
+	ULONG type_filter;
+	ULONG state_filter;
 };
 
 struct tagSERVICE_LIST_RPL
 {
-    MSG_HEADER h;                       // status is Win32 error
-    WCHAR names[1];
+	MSG_HEADER h; // status is Win32 error
+	WCHAR names[1];
 };
 
 typedef struct tagSERVICE_LIST_REQ SERVICE_LIST_REQ;
@@ -106,12 +106,12 @@ typedef struct tagSERVICE_LIST_RPL SERVICE_LIST_RPL;
 
 struct tagSERVICE_RUN_REQ
 {
-    MSG_HEADER h;
-    ULONG type;
-    WCHAR name[64];
-    WCHAR devmap[96];
-    ULONG path_len;                     // in bytes, including NULL
-    WCHAR path[1];
+	MSG_HEADER h;
+	ULONG type;
+	WCHAR name[64];
+	WCHAR devmap[96];
+	ULONG path_len; // in bytes, including NULL
+	WCHAR path[1];
 };
 
 typedef struct tagSERVICE_RUN_REQ SERVICE_RUN_REQ;
@@ -124,10 +124,10 @@ typedef struct tagSERVICE_RUN_REQ SERVICE_RUN_REQ;
 
 struct tagSERVICE_UAC_REQ
 {
-    MSG_HEADER h;
-    WCHAR   devmap[96];
-    ULONG64 uac_pkt_addr;
-    ULONG   uac_pkt_len;
+	MSG_HEADER h;
+	WCHAR devmap[96];
+	ULONG64 uac_pkt_addr;
+	ULONG uac_pkt_len;
 };
 
 typedef struct tagSERVICE_UAC_REQ SERVICE_UAC_REQ;
@@ -140,9 +140,9 @@ typedef struct tagSERVICE_UAC_REQ SERVICE_UAC_REQ;
 
 struct tagSERVICE_SPL_REQ
 {
-    MSG_HEADER h;
-    WCHAR integrity_level;
-    ULONG integrity_level_win7sp1;
+	MSG_HEADER h;
+	WCHAR integrity_level;
+	ULONG integrity_level_win7sp1;
 };
 
 typedef struct tagSERVICE_SPL_REQ SERVICE_SPL_REQ;

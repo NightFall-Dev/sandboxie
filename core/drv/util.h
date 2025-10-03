@@ -60,14 +60,14 @@ BOOLEAN MyIsCallerMyServiceProcess(void);
 // Returns the Terminal Services session id for the current process
 //
 
-NTSTATUS MyGetSessionId(ULONG *SessionId);
+NTSTATUS MyGetSessionId(ULONG* SessionId);
 
 
 //
 // Returns the parent process id for the current process
 //
 
-NTSTATUS MyGetParentId(HANDLE *ParentId);
+NTSTATUS MyGetParentId(HANDLE* ParentId);
 
 
 //
@@ -84,11 +84,11 @@ void EnableWriteProtect(void);
 
 void InvokeCPUID(ULONG Type, ULONG Info[4]);
 
-WCHAR *SearchUnicodeString(PCUNICODE_STRING pString1, PWCHAR pString2, BOOLEAN boolCaseInSensitive);
+WCHAR* SearchUnicodeString(PCUNICODE_STRING pString1, PWCHAR pString2, BOOLEAN boolCaseInSensitive);
 BOOLEAN UnicodeStringStartsWith(PCUNICODE_STRING pString1, PWCHAR pString2, BOOLEAN boolCaseInSensitive);
 BOOLEAN UnicodeStringEndsWith(PCUNICODE_STRING pString1, PWCHAR pString2, BOOLEAN boolCaseInSensitive);
-BOOLEAN DoesRegValueExist(ULONG RelativeTo, WCHAR *Path, WCHAR *ValueName);
-void *memmem(const void *pSearchBuf, size_t nBufSize, const void *pPattern, size_t nPatternSize);
+BOOLEAN DoesRegValueExist(ULONG RelativeTo, WCHAR* Path, WCHAR* ValueName);
+void* memmem(const void* pSearchBuf, size_t nBufSize, const void* pPattern, size_t nPatternSize);
 
 //---------------------------------------------------------------------------
 

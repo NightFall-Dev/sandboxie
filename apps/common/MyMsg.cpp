@@ -19,12 +19,13 @@
 // MyMsg Internationalization Utility
 //---------------------------------------------------------------------------
 
+#include "MyMsg.h"
+
 #include "..\control\stdafx.h"
+#include "common/defines.h"
+#include "core/dll/sbiedll.h"
 
 #include <afxcmn.h>
-#include "MyMsg.h"
-#include "core/dll/sbiedll.h"
-#include "common/defines.h"
 
 
 //---------------------------------------------------------------------------
@@ -32,7 +33,7 @@
 //---------------------------------------------------------------------------
 
 
-const CString &CMyMsg::m_unknown = CString(L"???");
+const CString& CMyMsg::m_unknown = CString(L"???");
 
 
 //---------------------------------------------------------------------------
@@ -42,7 +43,7 @@ const CString &CMyMsg::m_unknown = CString(L"???");
 
 CMyMsg::CMyMsg(ULONG msgid)
 {
-    Construct(SbieDll_FormatMessage0(msgid));
+	Construct(SbieDll_FormatMessage0(msgid));
 }
 
 
@@ -51,9 +52,9 @@ CMyMsg::CMyMsg(ULONG msgid)
 //---------------------------------------------------------------------------
 
 
-CMyMsg::CMyMsg(ULONG msgid, const WCHAR *p1)
+CMyMsg::CMyMsg(ULONG msgid, const WCHAR* p1)
 {
-    Construct(SbieDll_FormatMessage1(msgid, p1));
+	Construct(SbieDll_FormatMessage1(msgid, p1));
 }
 
 
@@ -62,9 +63,9 @@ CMyMsg::CMyMsg(ULONG msgid, const WCHAR *p1)
 //---------------------------------------------------------------------------
 
 
-CMyMsg::CMyMsg(ULONG msgid, const WCHAR *p1, const WCHAR *p2)
+CMyMsg::CMyMsg(ULONG msgid, const WCHAR* p1, const WCHAR* p2)
 {
-    Construct(SbieDll_FormatMessage2(msgid, p1, p2));
+	Construct(SbieDll_FormatMessage2(msgid, p1, p2));
 }
 
 
@@ -73,15 +74,14 @@ CMyMsg::CMyMsg(ULONG msgid, const WCHAR *p1, const WCHAR *p2)
 //---------------------------------------------------------------------------
 
 
-CMyMsg::CMyMsg(
-    ULONG msgid, const WCHAR *p1, const WCHAR *p2, const WCHAR *p3)
+CMyMsg::CMyMsg(ULONG msgid, const WCHAR* p1, const WCHAR* p2, const WCHAR* p3)
 {
-    const WCHAR *ins[6];
-    memzero((WCHAR *)ins, sizeof(ins));
-    ins[1] = (WCHAR *)p1;
-    ins[2] = (WCHAR *)p2;
-    ins[3] = (WCHAR *)p3;
-    Construct(SbieDll_FormatMessage(msgid, ins));
+	const WCHAR* ins[6];
+	memzero((WCHAR*)ins, sizeof(ins));
+	ins[1] = (WCHAR*)p1;
+	ins[2] = (WCHAR*)p2;
+	ins[3] = (WCHAR*)p3;
+	Construct(SbieDll_FormatMessage(msgid, ins));
 }
 
 
@@ -90,11 +90,15 @@ CMyMsg::CMyMsg(
 //---------------------------------------------------------------------------
 
 
-void CMyMsg::Construct(WCHAR *str)
+void CMyMsg::Construct(WCHAR* str)
 {
-    if (str) {
-        CString::operator=(str);
-        LocalFree(str);
-    } else
-        CString::operator=(m_unknown);
+	if (str)
+	{
+		CString::operator=(str);
+		LocalFree(str);
+	}
+	else
+	{
+		CString::operator=(m_unknown);
+	}
 }
